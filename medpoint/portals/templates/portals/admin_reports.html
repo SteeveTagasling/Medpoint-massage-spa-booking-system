@@ -1,0 +1,274 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Business Reports{% endblock %}
+{% block page_title %}Business Reports{% endblock %}
+{% block page_subtitle %}{{ period_label }} — Performance Monitoring{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Period Tabs */
+    .period-tabs {
+        display: flex;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        width: fit-content;
+    }
+    .period-tabs a {
+        padding: 0.55rem 1.25rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-right: 1px solid var(--border-color);
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .period-tabs a:last-child { border-right: none; }
+    .period-tabs a:hover { background: var(--sidebar-hover-bg); color: var(--purple-400); }
+    .period-tabs a.active {
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+    }
+
+    /* Print button */
+    .print-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 1.25rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: inherit;
+    }
+    .print-btn:hover {
+        border-color: var(--border-hover);
+        color: var(--purple-400);
+        background: var(--sidebar-hover-bg);
+    }
+
+    .header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    /* Commission badge */
+    .commission-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        background: rgba(168, 85, 247, 0.12);
+        color: var(--purple-400);
+    }
+
+    .revenue-highlight {
+        font-weight: 700;
+        color: var(--green-400);
+        font-size: 0.9rem;
+    }
+    .section-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .section-title i {
+        color: var(--purple-400);
+        font-size: 0.85rem;
+    }
+
+    /* Print styles: viewable and printable, but NOT downloadable */
+    @media print {
+        body { background: #fff !important; color: #111 !important; }
+        .sidebar, .mobile-header, .sidebar-footer, .print-btn,
+        .period-tabs, .mobile-toggle { display: none !important; }
+        .main-content { margin-left: 0 !important; padding: 1rem !important; }
+        .card { border: 1px solid #ddd !important; box-shadow: none !important; background: #fff !important; }
+        .data-table th, .data-table td { color: #111 !important; border-color: #ddd !important; }
+        .metrics-grid { grid-template-columns: repeat(4, 1fr) !important; }
+        .metric-card { background: #f9f9f9 !important; border-color: #ddd !important; }
+        .metric-value, .metric-label { color: #111 !important; }
+        .metric-icon { opacity: 0.4; }
+        .status, .commission-badge { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="header-row">
+    <div class="period-tabs">
+        <a href="?period=today" class="{% if period == 'today' %}active{% endif %}">
+            <i class="fas fa-sun"></i> Today
+        </a>
+        <a href="?period=weekly" class="{% if period == 'weekly' %}active{% endif %}">
+            <i class="fas fa-calendar-week"></i> This Week
+        </a>
+        <a href="?period=monthly" class="{% if period == 'monthly' %}active{% endif %}">
+            <i class="fas fa-calendar-alt"></i> This Month
+        </a>
+    </div>
+    <button class="print-btn" onclick="window.print()">
+        <i class="fas fa-print"></i> Print Report
+    </button>
+</div>
+
+<!-- Summary Metrics -->
+<div class="metrics-grid" style="margin-bottom: 1.5rem;">
+    <div class="metric-card metric-green">
+        <div class="metric-icon"><i class="fas fa-peso-sign"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Total Revenue</div>
+            <div class="metric-value">₱{{ total_revenue|floatformat:2 }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-purple">
+        <div class="metric-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Services Completed</div>
+            <div class="metric-value">{{ total_completed }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-blue">
+        <div class="metric-icon"><i class="fas fa-globe"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Online</div>
+            <div class="metric-value">{{ online_count }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-amber">
+        <div class="metric-icon"><i class="fas fa-walking"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Walk-in</div>
+            <div class="metric-value">{{ walkin_count }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Staff Performance Table -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <span class="card-header-title">
+            <i class="fas fa-users" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+            Staff Performance — {{ period_label }}
+        </span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Staff</th>
+                    <th>Title</th>
+                    <th>Services Rendered</th>
+                    <th>Revenue Generated</th>
+                    <th>Commission Rate</th>
+                    <th>Commission Earned (Salary)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in staff_data %}
+                <tr>
+                    <td style="color: var(--text-primary); font-weight: 500;">{{ item.therapist.name }}</td>
+                    <td>{{ item.therapist.title }}</td>
+                    <td style="font-weight: 600;">{{ item.services_rendered }}</td>
+                    <td class="revenue-highlight">₱{{ item.total_revenue|floatformat:2 }}</td>
+                    <td>
+                        <span class="commission-badge">
+                            <i class="fas fa-percentage"></i> {{ item.commission_rate }}%
+                        </span>
+                    </td>
+                    <td style="color: var(--purple-400); font-weight: 600;">₱{{ item.commission_earned|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="fas fa-chart-bar"></i>
+                            <p>No completed services for this period</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if staff_data %}
+            <tfoot>
+                <tr style="border-top: 2px solid var(--border-color);">
+                    <td colspan="2" style="font-weight: 700; color: var(--text-primary);">TOTALS</td>
+                    <td style="font-weight: 700; color: var(--text-primary);">{{ total_completed }}</td>
+                    <td class="revenue-highlight">₱{{ total_revenue|floatformat:2 }}</td>
+                    <td></td>
+                    <td style="font-weight: 700; color: var(--purple-400);">
+                        ₱{% widthratio 0 1 0 as total_comm %}
+                        {% for item in staff_data %}{% endfor %}
+                        —
+                    </td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+</div>
+
+<!-- Service Breakdown -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-header-title">
+            <i class="fas fa-concierge-bell" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+            Service Breakdown — {{ period_label }}
+        </span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Service</th>
+                    <th>Category</th>
+                    <th>Times Performed</th>
+                    <th>Unit Price</th>
+                    <th>Revenue</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in service_breakdown %}
+                <tr>
+                    <td style="color: var(--text-primary); font-weight: 500;">{{ item.service.name }}</td>
+                    <td>{{ item.service.get_category_display }}</td>
+                    <td style="font-weight: 600;">{{ item.count }}</td>
+                    <td>₱{{ item.service.discounted_price|floatformat:2 }}</td>
+                    <td class="revenue-highlight">₱{{ item.revenue|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state">
+                            <i class="fas fa-concierge-bell"></i>
+                            <p>No services performed in this period</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -8,26 +8,50 @@ urlpatterns = [
     path('login/', views.portal_login, name='login'),
     path('logout/', views.portal_logout, name='logout'),
 
-    # Dashboard
+    # Dashboard (routes to admin or staff dashboard based on role)
     path('dashboard/', views.dashboard, name='dashboard'),
 
-    # Booking management
+    # ── Booking management ────────────────────────────
     path('bookings/', views.booking_list, name='booking_list'),
+    path('bookings/walk-in/', views.booking_create_walkin, name='booking_walkin'),
     path('bookings/<int:pk>/update-status/', views.booking_update_status, name='booking_update_status'),
+    path('bookings/<int:pk>/delete/', views.booking_delete, name='booking_delete'),
+    path('bookings/calendar/', views.booking_calendar, name='booking_calendar'),
 
-    # Service management (admin only)
+    # ── Service management ────────────────────────────
     path('services/', views.service_list, name='service_list'),
+    path('services/create/', views.service_create, name='service_create'),
+    path('services/<int:pk>/edit/', views.service_edit, name='service_edit'),
+    path('services/<int:pk>/delete/', views.service_delete, name='service_delete'),
 
-    # Messages
+    # ── Staff / Therapist management (admin only) ─────
+    path('therapists/', views.therapist_list, name='therapist_list'),
+    path('therapists/register/', views.therapist_create, name='therapist_create'),
+    path('therapists/<int:pk>/edit/', views.therapist_edit, name='therapist_edit'),
+    path('therapists/<int:pk>/delete/', views.therapist_delete, name='therapist_delete'),
+
+    # ── Schedule management ───────────────────────────
+    path('schedules/', views.schedule_list, name='schedule_list'),
+    path('schedules/assign/', views.schedule_create, name='schedule_create'),
+    path('schedules/<int:pk>/edit/', views.schedule_edit, name='schedule_edit'),
+    path('schedules/<int:pk>/delete/', views.schedule_delete, name='schedule_delete'),
+    path('schedules/<int:pk>/toggle/', views.schedule_toggle_availability, name='schedule_toggle'),
+
+    # ── Admin Reports ─────────────────────────────────
+    path('reports/', views.admin_reports, name='admin_reports'),
+
+    # ── Staff views (therapist limited access) ────────
+    path('my-bookings/', views.staff_my_bookings, name='staff_my_bookings'),
+    path('my-schedule/', views.staff_my_schedule, name='staff_my_schedule'),
+    path('my-reports/', views.staff_my_reports, name='staff_my_reports'),
+
+    # ── Messages ──────────────────────────────────────
     path('messages/', views.message_list, name='message_list'),
     path('messages/<int:pk>/toggle-read/', views.message_toggle_read, name='message_toggle_read'),
 
-    # Staff / Therapist management (admin only)
-    path('therapists/', views.therapist_list, name='therapist_list'),
-
-    # Testimonials (admin only)
+    # ── Testimonials (admin only) ─────────────────────
     path('testimonials/', views.testimonial_list, name='testimonial_list'),
 
-    # Gallery (admin only)
+    # ── Gallery (admin only) ──────────────────────────
     path('gallery/', views.gallery_list, name='gallery_list'),
 ]

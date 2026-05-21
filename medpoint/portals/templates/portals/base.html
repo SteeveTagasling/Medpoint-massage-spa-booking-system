@@ -1181,23 +1181,48 @@
                 </a>
             </div>
 
+            {% if request.session.portal_role == 'admin' %}
+            <!-- ═══ ADMIN NAVIGATION ═══ -->
+
             <!-- Management Section -->
             <div class="nav-section">
                 <div class="nav-section-label">Management</div>
-                <a href="{% url 'portals:booking_list' %}" class="nav-item {% if request.resolver_match.url_name == 'booking_list' %}active{% endif %}" id="nav-bookings">
+                <a href="{% url 'portals:booking_list' %}" class="nav-item {% if request.resolver_match.url_name == 'booking_list' or request.resolver_match.url_name == 'booking_walkin' %}active{% endif %}" id="nav-bookings">
                     <i class="fas fa-calendar-alt"></i>
                     <span class="nav-label">Bookings</span>
                     {% if pending_bookings_count %}
                     <span class="badge badge-amber">{{ pending_bookings_count }}</span>
                     {% endif %}
                 </a>
-                <a href="{% url 'portals:service_list' %}" class="nav-item {% if request.resolver_match.url_name == 'service_list' %}active{% endif %}" id="nav-services">
+                <a href="{% url 'portals:service_list' %}" class="nav-item {% if request.resolver_match.url_name == 'service_list' or request.resolver_match.url_name == 'service_create' or request.resolver_match.url_name == 'service_edit' %}active{% endif %}" id="nav-services">
                     <i class="fas fa-concierge-bell"></i>
                     <span class="nav-label">Services</span>
                 </a>
-                <a href="{% url 'portals:therapist_list' %}" class="nav-item {% if request.resolver_match.url_name == 'therapist_list' %}active{% endif %}" id="nav-therapists">
+                <a href="{% url 'portals:therapist_list' %}" class="nav-item {% if request.resolver_match.url_name == 'therapist_list' or request.resolver_match.url_name == 'therapist_create' or request.resolver_match.url_name == 'therapist_edit' %}active{% endif %}" id="nav-therapists">
                     <i class="fas fa-users"></i>
-                    <span class="nav-label">Therapists</span>
+                    <span class="nav-label">Staff / Therapists</span>
+                </a>
+            </div>
+
+            <!-- Scheduling Section -->
+            <div class="nav-section">
+                <div class="nav-section-label">Scheduling</div>
+                <a href="{% url 'portals:schedule_list' %}" class="nav-item {% if request.resolver_match.url_name == 'schedule_list' or request.resolver_match.url_name == 'schedule_create' or request.resolver_match.url_name == 'schedule_edit' %}active{% endif %}" id="nav-schedules">
+                    <i class="fas fa-clock"></i>
+                    <span class="nav-label">Staff Schedules</span>
+                </a>
+                <a href="{% url 'portals:booking_calendar' %}" class="nav-item {% if request.resolver_match.url_name == 'booking_calendar' %}active{% endif %}" id="nav-calendar">
+                    <i class="fas fa-calendar-week"></i>
+                    <span class="nav-label">Calendar View</span>
+                </a>
+            </div>
+
+            <!-- Reports Section -->
+            <div class="nav-section">
+                <div class="nav-section-label">Analytics</div>
+                <a href="{% url 'portals:admin_reports' %}" class="nav-item {% if request.resolver_match.url_name == 'admin_reports' %}active{% endif %}" id="nav-reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span class="nav-label">Reports</span>
                 </a>
             </div>
 
@@ -1229,6 +1254,57 @@
                     <span class="nav-label">View Website</span>
                 </a>
             </div>
+
+            {% else %}
+            <!-- ═══ STAFF NAVIGATION ═══ -->
+
+            <!-- My Work Section -->
+            <div class="nav-section">
+                <div class="nav-section-label">My Work</div>
+                <a href="{% url 'portals:staff_my_bookings' %}" class="nav-item {% if request.resolver_match.url_name == 'staff_my_bookings' %}active{% endif %}" id="nav-my-bookings">
+                    <i class="fas fa-calendar-check"></i>
+                    <span class="nav-label">My Bookings</span>
+                </a>
+                <a href="{% url 'portals:staff_my_schedule' %}" class="nav-item {% if request.resolver_match.url_name == 'staff_my_schedule' %}active{% endif %}" id="nav-my-schedule">
+                    <i class="fas fa-clock"></i>
+                    <span class="nav-label">My Schedule</span>
+                </a>
+            </div>
+
+            <!-- Services Section -->
+            <div class="nav-section">
+                <div class="nav-section-label">Services</div>
+                <a href="{% url 'portals:service_list' %}" class="nav-item {% if request.resolver_match.url_name == 'service_list' or request.resolver_match.url_name == 'service_edit' %}active{% endif %}" id="nav-services">
+                    <i class="fas fa-concierge-bell"></i>
+                    <span class="nav-label">Manage Services</span>
+                </a>
+                <a href="{% url 'portals:booking_list' %}" class="nav-item {% if request.resolver_match.url_name == 'booking_list' %}active{% endif %}" id="nav-bookings">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span class="nav-label">All Bookings</span>
+                    {% if pending_bookings_count %}
+                    <span class="badge badge-amber">{{ pending_bookings_count }}</span>
+                    {% endif %}
+                </a>
+            </div>
+
+            <!-- Reports Section -->
+            <div class="nav-section">
+                <div class="nav-section-label">Analytics</div>
+                <a href="{% url 'portals:staff_my_reports' %}" class="nav-item {% if request.resolver_match.url_name == 'staff_my_reports' %}active{% endif %}" id="nav-my-reports">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="nav-label">My Reports</span>
+                </a>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="nav-section">
+                <div class="nav-section-label">Quick Links</div>
+                <a href="{% url 'website:home' %}" class="nav-item" id="nav-view-site" target="_blank">
+                    <i class="fas fa-external-link-alt"></i>
+                    <span class="nav-label">View Website</span>
+                </a>
+            </div>
+            {% endif %}
         </nav>
 
         <div class="sidebar-footer">

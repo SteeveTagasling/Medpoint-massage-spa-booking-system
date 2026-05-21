@@ -2,9 +2,108 @@
 
 {% block title %}Services{% endblock %}
 {% block page_title %}Services{% endblock %}
-{% block page_subtitle %}Manage spa services and treatments{% endblock %}
+{% block page_subtitle %}Add, edit, delete services and apply discounts{% endblock %}
+
+{% block extra_css %}
+<style>
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+    }
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.25rem;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-decoration: none;
+        font-family: inherit;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary i { font-size: 0.75rem; }
+    .item-card-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border-color);
+    }
+    .btn-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.65rem;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        font-family: inherit;
+    }
+    .btn-sm:hover { border-color: var(--border-hover); color: var(--purple-400); }
+    .btn-sm-danger {
+        border-color: rgba(239, 68, 68, 0.2);
+        color: var(--red-400);
+        background: rgba(239, 68, 68, 0.05);
+    }
+    .btn-sm-danger:hover {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.35);
+    }
+    .discount-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        background: rgba(239, 68, 68, 0.12);
+        color: var(--red-400);
+    }
+    .original-price {
+        text-decoration: line-through;
+        opacity: 0.5;
+        font-size: 0.7rem;
+    }
+    .discounted-price {
+        color: var(--green-400);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
+<!-- Header -->
+<div class="header-actions">
+    <a href="{% url 'portals:service_create' %}" class="btn-primary">
+        <i class="fas fa-plus"></i> Add New Service
+    </a>
+    <form method="get" action="{% url 'portals:service_list' %}" style="display: flex; gap: 0.5rem; align-items: center;">
+        <select name="category" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Categories</option>
+            {% for value, label in categories %}
+            <option value="{{ value }}" {% if category_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
 <div class="items-grid">
     {% for service in services %}
     <div class="item-card">
@@ -16,11 +115,21 @@
         </div>
         {% endif %}
         <div class="item-card-body">
-            <div class="item-card-title">{{ service.name }}</div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <div class="item-card-title">{{ service.name }}</div>
+                {% if service.has_discount %}
+                <span class="discount-badge"><i class="fas fa-tag"></i> {{ service.discount_percentage }}% OFF</span>
+                {% endif %}
+            </div>
             <div class="item-card-sub">{{ service.get_category_display }}</div>
             <div class="item-card-meta">
                 <span><i class="fas fa-clock"></i> {{ service.duration_minutes }} min</span>
+                {% if service.has_discount %}
+                <span class="original-price"><i class="fas fa-peso-sign"></i> {{ service.price }}</span>
+                <span class="discounted-price"><i class="fas fa-peso-sign"></i> {{ service.discounted_price|floatformat:2 }}</span>
+                {% else %}
                 <span><i class="fas fa-peso-sign"></i> {{ service.price }}</span>
+                {% endif %}
                 <span>
                     {% if service.is_active %}
                     <i class="fas fa-circle" style="color: var(--green-400); font-size: 0.5rem;"></i> Active
@@ -28,6 +137,17 @@
                     <i class="fas fa-circle" style="color: var(--red-400); font-size: 0.5rem;"></i> Inactive
                     {% endif %}
                 </span>
+            </div>
+            <div class="item-card-actions">
+                <a href="{% url 'portals:service_edit' service.pk %}" class="btn-sm">
+                    <i class="fas fa-pen"></i> Edit
+                </a>
+                <form method="post" action="{% url 'portals:service_delete' service.pk %}" style="display:inline;" onsubmit="return confirm('Delete &quot;{{ service.name }}&quot;?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-sm btn-sm-danger">
+                        <i class="fas fa-trash-alt"></i> Delete
+                    </button>
+                </form>
             </div>
         </div>
     </div>

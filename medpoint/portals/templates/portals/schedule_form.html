@@ -1,0 +1,177 @@
+{% extends "portals/base.html" %}
+
+{% block title %}{{ action }} Schedule{% endblock %}
+{% block page_title %}{{ action }} Schedule{% endblock %}
+{% block page_subtitle %}{% if action == 'Assign' %}Assign a new schedule to a therapist{% else %}Update schedule entry{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card { max-width: 600px; }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+    }
+    .form-group.full-width { grid-column: 1 / -1; }
+    .form-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .portal-input {
+        padding: 0.6rem 0.875rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--input-bg);
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-family: inherit;
+        outline: none;
+        transition: var(--transition);
+        width: 100%;
+    }
+    .portal-input:focus {
+        border-color: var(--purple-500);
+        box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.12);
+    }
+    .portal-input::placeholder { color: var(--text-muted); }
+    select.portal-input { cursor: pointer; }
+    select.portal-input option { background: var(--bg-secondary); }
+    .form-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border-color);
+    }
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.5rem;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        font-family: inherit;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-cancel {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.5rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+    .btn-cancel:hover { border-color: var(--border-hover); color: var(--text-primary); }
+    .error-text {
+        font-size: 0.7rem;
+        color: var(--red-400);
+        margin-top: 0.2rem;
+    }
+    .checkbox-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.25rem;
+    }
+    .checkbox-wrap input[type="checkbox"] {
+        accent-color: var(--purple-500);
+        width: 16px;
+        height: 16px;
+    }
+    .checkbox-wrap label {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+    }
+    @media (max-width: 640px) {
+        .form-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'portals:schedule_list' %}" class="back-link" style="margin-bottom: 1.25rem; display: inline-flex;">
+    <i class="fas fa-arrow-left"></i> Back to Schedules
+</a>
+
+<div class="card form-card">
+    <div class="card-header">
+        <span class="card-header-title">
+            <i class="fas fa-clock" style="margin-right: 0.5rem; color: var(--purple-400);"></i>
+            {{ action }} Schedule
+        </span>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-error" style="margin-bottom: 1rem;">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ form.non_field_errors.0 }}</span>
+            </div>
+            {% endif %}
+
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label class="form-label" for="id_therapist">Therapist</label>
+                    {{ form.therapist }}
+                    {% if form.therapist.errors %}<span class="error-text">{{ form.therapist.errors.0 }}</span>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="id_day_of_week">Day of Week</label>
+                    {{ form.day_of_week }}
+                    {% if form.day_of_week.errors %}<span class="error-text">{{ form.day_of_week.errors.0 }}</span>{% endif %}
+                </div>
+                <div class="form-group">
+                    <div class="checkbox-wrap" style="margin-top: 1.5rem;">
+                        {{ form.is_available }}
+                        <label for="id_is_available">Available</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="id_start_time">Start Time</label>
+                    {{ form.start_time }}
+                    {% if form.start_time.errors %}<span class="error-text">{{ form.start_time.errors.0 }}</span>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="id_end_time">End Time</label>
+                    {{ form.end_time }}
+                    {% if form.end_time.errors %}<span class="error-text">{{ form.end_time.errors.0 }}</span>{% endif %}
+                </div>
+                <div class="form-group full-width">
+                    <label class="form-label" for="id_notes">Notes</label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}<span class="error-text">{{ form.notes.errors.0 }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-check"></i> {{ action }} Schedule
+                </button>
+                <a href="{% url 'portals:schedule_list' %}" class="btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

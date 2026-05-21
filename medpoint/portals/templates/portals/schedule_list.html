@@ -1,0 +1,228 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Staff Schedules{% endblock %}
+{% block page_title %}Staff Schedules{% endblock %}
+{% block page_subtitle %}Assign schedules and monitor availability{% endblock %}
+
+{% block extra_css %}
+<style>
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+    }
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.25rem;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-decoration: none;
+        font-family: inherit;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary i { font-size: 0.75rem; }
+    .availability-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.65rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: var(--transition);
+        font-family: inherit;
+    }
+    .availability-toggle.available {
+        background: rgba(34, 197, 94, 0.12);
+        color: var(--green-400);
+    }
+    .availability-toggle.unavailable {
+        background: rgba(239, 68, 68, 0.12);
+        color: var(--red-400);
+    }
+    .availability-toggle:hover { opacity: 0.8; }
+    .btn-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.65rem;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        font-family: inherit;
+    }
+    .btn-sm:hover { border-color: var(--border-hover); color: var(--purple-400); }
+    .btn-sm-danger {
+        border-color: rgba(239, 68, 68, 0.2);
+        color: var(--red-400);
+        background: rgba(239, 68, 68, 0.05);
+    }
+    .btn-sm-danger:hover {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.35);
+    }
+    .day-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(168, 85, 247, 0.1);
+        color: var(--purple-400);
+    }
+    .time-range {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+    }
+    .schedule-notes {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header-actions">
+    <a href="{% url 'portals:schedule_create' %}" class="btn-primary">
+        <i class="fas fa-plus"></i> Assign Schedule
+    </a>
+    <form method="get" action="{% url 'portals:schedule_list' %}" style="display: flex; gap: 0.5rem; align-items: center;">
+        <select name="therapist" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Therapists</option>
+            {% for t in therapists %}
+            <option value="{{ t.pk }}" {% if therapist_filter == t.pk|stringformat:"d" %}selected{% endif %}>{{ t.name }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-header-title">
+            <i class="fas fa-clock" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+            Schedule Assignments
+        </span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Therapist</th>
+                    <th>Day</th>
+                    <th>Time</th>
+                    <th>Notes</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for schedule in schedules %}
+                <tr id="schedule-row-{{ schedule.pk }}">
+                    <td style="color: var(--text-primary); font-weight: 500;">{{ schedule.therapist.name }}</td>
+                    <td><span class="day-badge">{{ schedule.get_day_of_week_display }}</span></td>
+                    <td><span class="time-range">{{ schedule.start_time|time:"g:i A" }} — {{ schedule.end_time|time:"g:i A" }}</span></td>
+                    <td>
+                        {% if schedule.notes %}
+                        <span class="schedule-notes">{{ schedule.notes }}</span>
+                        {% else %}
+                        <span style="color: var(--text-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button
+                            class="availability-toggle {% if schedule.is_available %}available{% else %}unavailable{% endif %}"
+                            onclick="toggleAvailability({{ schedule.pk }}, this)"
+                            id="avail-btn-{{ schedule.pk }}"
+                        >
+                            <i class="fas {% if schedule.is_available %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
+                            <span>{% if schedule.is_available %}Available{% else %}Unavailable{% endif %}</span>
+                        </button>
+                    </td>
+                    <td style="display: flex; align-items: center; gap: 0.5rem;">
+                        <a href="{% url 'portals:schedule_edit' schedule.pk %}" class="btn-sm">
+                            <i class="fas fa-pen"></i> Edit
+                        </a>
+                        <form method="post" action="{% url 'portals:schedule_delete' schedule.pk %}" style="display:inline;" onsubmit="return confirm('Remove this schedule?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-sm btn-sm-danger">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="fas fa-clock"></i>
+                            <p>No schedules assigned yet</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleAvailability(scheduleId, btn) {
+        fetch(`/portal/schedules/${scheduleId}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const icon = btn.querySelector('i');
+                const label = btn.querySelector('span');
+                if (data.is_available) {
+                    btn.className = 'availability-toggle available';
+                    icon.className = 'fas fa-check-circle';
+                    label.textContent = 'Available';
+                } else {
+                    btn.className = 'availability-toggle unavailable';
+                    icon.className = 'fas fa-times-circle';
+                    label.textContent = 'Unavailable';
+                }
+            }
+        })
+        .catch(err => console.error('Error:', err));
+    }
+
+    function getCookie(name) {
+        let value = null;
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith(name + '=')) value = decodeURIComponent(c.substring(name.length + 1));
+        });
+        return value;
+    }
+</script>
+{% endblock %}

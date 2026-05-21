@@ -1,0 +1,396 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Calendar{% endblock %}
+{% block page_title %}Booking Calendar{% endblock %}
+{% block page_subtitle %}{{ month_name }} {{ year }} — Schedule bookings overview{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* View Toggle */
+    .calendar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .calendar-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .calendar-nav-btn {
+        width: 36px;
+        height: 36px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition);
+        text-decoration: none;
+    }
+    .calendar-nav-btn:hover {
+        border-color: var(--border-hover);
+        color: var(--purple-400);
+        background: var(--sidebar-hover-bg);
+    }
+    .calendar-month-label {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        min-width: 180px;
+        text-align: center;
+    }
+    .view-toggle {
+        display: flex;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .view-toggle a {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: var(--transition);
+        border-right: 1px solid var(--border-color);
+    }
+    .view-toggle a:last-child { border-right: none; }
+    .view-toggle a:hover {
+        background: var(--sidebar-hover-bg);
+        color: var(--purple-400);
+    }
+    .view-toggle a.active {
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+    }
+
+    /* Calendar Grid */
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        overflow: hidden;
+        background: var(--bg-card);
+    }
+    .calendar-day-header {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        text-align: center;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+    }
+    .calendar-cell {
+        min-height: 110px;
+        padding: 0.5rem;
+        border-right: 1px solid var(--table-border);
+        border-bottom: 1px solid var(--table-border);
+        position: relative;
+        transition: var(--transition);
+    }
+    .calendar-cell:nth-child(7n) { border-right: none; }
+    .calendar-cell:hover { background: var(--table-row-hover); }
+    .calendar-cell.empty {
+        background: var(--bg-primary);
+        opacity: 0.4;
+    }
+    .calendar-cell.today {
+        background: rgba(168, 85, 247, 0.04);
+    }
+    .calendar-cell.today .day-number {
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        border-radius: 50%;
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .day-number {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.35rem;
+    }
+    .calendar-booking {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem 0.4rem;
+        border-radius: 5px;
+        font-size: 0.6rem;
+        font-weight: 500;
+        margin-bottom: 0.2rem;
+        cursor: default;
+        transition: var(--transition);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .calendar-booking:hover { opacity: 0.85; }
+    .calendar-booking.cal-pending {
+        background: rgba(251, 191, 36, 0.15);
+        color: var(--amber-400);
+    }
+    .calendar-booking.cal-confirmed {
+        background: rgba(96, 165, 250, 0.15);
+        color: var(--blue-400);
+    }
+    .calendar-booking.cal-completed {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--green-400);
+    }
+    .calendar-booking.cal-cancelled {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--red-400);
+        text-decoration: line-through;
+        opacity: 0.6;
+    }
+    .calendar-booking i { font-size: 0.5rem; }
+    .more-bookings {
+        font-size: 0.6rem;
+        color: var(--purple-400);
+        font-weight: 600;
+        padding: 0.15rem 0.4rem;
+        cursor: pointer;
+    }
+
+    /* List View */
+    .list-date-group {
+        margin-bottom: 1rem;
+    }
+    .list-date-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 0.5rem 1rem;
+        background: var(--bg-secondary);
+        border-radius: 8px 8px 0 0;
+        border: 1px solid var(--border-color);
+        border-bottom: none;
+    }
+    .booking-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.65rem;
+        font-weight: 600;
+    }
+    .booking-type-online {
+        background: rgba(96, 165, 250, 0.12);
+        color: var(--blue-400);
+    }
+    .booking-type-walk_in {
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--amber-400);
+    }
+
+    @media (max-width: 768px) {
+        .calendar-cell { min-height: 70px; padding: 0.3rem; }
+        .calendar-booking { font-size: 0.5rem; padding: 0.15rem 0.25rem; }
+        .day-number { font-size: 0.7rem; }
+    }
+    @media (max-width: 480px) {
+        .calendar-grid { font-size: 0.7rem; }
+        .calendar-cell { min-height: 50px; }
+        .calendar-booking { display: none; }
+        .booking-count-dot {
+            display: block !important;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--purple-500);
+            margin: 0.2rem auto 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Calendar Header -->
+<div class="calendar-header">
+    <div class="calendar-nav">
+        <a href="?year={{ prev_year }}&month={{ prev_month }}&view={{ view_mode }}" class="calendar-nav-btn">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <span class="calendar-month-label">{{ month_name }} {{ year }}</span>
+        <a href="?year={{ next_year }}&month={{ next_month }}&view={{ view_mode }}" class="calendar-nav-btn">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+    </div>
+    <div class="view-toggle">
+        <a href="?year={{ year }}&month={{ month }}&view=calendar" class="{% if view_mode == 'calendar' %}active{% endif %}">
+            <i class="fas fa-th"></i> Calendar
+        </a>
+        <a href="?year={{ year }}&month={{ month }}&view=list" class="{% if view_mode == 'list' %}active{% endif %}">
+            <i class="fas fa-list"></i> List
+        </a>
+    </div>
+</div>
+
+{% if view_mode == 'calendar' %}
+<!-- Calendar View -->
+<div class="calendar-grid">
+    <!-- Day Headers -->
+    {% for day_name in weekday_names %}
+    <div class="calendar-day-header">{{ day_name }}</div>
+    {% endfor %}
+
+    <!-- Calendar Days -->
+    {% for week in month_days %}
+        {% for day in week %}
+            {% if day == 0 %}
+            <div class="calendar-cell empty"></div>
+            {% else %}
+            <div class="calendar-cell {% if day == today.day and month == today.month and year == today.year %}today{% endif %}">
+                <div class="day-number">{{ day }}</div>
+                {% with day_bookings=bookings_by_date %}
+                {% for b in day_bookings|default_if_none:"" %}
+                {% endfor %}
+                {% endwith %}
+
+                {% for booking in bookings_by_date|default:"" %}
+                {% endfor %}
+
+                <!-- Render bookings for this day -->
+                {% if bookings_by_date %}
+                    {% with bookings_for_day=bookings_by_date %}
+                    {% endwith %}
+                {% endif %}
+
+                <div class="calendar-day-bookings" data-day="{{ day }}">
+                </div>
+                <span class="booking-count-dot" style="display:none;"></span>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+</div>
+
+{% else %}
+<!-- List View -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-header-title">
+            <i class="fas fa-list" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+            Bookings for {{ month_name }} {{ year }}
+        </span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Client</th>
+                    <th>Service</th>
+                    <th>Therapist</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in list_bookings %}
+                <tr>
+                    <td style="font-weight: 500; color: var(--text-primary);">{{ booking.date|date:"M d, Y" }}</td>
+                    <td>{{ booking.get_time_display }}</td>
+                    <td style="font-weight: 500;">{{ booking.client_name }}</td>
+                    <td>{{ booking.service.name }}</td>
+                    <td>{{ booking.therapist.name|default:"—" }}</td>
+                    <td>
+                        <span class="booking-type-badge booking-type-{{ booking.booking_type }}">
+                            <i class="fas {% if booking.booking_type == 'online' %}fa-globe{% else %}fa-walking{% endif %}" style="font-size: 0.55rem;"></i>
+                            {{ booking.get_booking_type_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-times"></i>
+                            <p>No bookings for {{ month_name }} {{ year }}</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Populate calendar bookings from context
+    (function() {
+        const bookingsByDate = JSON.parse('{{ bookings_by_date_json|default:"{}" | escapejs }}' || '{}');
+
+        // Since Django templates can't easily iterate dict by key in the calendar,
+        // we render bookings via JS
+        const allBookings = [];
+        {% for day, day_bookings in bookings_by_date.items %}
+            {% for b in day_bookings %}
+            allBookings.push({
+                day: {{ day }},
+                time: '{{ b.get_time_display }}',
+                client: '{{ b.client_name|escapejs }}',
+                service: '{{ b.service.name|escapejs }}',
+                status: '{{ b.status }}',
+            });
+            {% endfor %}
+        {% endfor %}
+
+        document.querySelectorAll('.calendar-day-bookings').forEach(container => {
+            const day = parseInt(container.getAttribute('data-day'));
+            const dayBookings = allBookings.filter(b => b.day === day);
+            const dotEl = container.parentElement.querySelector('.booking-count-dot');
+
+            if (dayBookings.length > 0 && dotEl) {
+                dotEl.style.display = '';
+            }
+
+            const maxShow = 3;
+            dayBookings.slice(0, maxShow).forEach(b => {
+                const el = document.createElement('div');
+                el.className = `calendar-booking cal-${b.status}`;
+                el.innerHTML = `<i class="fas fa-circle"></i> ${b.time} ${b.client}`;
+                el.title = `${b.client} — ${b.service} (${b.status})`;
+                container.appendChild(el);
+            });
+
+            if (dayBookings.length > maxShow) {
+                const more = document.createElement('div');
+                more.className = 'more-bookings';
+                more.textContent = `+${dayBookings.length - maxShow} more`;
+                container.appendChild(more);
+            }
+        });
+    })();
+</script>
+{% endblock %}

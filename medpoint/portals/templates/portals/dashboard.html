@@ -5,7 +5,7 @@
 {% block page_subtitle %}Welcome back, {{ request.user.first_name|default:request.user.username }}{% endblock %}
 
 {% block content %}
-<!-- Metric Cards -->
+<!-- Primary Metric Cards -->
 <div class="metrics-grid">
     <div class="metric-card metric-purple">
         <div class="metric-icon"><i class="fas fa-calendar-alt"></i></div>
@@ -53,11 +53,18 @@
             <div class="metric-value">{{ total_therapists }}</div>
         </div>
     </div>
-    <div class="metric-card metric-amber">
-        <div class="metric-icon"><i class="fas fa-envelope"></i></div>
+    <div class="metric-card metric-green">
+        <div class="metric-icon"><i class="fas fa-globe"></i></div>
         <div class="metric-info">
-            <div class="metric-label">Unread Messages</div>
-            <div class="metric-value">{{ unread_messages }}</div>
+            <div class="metric-label">Online Bookings</div>
+            <div class="metric-value">{{ online_bookings }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-amber">
+        <div class="metric-icon"><i class="fas fa-walking"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Walk-in Bookings</div>
+            <div class="metric-value">{{ walkin_bookings }}</div>
         </div>
     </div>
 </div>
@@ -74,6 +81,7 @@
                 <tr>
                     <th>Client</th>
                     <th>Service</th>
+                    <th>Type</th>
                     <th>Date</th>
                     <th>Time</th>
                     <th>Status</th>
@@ -84,6 +92,12 @@
                 <tr>
                     <td style="color: var(--text-primary); font-weight: 500;">{{ booking.client_name }}</td>
                     <td>{{ booking.service.name }}</td>
+                    <td>
+                        <span class="booking-type-badge booking-type-{{ booking.booking_type }}">
+                            <i class="fas {% if booking.booking_type == 'online' %}fa-globe{% else %}fa-walking{% endif %}"></i>
+                            {{ booking.get_booking_type_display }}
+                        </span>
+                    </td>
                     <td>{{ booking.date|date:"M d, Y" }}</td>
                     <td>{{ booking.get_time_display }}</td>
                     <td>
@@ -92,7 +106,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5">
+                    <td colspan="6">
                         <div class="empty-state">
                             <i class="fas fa-calendar-times"></i>
                             <p>No bookings yet</p>
@@ -104,4 +118,29 @@
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .booking-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.65rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .booking-type-badge i { font-size: 0.6rem; }
+    .booking-type-online {
+        background: rgba(96, 165, 250, 0.12);
+        color: var(--blue-400);
+    }
+    .booking-type-walk_in {
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--amber-400);
+    }
+</style>
 {% endblock %}

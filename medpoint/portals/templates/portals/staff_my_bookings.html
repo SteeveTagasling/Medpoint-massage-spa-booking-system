@@ -1,0 +1,151 @@
+{% extends "portals/base.html" %}
+
+{% block title %}My Bookings{% endblock %}
+{% block page_title %}My Bookings{% endblock %}
+{% block page_subtitle %}View your assigned booking records{% endblock %}
+
+{% block extra_css %}
+<style>
+    .booking-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.65rem;
+        font-weight: 600;
+    }
+    .booking-type-badge i { font-size: 0.55rem; }
+    .booking-type-online {
+        background: rgba(96, 165, 250, 0.12);
+        color: var(--blue-400);
+    }
+    .booking-type-walk_in {
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--amber-400);
+    }
+    .no-profile-alert {
+        padding: 1.25rem;
+        border-radius: 12px;
+        border: 1px solid rgba(251, 191, 36, 0.3);
+        background: rgba(251, 191, 36, 0.06);
+        color: var(--amber-400);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+    }
+    .no-profile-alert i { font-size: 1.1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if not therapist %}
+<div class="no-profile-alert">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span>Your user account is not linked to a therapist profile. Contact your admin to set up your profile.</span>
+</div>
+{% endif %}
+
+<div class="card">
+    <!-- Filter Bar -->
+    <form class="filter-bar" method="get" action="{% url 'portals:staff_my_bookings' %}">
+        <select name="status" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Client</th>
+                    <th>Service</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>Update</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr>
+                    <td style="color: var(--text-muted);">{{ booking.pk }}</td>
+                    <td style="color: var(--text-primary); font-weight: 500;">{{ booking.client_name }}</td>
+                    <td>{{ booking.service.name }}</td>
+                    <td>
+                        <span class="booking-type-badge booking-type-{{ booking.booking_type }}">
+                            <i class="fas {% if booking.booking_type == 'online' %}fa-globe{% else %}fa-walking{% endif %}"></i>
+                            {{ booking.get_booking_type_display }}
+                        </span>
+                    </td>
+                    <td>{{ booking.date|date:"M d, Y" }}</td>
+                    <td>{{ booking.get_time_display }}</td>
+                    <td>
+                        <span class="status status-{{ booking.status }}" id="status-badge-{{ booking.pk }}">{{ booking.get_status_display }}</span>
+                    </td>
+                    <td>
+                        <select class="status-select" onchange="updateBookingStatus({{ booking.pk }}, this.value)" id="status-select-{{ booking.pk }}">
+                            {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if booking.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-check"></i>
+                            <p>No bookings assigned to you</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateBookingStatus(bookingId, newStatus) {
+        fetch(`/portal/bookings/${bookingId}/update-status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: `status=${newStatus}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const badge = document.getElementById(`status-badge-${bookingId}`);
+                if (badge) {
+                    badge.className = `status status-${newStatus}`;
+                    const labels = { pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled' };
+                    badge.textContent = labels[newStatus] || newStatus;
+                }
+            }
+        })
+        .catch(err => console.error('Error:', err));
+    }
+
+    function getCookie(name) {
+        let value = null;
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith(name + '=')) value = decodeURIComponent(c.substring(name.length + 1));
+        });
+        return value;
+    }
+</script>
+{% endblock %}

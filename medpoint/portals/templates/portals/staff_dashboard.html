@@ -1,0 +1,192 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Staff Dashboard{% endblock %}
+{% block page_title %}Staff Dashboard{% endblock %}
+{% block page_subtitle %}Welcome back, {{ request.user.first_name|default:request.user.username }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .staff-profile-card {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .staff-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--purple-500);
+    }
+    .staff-avatar-placeholder {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 1.5rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    .staff-details h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 0.25rem;
+    }
+    .staff-details .staff-title {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-bottom: 0.35rem;
+    }
+    .staff-details .staff-commission {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(168, 85, 247, 0.12);
+        color: var(--purple-400);
+    }
+    .no-profile-alert {
+        padding: 1.25rem;
+        border-radius: 12px;
+        border: 1px solid rgba(251, 191, 36, 0.3);
+        background: rgba(251, 191, 36, 0.06);
+        color: var(--amber-400);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+    }
+    .no-profile-alert i { font-size: 1.1rem; }
+    .today-bookings-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .today-booking-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.85rem 1rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        transition: var(--transition);
+        gap: 1rem;
+    }
+    .today-booking-item:hover { border-color: var(--border-hover); background: var(--sidebar-hover-bg); }
+    .today-booking-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .booking-time-pill {
+        padding: 0.3rem 0.65rem;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(168, 85, 247, 0.1);
+        color: var(--purple-400);
+        white-space: nowrap;
+    }
+    .today-booking-client {
+        font-weight: 500;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+    }
+    .today-booking-service {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Staff Profile Card -->
+{% if therapist %}
+<div class="card staff-profile-card">
+    {% if therapist.photo %}
+    <img src="{{ therapist.photo.url }}" alt="{{ therapist.name }}" class="staff-avatar">
+    {% else %}
+    <div class="staff-avatar-placeholder">{{ therapist.name|first|upper }}</div>
+    {% endif %}
+    <div class="staff-details">
+        <h3>{{ therapist.name }}</h3>
+        <div class="staff-title">{{ therapist.title }}</div>
+        <span class="staff-commission">
+            <i class="fas fa-percentage"></i> {{ therapist.commission_percentage }}% Commission Rate
+        </span>
+    </div>
+</div>
+{% else %}
+<div class="no-profile-alert">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span>Your user account is not linked to a therapist profile. Please contact your admin to set up your staff profile.</span>
+</div>
+{% endif %}
+
+<!-- Metrics -->
+<div class="metrics-grid" style="margin-bottom: 1.5rem;">
+    <div class="metric-card metric-green">
+        <div class="metric-icon"><i class="fas fa-calendar-day"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Today's Bookings</div>
+            <div class="metric-value">{{ my_bookings_today.count }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-purple">
+        <div class="metric-icon"><i class="fas fa-check-double"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Total Completed</div>
+            <div class="metric-value">{{ my_total_completed }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-amber">
+        <div class="metric-icon"><i class="fas fa-clock"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Pending</div>
+            <div class="metric-value">{{ my_pending }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Schedule -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-header-title">
+            <i class="fas fa-calendar-day" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+            Today's Appointments — {{ today|date:"l, M d, Y" }}
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="today-bookings-list">
+            {% for booking in my_bookings_today %}
+            <div class="today-booking-item">
+                <div class="today-booking-info">
+                    <span class="booking-time-pill">{{ booking.get_time_display }}</span>
+                    <div>
+                        <div class="today-booking-client">{{ booking.client_name }}</div>
+                        <div class="today-booking-service">{{ booking.service.name }} • {{ booking.service.duration_minutes }} min</div>
+                    </div>
+                </div>
+                <span class="status status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <i class="fas fa-coffee"></i>
+                <p>No appointments scheduled for today</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

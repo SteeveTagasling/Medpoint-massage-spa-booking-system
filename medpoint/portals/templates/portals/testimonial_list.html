@@ -27,12 +27,12 @@
                     <td>
                         <span style="color: var(--amber-400);">
                             {% for i in "12345" %}
-                                {% if forloop.counter <= testimonial.rating %}
-                                    <i class="fas fa-star" style="font-size: 0.7rem;"></i>
+                            {% if forloop.counter <= testimonial.rating %} <i class="fas fa-star"
+                                style="font-size: 0.7rem;"></i>
                                 {% else %}
-                                    <i class="far fa-star" style="font-size: 0.7rem; opacity: 0.3;"></i>
+                                <i class="far fa-star" style="font-size: 0.7rem; opacity: 0.3;"></i>
                                 {% endif %}
-                            {% endfor %}
+                                {% endfor %}
                         </span>
                     </td>
                     <td style="max-width: 300px;">

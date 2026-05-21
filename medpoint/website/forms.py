@@ -3,7 +3,7 @@ from .models import Booking, ContactMessage, Service, Therapist
 
 
 class BookingForm(forms.ModelForm):
-    """Form for booking spa appointments."""
+    """Form for booking spa appointments with therapist gender preference."""
 
     date = forms.DateField(
         widget=forms.DateInput(
@@ -17,7 +17,11 @@ class BookingForm(forms.ModelForm):
 
     class Meta:
         model = Booking
-        fields = ['client_name', 'client_email', 'client_phone', 'service', 'therapist', 'date', 'time', 'notes']
+        fields = [
+            'client_name', 'client_email', 'client_phone',
+            'client_gender', 'service', 'therapist_preference',
+            'therapist', 'date', 'time', 'notes'
+        ]
         widgets = {
             'client_name': forms.TextInput(attrs={
                 'class': 'form-input',
@@ -34,9 +38,17 @@ class BookingForm(forms.ModelForm):
                 'placeholder': '+63 9XX XXX XXXX',
                 'id': 'booking-phone',
             }),
+            'client_gender': forms.Select(attrs={
+                'class': 'form-input',
+                'id': 'booking-client-gender',
+            }),
             'service': forms.Select(attrs={
                 'class': 'form-input',
                 'id': 'booking-service',
+            }),
+            'therapist_preference': forms.Select(attrs={
+                'class': 'form-input',
+                'id': 'booking-therapist-preference',
             }),
             'therapist': forms.Select(attrs={
                 'class': 'form-input',
@@ -60,6 +72,30 @@ class BookingForm(forms.ModelForm):
         self.fields['therapist'].queryset = Therapist.objects.filter(is_active=True)
         self.fields['therapist'].required = False
         self.fields['notes'].required = False
+        # Will be dynamically filtered via JS based on gender preference
+        self.fields['therapist'].label = "Preferred Therapist (Optional)"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        client_gender = cleaned_data.get('client_gender')
+        therapist_preference = cleaned_data.get('therapist_preference')
+        therapist = cleaned_data.get('therapist')
+
+        # Rule: Female customers can only choose female therapist
+        if client_gender == 'female' and therapist_preference == 'male':
+            raise forms.ValidationError(
+                "Female customers can only be assigned to female therapists."
+            )
+
+        # If a specific therapist is selected, validate gender matches preference
+        if therapist and therapist_preference != 'random':
+            if therapist.gender != therapist_preference:
+                raise forms.ValidationError(
+                    f"The selected therapist ({therapist.name}) does not match "
+                    f"your gender preference ({therapist_preference})."
+                )
+
+        return cleaned_data
 
 
 class ContactForm(forms.ModelForm):

@@ -1,0 +1,222 @@
+{% extends "portals/base.html" %}
+
+{% block title %}My Reports{% endblock %}
+{% block page_title %}My Reports{% endblock %}
+{% block page_subtitle %}{{ period_label }} — Track your work and activities{% endblock %}
+
+{% block extra_css %}
+<style>
+    .period-tabs {
+        display: flex;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        width: fit-content;
+    }
+    .period-tabs a {
+        padding: 0.55rem 1.25rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-right: 1px solid var(--border-color);
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .period-tabs a:last-child { border-right: none; }
+    .period-tabs a:hover { background: var(--sidebar-hover-bg); color: var(--purple-400); }
+    .period-tabs a.active {
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+    }
+    .print-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 1.25rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: inherit;
+    }
+    .print-btn:hover {
+        border-color: var(--border-hover);
+        color: var(--purple-400);
+        background: var(--sidebar-hover-bg);
+    }
+    .header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    .revenue-highlight {
+        font-weight: 700;
+        color: var(--green-400);
+    }
+    .commission-highlight {
+        font-weight: 700;
+        color: var(--purple-400);
+    }
+    .no-profile-alert {
+        padding: 1.25rem;
+        border-radius: 12px;
+        border: 1px solid rgba(251, 191, 36, 0.3);
+        background: rgba(251, 191, 36, 0.06);
+        color: var(--amber-400);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+    }
+    .no-profile-alert i { font-size: 1.1rem; }
+
+    @media print {
+        body { background: #fff !important; color: #111 !important; }
+        .sidebar, .mobile-header, .sidebar-footer, .print-btn,
+        .period-tabs, .mobile-toggle { display: none !important; }
+        .main-content { margin-left: 0 !important; padding: 1rem !important; }
+        .card { border: 1px solid #ddd !important; box-shadow: none !important; background: #fff !important; }
+        .data-table th, .data-table td { color: #111 !important; border-color: #ddd !important; }
+        .metrics-grid { grid-template-columns: repeat(3, 1fr) !important; }
+        .metric-card { background: #f9f9f9 !important; border-color: #ddd !important; }
+        .metric-value, .metric-label { color: #111 !important; }
+        .status { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if not therapist %}
+<div class="no-profile-alert">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span>Your user account is not linked to a therapist profile. Contact your admin to set up your profile.</span>
+</div>
+{% endif %}
+
+<!-- Header -->
+<div class="header-row">
+    <div class="period-tabs">
+        <a href="?period=today" class="{% if period == 'today' %}active{% endif %}">
+            <i class="fas fa-sun"></i> Today
+        </a>
+        <a href="?period=weekly" class="{% if period == 'weekly' %}active{% endif %}">
+            <i class="fas fa-calendar-week"></i> This Week
+        </a>
+        <a href="?period=monthly" class="{% if period == 'monthly' %}active{% endif %}">
+            <i class="fas fa-calendar-alt"></i> This Month
+        </a>
+    </div>
+    <button class="print-btn" onclick="window.print()">
+        <i class="fas fa-print"></i> Print Report
+    </button>
+</div>
+
+<!-- Summary Metrics -->
+<div class="metrics-grid" style="margin-bottom: 1.5rem;">
+    <div class="metric-card metric-purple">
+        <div class="metric-icon"><i class="fas fa-hands"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Services Rendered</div>
+            <div class="metric-value">{{ services_rendered }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-green">
+        <div class="metric-icon"><i class="fas fa-peso-sign"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Total Revenue</div>
+            <div class="metric-value">₱{{ total_revenue|floatformat:2 }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-amber">
+        <div class="metric-icon"><i class="fas fa-coins"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">My Commission</div>
+            <div class="metric-value">₱{{ commission_earned|floatformat:2 }}</div>
+        </div>
+    </div>
+</div>
+
+{% if therapist %}
+<div class="card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">
+            <i class="fas fa-info-circle" style="color: var(--purple-400); margin-right: 0.3rem;"></i>
+            Your commission rate is <strong style="color: var(--purple-400);">{{ therapist.commission_percentage }}%</strong> per completed service.
+        </span>
+    </div>
+</div>
+{% endif %}
+
+<!-- Detailed Breakdown -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-header-title">
+            <i class="fas fa-list" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+            Completed Services — {{ period_label }}
+        </span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Client</th>
+                    <th>Service</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in booking_details %}
+                <tr>
+                    <td style="font-weight: 500; color: var(--text-primary);">{{ item.booking.date|date:"M d, Y" }}</td>
+                    <td>{{ item.booking.get_time_display }}</td>
+                    <td>{{ item.booking.client_name }}</td>
+                    <td>{{ item.booking.service.name }}</td>
+                    <td class="revenue-highlight">₱{{ item.price|floatformat:2 }}</td>
+                    <td><span class="status status-{{ item.booking.status }}">{{ item.booking.get_status_display }}</span></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="fas fa-chart-line"></i>
+                            <p>No completed services for this period</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% if booking_details %}
+            <tfoot>
+                <tr style="border-top: 2px solid var(--border-color);">
+                    <td colspan="4" style="font-weight: 700; color: var(--text-primary);">TOTAL ({{ services_rendered }} services)</td>
+                    <td class="revenue-highlight">₱{{ total_revenue|floatformat:2 }}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="font-weight: 700; color: var(--purple-400);">
+                        <i class="fas fa-coins" style="margin-right: 0.3rem;"></i> YOUR COMMISSION ({{ therapist.commission_percentage }}%)
+                    </td>
+                    <td class="commission-highlight">₱{{ commission_earned|floatformat:2 }}</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+            {% endif %}
+        </table>
+    </div>
+</div>
+{% endblock %}
