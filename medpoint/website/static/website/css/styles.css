@@ -1,0 +1,457 @@
+/* ===================================================================
+   MEDPOINT Massage & Spa - Design System
+   =================================================================== */
+
+/* --- Custom Animations --- */
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-down {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+    from { opacity: 0; transform: translateX(-40px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scale-in {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.15); }
+    50% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.3); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+
+@keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* --- Animation Utility Classes --- */
+.animate-fade-in {
+    animation: fade-in 0.8s ease-out forwards;
+    opacity: 0;
+}
+
+.animate-fade-in-up {
+    animation: fade-in-up 0.8s ease-out forwards;
+    opacity: 0;
+}
+
+.animate-fade-in-down {
+    animation: fade-in-down 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+.animate-slide-in {
+    animation: slide-in 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+.animate-slide-in-left {
+    animation: slide-in-left 0.6s ease-out forwards;
+    opacity: 0;
+}
+
+.animate-scale-in {
+    animation: scale-in 0.5s ease-out forwards;
+    opacity: 0;
+}
+
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* --- Scroll-Triggered Animations --- */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scroll-reveal-left {
+    opacity: 0;
+    transform: translateX(-40px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scroll-reveal-left.revealed {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.scroll-reveal-right {
+    opacity: 0;
+    transform: translateX(40px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scroll-reveal-right.revealed {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.scroll-reveal-scale {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scroll-reveal-scale.revealed {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Stagger delay helpers */
+.delay-100 { transition-delay: 0.1s; }
+.delay-200 { transition-delay: 0.2s; }
+.delay-300 { transition-delay: 0.3s; }
+.delay-400 { transition-delay: 0.4s; }
+.delay-500 { transition-delay: 0.5s; }
+.delay-600 { transition-delay: 0.6s; }
+
+/* --- Navbar --- */
+.navbar-scrolled {
+    background: rgba(21, 13, 31, 0.95) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(168, 85, 247, 0.1);
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+}
+
+.nav-link {
+    position: relative;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #a855f7, #7c3aed);
+    transition: width 0.3s ease;
+    border-radius: 1px;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+    width: 100%;
+}
+
+/* Hamburger animation */
+#nav-toggle.active span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+
+#nav-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+
+#nav-toggle.active span:nth-child(3) {
+    width: 1.5rem;
+    transform: translateY(-8px) rotate(-45deg);
+}
+
+/* --- Form Inputs --- */
+.form-input {
+    width: 100%;
+    padding: 0.875rem 1.25rem;
+    background: rgba(26, 16, 37, 0.6);
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    border-radius: 0.75rem;
+    color: #e5e7eb;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9375rem;
+    transition: all 0.3s ease;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.form-input:focus {
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1), 0 0 20px rgba(168, 85, 247, 0.05);
+    background: rgba(26, 16, 37, 0.8);
+}
+
+.form-input::placeholder {
+    color: rgba(156, 163, 175, 0.5);
+}
+
+.form-input:hover {
+    border-color: rgba(168, 85, 247, 0.3);
+}
+
+/* Select dropdown styling */
+select.form-input {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+}
+
+select.form-input option {
+    background: #150d1f;
+    color: #e5e7eb;
+    padding: 0.5rem;
+}
+
+/* Date input fix */
+input[type="date"].form-input {
+    color-scheme: dark;
+}
+
+/* Form label */
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #d1d5db;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.025em;
+}
+
+/* Form error */
+.form-error {
+    color: #f87171;
+    font-size: 0.8125rem;
+    margin-top: 0.375rem;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.form-error::before {
+    content: '!';
+    display: inline-flex;
+    width: 1rem;
+    height: 1rem;
+    background: rgba(248, 113, 113, 0.15);
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.625rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* --- Page Hero/Banner --- */
+.page-hero {
+    position: relative;
+    padding: 10rem 0 5rem;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0d0714 0%, #1a1025 40%, #150d1f 100%);
+}
+
+.page-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(ellipse, rgba(168, 85, 247, 0.06) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.page-hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.3), transparent);
+}
+
+/* --- Card Styles --- */
+.service-card {
+    background: rgba(26, 16, 37, 0.5);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(168, 85, 247, 0.1);
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.service-card:hover {
+    border-color: rgba(168, 85, 247, 0.3);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(168, 85, 247, 0.1);
+}
+
+/* --- Glassmorphism Panels --- */
+.glass-panel {
+    background: rgba(26, 16, 37, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(168, 85, 247, 0.1);
+    border-radius: 1.5rem;
+}
+
+.glass-panel-dark {
+    background: rgba(13, 7, 20, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(168, 85, 247, 0.08);
+    border-radius: 1.5rem;
+}
+
+/* --- Success Checkmark --- */
+.checkmark-circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    animation: check-stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark-check {
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: check-stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.4s forwards;
+}
+
+@keyframes check-stroke {
+    100% { stroke-dashoffset: 0; }
+}
+
+/* --- Custom Scrollbar --- */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0d0714;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(168, 85, 247, 0.5);
+}
+
+/* --- Selection --- */
+::selection {
+    background: rgba(168, 85, 247, 0.3);
+    color: #fff;
+}
+
+/* --- Smooth Scroll --- */
+html {
+    scroll-behavior: smooth;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+    .page-hero {
+        padding: 8rem 0 3rem;
+    }
+}
+
+/* --- Map Container --- */
+.map-container {
+    border-radius: 1rem;
+    overflow: hidden;
+    border: 1px solid rgba(168, 85, 247, 0.15);
+}
+
+.map-container iframe {
+    display: block;
+    width: 100%;
+    filter: brightness(0.8) contrast(1.1) saturate(0.5) hue-rotate(210deg);
+}
+
+/* --- Loading shimmer --- */
+.shimmer {
+    background: linear-gradient(90deg, 
+        rgba(168, 85, 247, 0.05) 25%, 
+        rgba(168, 85, 247, 0.1) 50%, 
+        rgba(168, 85, 247, 0.05) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* --- Breadcrumb separator --- */
+.breadcrumb-sep {
+    color: rgba(168, 85, 247, 0.3);
+    margin: 0 0.5rem;
+}
+
+/* --- Therapist Card --- */
+.therapist-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    transition: all 0.5s ease;
+}
+
+.therapist-card:hover .therapist-overlay {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.therapist-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2rem 1.5rem;
+    background: linear-gradient(transparent, rgba(13, 7, 20, 0.95));
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s ease;
+}
+
+/* --- Print styles --- */
+@media print {
+    .no-print,
+    #navbar,
+    footer,
+    #back-to-top {
+        display: none !important;
+    }
+}

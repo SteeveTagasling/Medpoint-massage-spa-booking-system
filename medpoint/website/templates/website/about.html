@@ -1,0 +1,236 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}About Us - MEDPOINT Massage &amp; Spa{% endblock %}
+
+{% block content %}
+<!-- Page Hero -->
+<section class="page-hero">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="flex items-center gap-3 mb-4 animate-fade-in">
+            <div class="w-8 h-px bg-purple-500"></div>
+            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Our Story</span>
+        </div>
+        <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in-up">
+            About <span class="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">MEDPOINT</span>
+        </h1>
+        <p class="text-gray-400 text-lg max-w-xl animate-fade-in-up" style="animation-delay:0.2s">
+            A sanctuary where ancient healing traditions meet modern wellness excellence.
+        </p>
+        <div class="flex items-center gap-2 mt-6 text-sm animate-fade-in" style="animation-delay:0.3s">
+            <a href="{% url 'website:home' %}" class="text-gray-500 hover:text-purple-400 transition-colors">Home</a>
+            <span class="breadcrumb-sep">/</span>
+            <span class="text-purple-400">About</span>
+        </div>
+    </div>
+</section>
+
+<!-- Our Story -->
+<section class="py-24 relative overflow-hidden">
+    <div class="absolute top-20 right-0 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-2 gap-16 items-center">
+            <div class="relative scroll-reveal-left">
+                <div class="absolute -top-4 -left-4 w-full h-full border border-purple-500/20 rounded-2xl"></div>
+                <img src="{% static 'website/images/about.png' %}" alt="About MEDPOINT" class="rounded-2xl w-full h-[500px] object-cover relative z-10 shadow-2xl shadow-purple-500/10">
+                <div class="absolute -bottom-6 -right-6 bg-gradient-to-br from-purple-600 to-violet-700 rounded-xl p-6 z-20 shadow-xl">
+                    <div class="text-center">
+                        <span class="block text-3xl font-display font-bold text-white">10+</span>
+                        <span class="text-purple-200 text-sm">Years of Excellence</span>
+                    </div>
+                </div>
+            </div>
+            <div class="scroll-reveal-right">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-8 h-px bg-purple-500"></div>
+                    <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Our Journey</span>
+                </div>
+                <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-6 leading-tight">
+                    Where Wellness<br>Meets <span class="text-purple-400">Excellence</span>
+                </h2>
+                <p class="text-gray-400 leading-relaxed mb-6">
+                    Founded with a passion for holistic wellness, MEDPOINT Massage & Spa has grown into one of the most trusted names in premium spa services. Our journey began with a simple vision: to create a sanctuary where every guest feels renewed, refreshed, and rejuvenated.
+                </p>
+                <p class="text-gray-400 leading-relaxed mb-8">
+                    Today, we continue to uphold the highest standards of service, using only premium products and employing licensed, experienced therapists who are dedicated to your well-being. Every visit to MEDPOINT is a transformative experience that nurtures both body and soul.
+                </p>
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="text-center p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">
+                        <span class="block text-2xl font-display font-bold text-purple-400">5,000+</span>
+                        <span class="text-gray-500 text-sm">Happy Clients</span>
+                    </div>
+                    <div class="text-center p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">
+                        <span class="block text-2xl font-display font-bold text-purple-400">15+</span>
+                        <span class="text-gray-500 text-sm">Expert Therapists</span>
+                    </div>
+                    <div class="text-center p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">
+                        <span class="block text-2xl font-display font-bold text-purple-400">25+</span>
+                        <span class="text-gray-500 text-sm">Treatments Offered</span>
+                    </div>
+                    <div class="text-center p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">
+                        <span class="block text-2xl font-display font-bold text-purple-400">4.9</span>
+                        <span class="text-gray-500 text-sm">Average Rating</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Our Values -->
+<section class="py-20 relative">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/3 to-transparent"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center mb-16 scroll-reveal">
+            <div class="flex items-center justify-center gap-3 mb-4">
+                <div class="w-8 h-px bg-purple-500"></div>
+                <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Why Choose Us</span>
+                <div class="w-8 h-px bg-purple-500"></div>
+            </div>
+            <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">Our Core Values</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">What sets us apart in delivering exceptional wellness experiences.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="text-center p-8 bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-100">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-5">
+                    <i class="fas fa-heart text-2xl text-purple-400"></i>
+                </div>
+                <h3 class="font-display text-lg font-semibold text-white mb-3">Passion</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">We are passionate about helping you achieve holistic wellness and inner peace.</p>
+            </div>
+            <div class="text-center p-8 bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-200">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-5">
+                    <i class="fas fa-award text-2xl text-purple-400"></i>
+                </div>
+                <h3 class="font-display text-lg font-semibold text-white mb-3">Excellence</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Every treatment is delivered with the highest standards of quality and care.</p>
+            </div>
+            <div class="text-center p-8 bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-300">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-5">
+                    <i class="fas fa-shield-alt text-2xl text-purple-400"></i>
+                </div>
+                <h3 class="font-display text-lg font-semibold text-white mb-3">Trust</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Your safety and comfort are our top priorities in everything we do.</p>
+            </div>
+            <div class="text-center p-8 bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-400">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-5">
+                    <i class="fas fa-hands text-2xl text-purple-400"></i>
+                </div>
+                <h3 class="font-display text-lg font-semibold text-white mb-3">Care</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">Every guest is treated with genuine warmth and personalized attention.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Our Team -->
+<section class="py-24 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 scroll-reveal">
+            <div class="flex items-center justify-center gap-3 mb-4">
+                <div class="w-8 h-px bg-purple-500"></div>
+                <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Our Team</span>
+                <div class="w-8 h-px bg-purple-500"></div>
+            </div>
+            <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">Meet Our Therapists</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">Our licensed professionals bring years of expertise and genuine care to every session.</p>
+        </div>
+
+        {% if therapists %}
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {% for t in therapists %}
+            <div class="therapist-card group scroll-reveal delay-{{ forloop.counter }}00">
+                <div class="relative h-80 overflow-hidden rounded-2xl">
+                    {% if t.photo %}
+                    <img src="{{ t.photo.url }}" alt="{{ t.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                    {% else %}
+                    <div class="w-full h-full bg-gradient-to-br from-purple-900/60 to-violet-900/60 flex items-center justify-center">
+                        <i class="fas fa-user text-5xl text-purple-400/30"></i>
+                    </div>
+                    {% endif %}
+                    <div class="absolute inset-0 bg-gradient-to-t from-dark-50/90 via-transparent to-transparent"></div>
+                    <div class="therapist-overlay">
+                        <h3 class="font-display text-lg font-semibold text-white">{{ t.name }}</h3>
+                        <p class="text-purple-300 text-sm mb-2">{{ t.title }}</p>
+                        <p class="text-gray-400 text-xs">{{ t.years_experience }} years experience</p>
+                    </div>
+                </div>
+                <div class="p-4 text-center lg:hidden">
+                    <h3 class="font-display text-lg font-semibold text-white">{{ t.name }}</h3>
+                    <p class="text-purple-400 text-sm">{{ t.title }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div class="text-center scroll-reveal delay-100">
+                <div class="h-72 bg-gradient-to-br from-purple-900/40 to-violet-900/40 rounded-2xl flex items-center justify-center mb-4 border border-purple-500/10">
+                    <i class="fas fa-user text-4xl text-purple-400/30"></i>
+                </div>
+                <h3 class="font-display text-lg font-semibold text-white">Ana Garcia</h3>
+                <p class="text-purple-400 text-sm">Senior Massage Therapist</p>
+            </div>
+            <div class="text-center scroll-reveal delay-200">
+                <div class="h-72 bg-gradient-to-br from-purple-900/40 to-violet-900/40 rounded-2xl flex items-center justify-center mb-4 border border-purple-500/10">
+                    <i class="fas fa-user text-4xl text-purple-400/30"></i>
+                </div>
+                <h3 class="font-display text-lg font-semibold text-white">Marco Reyes</h3>
+                <p class="text-purple-400 text-sm">Hot Stone Specialist</p>
+            </div>
+            <div class="text-center scroll-reveal delay-300">
+                <div class="h-72 bg-gradient-to-br from-purple-900/40 to-violet-900/40 rounded-2xl flex items-center justify-center mb-4 border border-purple-500/10">
+                    <i class="fas fa-user text-4xl text-purple-400/30"></i>
+                </div>
+                <h3 class="font-display text-lg font-semibold text-white">Lisa Santos</h3>
+                <p class="text-purple-400 text-sm">Facial &amp; Skin Expert</p>
+            </div>
+            <div class="text-center scroll-reveal delay-400">
+                <div class="h-72 bg-gradient-to-br from-purple-900/40 to-violet-900/40 rounded-2xl flex items-center justify-center mb-4 border border-purple-500/10">
+                    <i class="fas fa-user text-4xl text-purple-400/30"></i>
+                </div>
+                <h3 class="font-display text-lg font-semibold text-white">David Cruz</h3>
+                <p class="text-purple-400 text-sm">Aromatherapy Specialist</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Testimonials -->
+{% if testimonials %}
+<section class="py-20 relative border-t border-purple-500/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12 scroll-reveal">
+            <h2 class="font-display text-3xl font-bold text-white mb-3">Client Testimonials</h2>
+            <p class="text-gray-400">Hear what our clients have to say about us</p>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for t in testimonials %}
+            <div class="bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl p-8 hover:border-purple-500/20 transition-all duration-300 scroll-reveal delay-{{ forloop.counter }}00">
+                <div class="flex gap-1 mb-4">{% for i in "12345" %}{% if forloop.counter <= t.rating %}<i class="fas fa-star text-yellow-400 text-sm"></i>{% else %}<i class="far fa-star text-gray-600 text-sm"></i>{% endif %}{% endfor %}</div>
+                <p class="text-gray-300 leading-relaxed mb-6 italic">"{{ t.content|truncatewords:30 }}"</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white font-semibold text-sm">{{ t.client_name|make_list|first }}</div>
+                    <div><p class="text-white font-medium text-sm">{{ t.client_name }}</p>{% if t.service %}<p class="text-purple-400 text-xs">{{ t.service.name }}</p>{% endif %}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- CTA -->
+<section class="py-20 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-r from-purple-900/20 via-violet-900/15 to-purple-900/20"></div>
+    <div class="relative z-10 max-w-3xl mx-auto px-4 text-center scroll-reveal">
+        <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">Experience the MEDPOINT Difference</h2>
+        <p class="text-gray-400 mb-8">Book your session today and discover why thousands trust us with their wellness journey.</p>
+        <a href="{% url 'website:booking' %}" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-full transition-all duration-300 shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-1">
+            <i class="fas fa-calendar-check"></i> Book Appointment
+        </a>
+    </div>
+</section>
+{% endblock %}

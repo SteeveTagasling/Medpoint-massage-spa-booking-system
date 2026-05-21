@@ -1,0 +1,224 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="MEDPOINT Massage and Spa - Premium massage therapy and spa wellness services. Book your relaxation today.">
+    <title>{% block title %}MEDPOINT Massage &amp; Spa{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#faf5ff', 100: '#f3e8ff', 200: '#e9d5ff', 300: '#d8b4fe', 400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce', 800: '#6b21a8', 900: '#581c87', 950: '#3b0764' },
+                        violet: { 50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd', 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9', 800: '#5b21b6', 900: '#4c1d95', 950: '#2e1065' },
+                        dark: { 50: '#1a1025', 100: '#150d1f', 200: '#110a19', 300: '#0d0714', 400: '#0a050f', 500: '#07030a', 600: '#050208', 700: '#030105', 800: '#020103', 900: '#010001' },
+                        gold: { 400: '#d4a843', 500: '#c9952e', 600: '#b8842a' },
+                    },
+                    fontFamily: {
+                        'display': ['"Playfair Display"', 'serif'],
+                        'body': ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="{% static 'website/css/styles.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="bg-dark-50 text-gray-200 font-body antialiased">
+
+    <!-- Preloader -->
+    <div id="preloader"
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-dark-100 transition-opacity duration-700">
+        <div class="text-center">
+            <div
+                class="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-4">
+            </div>
+            <span class="text-xl font-display tracking-[0.3em] text-purple-300">MEDPOINT</span>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            <a href="{% url 'website:home' %}" class="flex items-center gap-3 group" id="nav-logo">
+                <span class="text-3xl text-purple-400 group-hover:text-purple-300 transition-colors"><i
+                        class="fas fa-spa"></i></span>
+                <div class="leading-tight">
+                    <span class="block text-lg font-display font-bold tracking-wider text-white">MEDPOINT</span>
+                    <span class="block text-[10px] tracking-[0.25em] uppercase text-purple-300/70">Massage &amp;
+                        Spa</span>
+                </div>
+            </a>
+            <ul class="hidden lg:flex items-center gap-8" id="nav-menu">
+                <li><a href="{% url 'website:home' %}"
+                        class="nav-link text-sm font-medium tracking-wide uppercase hover:text-purple-400 transition-colors {% if request.resolver_match.url_name == 'home' %}text-purple-400{% else %}text-gray-300{% endif %}">Home</a>
+                </li>
+                <li><a href="{% url 'website:services' %}"
+                        class="nav-link text-sm font-medium tracking-wide uppercase hover:text-purple-400 transition-colors {% if 'service' in request.resolver_match.url_name %}text-purple-400{% else %}text-gray-300{% endif %}">Services</a>
+                </li>
+                <li><a href="{% url 'website:about' %}"
+                        class="nav-link text-sm font-medium tracking-wide uppercase hover:text-purple-400 transition-colors {% if request.resolver_match.url_name == 'about' %}text-purple-400{% else %}text-gray-300{% endif %}">About</a>
+                </li>
+                <li><a href="{% url 'website:booking' %}"
+                        class="nav-link text-sm font-medium tracking-wide uppercase hover:text-purple-400 transition-colors {% if 'booking' in request.resolver_match.url_name %}text-purple-400{% else %}text-gray-300{% endif %}">Book
+                        Now</a></li>
+                <li><a href="{% url 'website:contact' %}"
+                        class="nav-link text-sm font-medium tracking-wide uppercase hover:text-purple-400 transition-colors {% if request.resolver_match.url_name == 'contact' %}text-purple-400{% else %}text-gray-300{% endif %}">Contact</a>
+                </li>
+            </ul>
+            <div class="flex items-center gap-4">
+                <a href="{% url 'website:booking' %}"
+                    class="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white text-sm font-semibold rounded-full transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5">
+                    <i class="fas fa-calendar-check text-xs"></i> Book Now
+                </a>
+                <button id="nav-toggle" class="lg:hidden flex flex-col gap-1.5 p-2" aria-label="Toggle menu">
+                    <span class="block w-6 h-0.5 bg-white transition-all duration-300"></span>
+                    <span class="block w-6 h-0.5 bg-white transition-all duration-300"></span>
+                    <span class="block w-4 h-0.5 bg-white transition-all duration-300 ml-auto"></span>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu"
+            class="lg:hidden hidden bg-dark-100/98 backdrop-blur-xl border-t border-purple-500/10 mt-4">
+            <div class="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-4">
+                <a href="{% url 'website:home' %}"
+                    class="text-gray-300 hover:text-purple-400 py-2 text-lg transition-colors">Home</a>
+                <a href="{% url 'website:services' %}"
+                    class="text-gray-300 hover:text-purple-400 py-2 text-lg transition-colors">Services</a>
+                <a href="{% url 'website:about' %}"
+                    class="text-gray-300 hover:text-purple-400 py-2 text-lg transition-colors">About</a>
+                <a href="{% url 'website:booking' %}"
+                    class="text-gray-300 hover:text-purple-400 py-2 text-lg transition-colors">Book Now</a>
+                <a href="{% url 'website:contact' %}"
+                    class="text-gray-300 hover:text-purple-400 py-2 text-lg transition-colors">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="fixed top-24 right-4 z-50 flex flex-col gap-3 max-w-md" id="messages-container">
+        {% for message in messages %}
+        <div
+            class="flex items-center gap-3 px-5 py-3 rounded-xl backdrop-blur-xl border shadow-xl animate-slide-in {% if message.tags == 'success' %}bg-green-500/10 border-green-500/30 text-green-300{% elif message.tags == 'error' %}bg-red-500/10 border-red-500/30 text-red-300{% else %}bg-purple-500/10 border-purple-500/30 text-purple-300{% endif %}">
+            <i
+                class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %}"></i>
+            <p class="text-sm flex-1">{{ message }}</p>
+            <button onclick="this.parentElement.remove()" class="opacity-60 hover:opacity-100"><i
+                    class="fas fa-times"></i></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <main id="main-content">{% block content %}{% endblock %}</main>
+
+    <!-- Footer -->
+    <footer class="relative bg-dark-200 border-t border-purple-500/10 pt-16 pb-8">
+        <div
+            class="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent">
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+                <div>
+                    <a href="{% url 'website:home' %}" class="flex items-center gap-3 mb-4">
+                        <span class="text-2xl text-purple-400"><i class="fas fa-spa"></i></span>
+                        <div class="leading-tight">
+                            <span class="block font-display font-bold tracking-wider text-white">MEDPOINT</span>
+                            <span class="block text-[9px] tracking-[0.2em] uppercase text-purple-300/60">Massage &amp;
+                                Spa</span>
+                        </div>
+                    </a>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-5">Experience the harmony of body and soul.
+                        Premium wellness treatments by expert therapists.</p>
+                    <div class="flex gap-3">
+                        <a href="#"
+                            class="w-9 h-9 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 hover:bg-purple-500 hover:text-white transition-all text-sm"><i
+                                class="fab fa-facebook-f"></i></a>
+                        <a href="#"
+                            class="w-9 h-9 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 hover:bg-purple-500 hover:text-white transition-all text-sm"><i
+                                class="fab fa-instagram"></i></a>
+                        <a href="#"
+                            class="w-9 h-9 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 hover:bg-purple-500 hover:text-white transition-all text-sm"><i
+                                class="fab fa-tiktok"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-display font-semibold text-white mb-4">Quick Links</h4>
+                    <ul class="space-y-2.5 text-sm">
+                        <li><a href="{% url 'website:home' %}"
+                                class="text-gray-400 hover:text-purple-400 transition-colors">Home</a></li>
+                        <li><a href="{% url 'website:services' %}"
+                                class="text-gray-400 hover:text-purple-400 transition-colors">Our Services</a></li>
+                        <li><a href="{% url 'website:about' %}"
+                                class="text-gray-400 hover:text-purple-400 transition-colors">About Us</a></li>
+                        <li><a href="{% url 'website:booking' %}"
+                                class="text-gray-400 hover:text-purple-400 transition-colors">Book Appointment</a></li>
+                        <li><a href="{% url 'website:contact' %}"
+                                class="text-gray-400 hover:text-purple-400 transition-colors">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-display font-semibold text-white mb-4">Services</h4>
+                    <ul class="space-y-2.5 text-sm">
+                        <li><a href="{% url 'website:services' %}?category=massage"
+                                class="text-gray-400 hover:text-purple-400 transition-colors">Massage Therapy</a></li>
+                        <li><a href="{% url 'website:services' %}?category=facial"
+                                class="text-gray-400 hover:text-purple-400 transition-colors">Facial Treatments</a></li>
+                        <li><a href="{% url 'website:services' %}?category=body"
+                                class="text-gray-400 hover:text-purple-400 transition-colors">Body Treatments</a></li>
+                        <li><a href="{% url 'website:services' %}?category=aromatherapy"
+                                class="text-gray-400 hover:text-purple-400 transition-colors">Aromatherapy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-display font-semibold text-white mb-4">Contact</h4>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex items-start gap-3 text-gray-400"><i
+                                class="fas fa-map-marker-alt text-purple-400 mt-1"></i><span>Gallares Street, Tagbilaran
+                                City, Philippines</span></div>
+                        <div class="flex items-start gap-3 text-gray-400"><i
+                                class="fas fa-phone-alt text-purple-400 mt-1"></i><span>+63 912 345 6789</span></div>
+                        <div class="flex items-start gap-3 text-gray-400"><i
+                                class="fas fa-envelope text-purple-400 mt-1"></i><span>info@medpointspa.com</span></div>
+                        <div class="flex items-start gap-3 text-gray-400"><i
+                                class="fas fa-clock text-purple-400 mt-1"></i><span>Mon-Sun: 9AM - 9PM</span></div>
+                    </div>
+                </div>
+            </div>
+            <div
+                class="border-t border-purple-500/10 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <p class="text-gray-500 text-xs">&copy; 2026 MEDPOINT Massage &amp; Spa. All rights reserved.</p>
+                <div class="flex gap-4 text-xs text-gray-500">
+                    <a href="#" class="hover:text-purple-400 transition-colors">Privacy</a>
+                    <a href="#" class="hover:text-purple-400 transition-colors">Terms</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <button id="back-to-top"
+        class="fixed bottom-6 right-6 w-12 h-12 bg-purple-600/80 hover:bg-purple-500 text-white rounded-full shadow-lg shadow-purple-500/25 flex items-center justify-center opacity-0 invisible translate-y-4 transition-all duration-300 z-40"
+        aria-label="Back to top">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
+    <script src="{% static 'website/js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,110 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}Our Services - MEDPOINT Massage &amp; Spa{% endblock %}
+
+{% block content %}
+<!-- Page Hero -->
+<section class="page-hero">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="flex items-center gap-3 mb-4 animate-fade-in">
+            <div class="w-8 h-px bg-purple-500"></div>
+            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">What We Offer</span>
+        </div>
+        <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in-up">
+            Our <span class="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">Services</span>
+        </h1>
+        <p class="text-gray-400 text-lg max-w-xl animate-fade-in-up" style="animation-delay:0.2s">
+            Discover our premium range of massage therapies and spa treatments designed for your ultimate relaxation.
+        </p>
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 mt-6 text-sm animate-fade-in" style="animation-delay:0.3s">
+            <a href="{% url 'website:home' %}" class="text-gray-500 hover:text-purple-400 transition-colors">Home</a>
+            <span class="breadcrumb-sep">/</span>
+            <span class="text-purple-400">Services</span>
+        </div>
+    </div>
+</section>
+
+<!-- Category Filter -->
+<section class="py-12 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-wrap justify-center gap-3 scroll-reveal">
+            <a href="{% url 'website:services' %}"
+               class="px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 {% if not active_category %}bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg shadow-purple-500/25{% else %}bg-dark-100/50 border border-purple-500/15 text-gray-400 hover:text-purple-300 hover:border-purple-500/30{% endif %}">
+                <i class="fas fa-th mr-1.5"></i>All Services
+            </a>
+            {% for cat_value, cat_label in categories %}
+            <a href="{% url 'website:services' %}?category={{ cat_value }}"
+               class="px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 {% if active_category == cat_value %}bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg shadow-purple-500/25{% else %}bg-dark-100/50 border border-purple-500/15 text-gray-400 hover:text-purple-300 hover:border-purple-500/30{% endif %}">
+                {{ cat_label }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Services Grid -->
+<section class="pb-24 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {% if services %}
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for service in services %}
+            <div class="group relative bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl hover:shadow-purple-500/10 scroll-reveal {% if forloop.counter > 3 %}delay-{{ forloop.counter|add:"-3" }}00{% endif %}">
+                <div class="h-56 overflow-hidden relative">
+                    {% if service.image %}
+                    <img src="{{ service.image.url }}" alt="{{ service.name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    {% else %}
+                    <div class="w-full h-full bg-gradient-to-br from-purple-900/50 to-violet-900/50 flex items-center justify-center">
+                        <i class="fas fa-spa text-5xl text-purple-400/30"></i>
+                    </div>
+                    {% endif %}
+                    <div class="absolute top-4 right-4 bg-purple-600/90 backdrop-blur-sm text-white text-sm font-semibold px-3 py-1 rounded-full">₱{{ service.price }}</div>
+                    <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-dark-50/80 to-transparent"></div>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-[11px] tracking-wider uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">{{ service.get_category_display }}</span>
+                        <span class="text-gray-500 text-xs"><i class="far fa-clock mr-1"></i>{{ service.duration_minutes }} min</span>
+                    </div>
+                    <h3 class="font-display text-xl font-semibold text-white mb-2 group-hover:text-purple-300 transition-colors">{{ service.name }}</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">{{ service.short_description|default:service.description|truncatewords:20 }}</p>
+                    <div class="flex items-center justify-between">
+                        <a href="{% url 'website:service_detail' service.slug %}" class="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors">
+                            Learn More <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                        <a href="{% url 'website:booking' %}?service={{ service.pk }}" class="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-purple-400 transition-colors">
+                            <i class="fas fa-calendar-check"></i> Book
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-20 scroll-reveal">
+            <div class="w-20 h-20 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-spa text-3xl text-purple-400/50"></i>
+            </div>
+            <h3 class="font-display text-2xl font-semibold text-white mb-3">No Services Found</h3>
+            <p class="text-gray-400 mb-6">We're updating our service menu. Please check back soon!</p>
+            <a href="{% url 'website:services' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-purple-600/20 border border-purple-500/30 text-purple-300 rounded-full hover:bg-purple-600/30 transition-all">
+                <i class="fas fa-arrow-left text-sm"></i> View All Services
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Booking CTA -->
+<section class="py-20 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-r from-purple-900/20 via-violet-900/10 to-purple-900/20"></div>
+    <div class="relative z-10 max-w-3xl mx-auto px-4 text-center scroll-reveal">
+        <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">Ready to Book?</h2>
+        <p class="text-gray-400 mb-8">Choose from our wide range of treatments and book your session today.</p>
+        <a href="{% url 'website:booking' %}" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-full transition-all duration-300 shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-1">
+            <i class="fas fa-calendar-check"></i> Book Appointment
+        </a>
+    </div>
+</section>
+{% endblock %}

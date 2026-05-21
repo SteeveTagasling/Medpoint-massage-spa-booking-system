@@ -1,0 +1,276 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}MEDPOINT Massage &amp; Spa - Harmony of Body &amp; Soul{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section id="hero" class="relative min-h-screen flex items-center overflow-hidden">
+    <div class="absolute inset-0">
+        <img src="{% static 'website/images/hero.png' %}" alt="MEDPOINT Spa" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-dark-50/70 to-purple-900/40"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-dark-50 via-transparent to-transparent"></div>
+    </div>
+    <!-- Floating orbs -->
+    <div class="absolute top-20 right-20 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+    <div class="absolute bottom-20 left-10 w-96 h-96 bg-violet-500/8 rounded-full blur-3xl animate-pulse" style="animation-delay:2s"></div>
+
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
+        <div class="max-w-2xl">
+            <div class="flex items-center gap-3 mb-6 animate-fade-in">
+                <div class="w-12 h-px bg-gradient-to-r from-purple-400 to-transparent"></div>
+                <span class="text-purple-300 text-sm tracking-[0.3em] uppercase font-medium">Welcome to MEDPOINT</span>
+            </div>
+            <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6 animate-fade-in-up">
+                Harmony of<br>
+                <span class="bg-gradient-to-r from-purple-400 via-violet-400 to-purple-300 bg-clip-text text-transparent">Body &amp; Soul</span>
+            </h1>
+            <p class="text-gray-300/90 text-lg sm:text-xl leading-relaxed mb-10 max-w-lg animate-fade-in-up" style="animation-delay:0.2s">
+                Discover the art of relaxation at MEDPOINT Massage &amp; Spa. Our expert therapists deliver premium wellness treatments crafted for your complete rejuvenation.
+            </p>
+            <div class="flex flex-wrap gap-4 animate-fade-in-up" style="animation-delay:0.4s">
+                <a href="{% url 'website:booking' %}" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-full transition-all duration-300 shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-1">
+                    <i class="fas fa-calendar-check"></i> Book Appointment
+                </a>
+                <a href="{% url 'website:services' %}" class="inline-flex items-center gap-2 px-8 py-4 border border-purple-400/30 text-purple-300 hover:bg-purple-500/10 hover:border-purple-400/50 rounded-full transition-all duration-300 hover:-translate-y-1">
+                    <i class="fas fa-spa"></i> Our Services
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
+        <span class="text-purple-300/50 text-xs tracking-widest uppercase">Scroll</span>
+        <i class="fas fa-chevron-down text-purple-400/50"></i>
+    </div>
+</section>
+
+<!-- About Preview -->
+<section class="py-24 relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-2 gap-16 items-center">
+            <div class="relative">
+                <div class="absolute -top-4 -left-4 w-full h-full border border-purple-500/20 rounded-2xl"></div>
+                <img src="{% static 'website/images/about.png' %}" alt="About MEDPOINT" class="rounded-2xl w-full h-[450px] object-cover relative z-10 shadow-2xl shadow-purple-500/10">
+                <div class="absolute -bottom-6 -right-6 bg-gradient-to-br from-purple-600 to-violet-700 rounded-xl p-6 z-20 shadow-xl">
+                    <div class="text-center">
+                        <span class="block text-3xl font-display font-bold text-white">10+</span>
+                        <span class="text-purple-200 text-sm">Years of Excellence</span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-8 h-px bg-purple-500"></div>
+                    <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">About Us</span>
+                </div>
+                <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-6 leading-tight">
+                    A Sanctuary of<br><span class="text-purple-400">Wellness &amp; Beauty</span>
+                </h2>
+                <p class="text-gray-400 leading-relaxed mb-6">
+                    At MEDPOINT Massage &amp; Spa, we believe in the healing power of touch. Our sanctuary is designed to transport you to a world of tranquility, where every treatment is crafted with care and precision.
+                </p>
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="flex items-center gap-3 text-sm"><i class="fas fa-check-circle text-purple-400"></i><span class="text-gray-300">Licensed Therapists</span></div>
+                    <div class="flex items-center gap-3 text-sm"><i class="fas fa-check-circle text-purple-400"></i><span class="text-gray-300">Premium Products</span></div>
+                    <div class="flex items-center gap-3 text-sm"><i class="fas fa-check-circle text-purple-400"></i><span class="text-gray-300">Hygienic Environment</span></div>
+                    <div class="flex items-center gap-3 text-sm"><i class="fas fa-check-circle text-purple-400"></i><span class="text-gray-300">Relaxing Ambiance</span></div>
+                </div>
+                <a href="{% url 'website:about' %}" class="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 font-medium transition-colors">
+                    Learn More <i class="fas fa-arrow-right text-sm"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section class="py-24 relative" id="services-section">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/3 to-transparent"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center mb-16">
+            <div class="flex items-center justify-center gap-3 mb-4">
+                <div class="w-8 h-px bg-purple-500"></div>
+                <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Our Services</span>
+                <div class="w-8 h-px bg-purple-500"></div>
+            </div>
+            <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">Premium Spa Treatments</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">Indulge in our carefully curated selection of massage and spa treatments designed for your ultimate relaxation.</p>
+        </div>
+
+        {% if services %}
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for service in services %}
+            <div class="group relative bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl hover:shadow-purple-500/10">
+                <div class="h-56 overflow-hidden">
+                    {% if service.image %}
+                    <img src="{{ service.image.url }}" alt="{{ service.name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    {% else %}
+                    <div class="w-full h-full bg-gradient-to-br from-purple-900/50 to-violet-900/50 flex items-center justify-center">
+                        <i class="fas fa-spa text-4xl text-purple-400/30"></i>
+                    </div>
+                    {% endif %}
+                    <div class="absolute top-4 right-4 bg-purple-600/90 backdrop-blur-sm text-white text-sm font-semibold px-3 py-1 rounded-full">₱{{ service.price }}</div>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-[11px] tracking-wider uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">{{ service.get_category_display }}</span>
+                        <span class="text-gray-500 text-xs"><i class="far fa-clock mr-1"></i>{{ service.duration_minutes }} min</span>
+                    </div>
+                    <h3 class="font-display text-xl font-semibold text-white mb-2 group-hover:text-purple-300 transition-colors">{{ service.name }}</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">{{ service.short_description|default:service.description|truncatewords:20 }}</p>
+                    <a href="{% url 'website:service_detail' service.slug %}" class="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors">
+                        Learn More <i class="fas fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Default services when DB is empty -->
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% with default_services="Swedish Massage,Hot Stone Therapy,Aromatherapy,Facial Treatment,Deep Tissue Massage,Body Scrub" %}
+            {% for svc_name in default_services|make_list %}{% endfor %}
+            {% endwith %}
+            <div class="group relative bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-2">
+                <div class="h-56 overflow-hidden">
+                    <img src="{% static 'website/images/service_massage.png' %}" alt="Swedish Massage" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute top-4 right-4 bg-purple-600/90 text-white text-sm font-semibold px-3 py-1 rounded-full">₱500</div>
+                </div>
+                <div class="p-6">
+                    <span class="text-[11px] tracking-wider uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">Massage</span>
+                    <h3 class="font-display text-xl font-semibold text-white mb-2 mt-2">Swedish Massage</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">A gentle full-body massage that promotes relaxation and improves circulation.</p>
+                </div>
+            </div>
+            <div class="group relative bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-2">
+                <div class="h-56 overflow-hidden">
+                    <img src="{% static 'website/images/service_hotstone.png' %}" alt="Hot Stone Therapy" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute top-4 right-4 bg-purple-600/90 text-white text-sm font-semibold px-3 py-1 rounded-full">₱800</div>
+                </div>
+                <div class="p-6">
+                    <span class="text-[11px] tracking-wider uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">Massage</span>
+                    <h3 class="font-display text-xl font-semibold text-white mb-2 mt-2">Hot Stone Therapy</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">Heated basalt stones placed on key points to melt away tension and stress.</p>
+                </div>
+            </div>
+            <div class="group relative bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-2">
+                <div class="h-56 overflow-hidden">
+                    <img src="{% static 'website/images/service_facial.png' %}" alt="Facial Treatment" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute top-4 right-4 bg-purple-600/90 text-white text-sm font-semibold px-3 py-1 rounded-full">₱700</div>
+                </div>
+                <div class="p-6">
+                    <span class="text-[11px] tracking-wider uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">Facial</span>
+                    <h3 class="font-display text-xl font-semibold text-white mb-2 mt-2">Luxury Facial</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">Premium facial treatment to rejuvenate and nourish your skin to perfection.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="text-center mt-12">
+            <a href="{% url 'website:services' %}" class="inline-flex items-center gap-2 px-8 py-3 border border-purple-500/30 text-purple-300 hover:bg-purple-500/10 rounded-full transition-all duration-300 font-medium">
+                View All Services <i class="fas fa-arrow-right text-sm"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-16 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-gradient-to-r from-purple-900/30 via-violet-900/20 to-purple-900/30 border border-purple-500/10 rounded-3xl p-8 sm:p-12 backdrop-blur-sm">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <span class="block text-4xl sm:text-5xl font-display font-bold bg-gradient-to-b from-white to-purple-300 bg-clip-text text-transparent counter" data-target="5000">0</span>
+                    <span class="text-gray-400 text-sm mt-2 block">Happy Clients</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-4xl sm:text-5xl font-display font-bold bg-gradient-to-b from-white to-purple-300 bg-clip-text text-transparent counter" data-target="15">0</span>
+                    <span class="text-gray-400 text-sm mt-2 block">Expert Therapists</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-4xl sm:text-5xl font-display font-bold bg-gradient-to-b from-white to-purple-300 bg-clip-text text-transparent counter" data-target="25">0</span>
+                    <span class="text-gray-400 text-sm mt-2 block">Spa Treatments</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-4xl sm:text-5xl font-display font-bold bg-gradient-to-b from-white to-purple-300 bg-clip-text text-transparent counter" data-target="10">0</span>
+                    <span class="text-gray-400 text-sm mt-2 block">Years Experience</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Booking CTA -->
+<section class="py-24 relative overflow-hidden">
+    <div class="absolute inset-0">
+        <img src="{% static 'website/images/service_aromatherapy.png' %}" alt="Book Now" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-r from-dark-50/95 via-purple-900/80 to-dark-50/95"></div>
+    </div>
+    <div class="relative z-10 max-w-4xl mx-auto px-4 text-center">
+        <div class="flex items-center justify-center gap-3 mb-4">
+            <div class="w-8 h-px bg-purple-400"></div>
+            <span class="text-purple-300 text-sm tracking-[0.2em] uppercase">Book Your Visit</span>
+            <div class="w-8 h-px bg-purple-400"></div>
+        </div>
+        <h2 class="font-display text-3xl sm:text-5xl font-bold text-white mb-6">Ready to Experience<br><span class="text-purple-300">True Relaxation?</span></h2>
+        <p class="text-gray-300/80 text-lg mb-10 max-w-2xl mx-auto">Book your appointment today and let our expert therapists guide you on a journey of complete rejuvenation and wellness.</p>
+        <div class="flex flex-wrap justify-center gap-4">
+            <a href="{% url 'website:booking' %}" class="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-full transition-all duration-300 shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-1 text-lg">
+                <i class="fas fa-calendar-check"></i> Book Appointment
+            </a>
+            <a href="tel:+639123456789" class="inline-flex items-center gap-2 px-10 py-4 border border-white/20 text-white hover:bg-white/5 rounded-full transition-all duration-300 hover:-translate-y-1 text-lg">
+                <i class="fas fa-phone-alt"></i> Call Us
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="py-24 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <div class="flex items-center justify-center gap-3 mb-4">
+                <div class="w-8 h-px bg-purple-500"></div>
+                <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Testimonials</span>
+                <div class="w-8 h-px bg-purple-500"></div>
+            </div>
+            <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">What Our Clients Say</h2>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% if testimonials %}
+                {% for t in testimonials %}
+                <div class="bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl p-8 hover:border-purple-500/20 transition-all duration-300">
+                    <div class="flex gap-1 mb-4">{% for i in "12345" %}{% if forloop.counter <= t.rating %}<i class="fas fa-star text-yellow-400 text-sm"></i>{% else %}<i class="far fa-star text-gray-600 text-sm"></i>{% endif %}{% endfor %}</div>
+                    <p class="text-gray-300 leading-relaxed mb-6 italic">"{{ t.content|truncatewords:30 }}"</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white font-semibold text-sm">{{ t.client_name|make_list|first }}</div>
+                        <div><p class="text-white font-medium text-sm">{{ t.client_name }}</p>{% if t.service %}<p class="text-purple-400 text-xs">{{ t.service.name }}</p>{% endif %}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl p-8">
+                    <div class="flex gap-1 mb-4"><i class="fas fa-star text-yellow-400 text-sm"></i><i class="fas fa-star text-yellow-400 text-sm"></i><i class="fas fa-star text-yellow-400 text-sm"></i><i class="fas fa-star text-yellow-400 text-sm"></i><i class="fas fa-star text-yellow-400 text-sm"></i></div>
+                    <p class="text-gray-300 leading-relaxed mb-6 italic">"The best spa experience I've ever had! The therapists are incredibly skilled and the ambiance is absolutely divine."</p>
+                    <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white font-semibold text-sm">M</div><div><p class="text-white font-medium text-sm">Maria Santos</p><p class="text-purple-400 text-xs">Swedish Massage</p></div></div>
+                </div>
+                <div class="bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl p-8">
+                    <div class="flex gap-1 mb-4"><i class="fas fa-star text-yellow-400 text-sm"></i><i class="fas fa-star text-yellow-400 text-sm"></i><i class="fas fa-star text-yellow-400 text-sm"></i><i class="fas fa-star text-yellow-400 text-sm"></i><i class="fas fa-star text-yellow-400 text-sm"></i></div>
+                    <p class="text-gray-300 leading-relaxed mb-6 italic">"MEDPOINT is my go-to spa. The hot stone therapy melted all my stress away. Highly recommended!"</p>
+                    <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white font-semibold text-sm">J</div><div><p class="text-white font-medium text-sm">Juan Dela Cruz</p><p class="text-purple-400 text-xs">Hot Stone Therapy</p></div></div>
+                </div>
+                <div class="bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl p-8">
+                    <div class="flex gap-1 mb-4"><i class="fas fa-star text-yellow-400 text-sm"></i><i class="fas fa-star text-yellow-400 text-sm"></i><i class="fas fa-star text-yellow-400 text-sm"></i><i class="fas fa-star text-yellow-400 text-sm"></i><i class="fas fa-star text-yellow-400 text-sm"></i></div>
+                    <p class="text-gray-300 leading-relaxed mb-6 italic">"The facial treatment gave my skin an incredible glow. The staff are so professional and caring."</p>
+                    <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white font-semibold text-sm">A</div><div><p class="text-white font-medium text-sm">Angela Reyes</p><p class="text-purple-400 text-xs">Luxury Facial</p></div></div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,214 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}Book Appointment - MEDPOINT Massage &amp; Spa{% endblock %}
+
+{% block content %}
+<!-- Page Hero -->
+<section class="page-hero">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="flex items-center gap-3 mb-4 animate-fade-in">
+            <div class="w-8 h-px bg-purple-500"></div>
+            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Reserve Your Session</span>
+        </div>
+        <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in-up">
+            Book Your <span class="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">Appointment</span>
+        </h1>
+        <p class="text-gray-400 text-lg max-w-xl animate-fade-in-up" style="animation-delay:0.2s">
+            Choose your preferred service, therapist, date, and time. We'll confirm your booking shortly.
+        </p>
+        <div class="flex items-center gap-2 mt-6 text-sm animate-fade-in" style="animation-delay:0.3s">
+            <a href="{% url 'website:home' %}" class="text-gray-500 hover:text-purple-400 transition-colors">Home</a>
+            <span class="breadcrumb-sep">/</span>
+            <span class="text-purple-400">Book Appointment</span>
+        </div>
+    </div>
+</section>
+
+<!-- Booking Form -->
+<section class="py-16 relative">
+    <div class="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="grid lg:grid-cols-5 gap-12">
+            <!-- Form -->
+            <div class="lg:col-span-3 scroll-reveal">
+                <div class="glass-panel p-8 sm:p-10">
+                    <h2 class="font-display text-2xl font-semibold text-white mb-2">Appointment Details</h2>
+                    <p class="text-gray-400 text-sm mb-8">Fill in your details below to book your spa session.</p>
+
+                    <form method="post" action="{% url 'website:booking' %}" id="booking-form">
+                        {% csrf_token %}
+
+                        <!-- Personal Information -->
+                        <div class="mb-8">
+                            <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-user text-xs"></i> Personal Information
+                            </h3>
+                            <div class="grid sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="booking-name" class="form-label">Full Name <span class="text-red-400">*</span></label>
+                                    {{ form.client_name }}
+                                    {% if form.client_name.errors %}
+                                    <span class="form-error">{{ form.client_name.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="booking-phone" class="form-label">Phone Number <span class="text-red-400">*</span></label>
+                                    {{ form.client_phone }}
+                                    {% if form.client_phone.errors %}
+                                    <span class="form-error">{{ form.client_phone.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="mt-5">
+                                <label for="booking-email" class="form-label">Email Address <span class="text-red-400">*</span></label>
+                                {{ form.client_email }}
+                                {% if form.client_email.errors %}
+                                <span class="form-error">{{ form.client_email.errors.0 }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Service Selection -->
+                        <div class="mb-8">
+                            <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-spa text-xs"></i> Service Selection
+                            </h3>
+                            <div class="grid sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="booking-service" class="form-label">Service <span class="text-red-400">*</span></label>
+                                    {{ form.service }}
+                                    {% if form.service.errors %}
+                                    <span class="form-error">{{ form.service.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="booking-therapist" class="form-label">Preferred Therapist</label>
+                                    {{ form.therapist }}
+                                    {% if form.therapist.errors %}
+                                    <span class="form-error">{{ form.therapist.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Schedule -->
+                        <div class="mb-8">
+                            <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-calendar text-xs"></i> Schedule
+                            </h3>
+                            <div class="grid sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="booking-date" class="form-label">Preferred Date <span class="text-red-400">*</span></label>
+                                    {{ form.date }}
+                                    {% if form.date.errors %}
+                                    <span class="form-error">{{ form.date.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="booking-time" class="form-label">Preferred Time <span class="text-red-400">*</span></label>
+                                    {{ form.time }}
+                                    {% if form.time.errors %}
+                                    <span class="form-error">{{ form.time.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-8">
+                            <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-pen text-xs"></i> Additional Notes
+                            </h3>
+                            <div>
+                                <label for="booking-notes" class="form-label">Special Requests</label>
+                                {{ form.notes }}
+                            </div>
+                        </div>
+
+                        <button type="submit" id="booking-submit" class="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                            <i class="fas fa-calendar-check"></i> Confirm Booking
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sidebar Info -->
+            <div class="lg:col-span-2 scroll-reveal delay-200">
+                <!-- Hours -->
+                <div class="glass-panel p-8 mb-6">
+                    <h3 class="font-display text-lg font-semibold text-white mb-5 flex items-center gap-2">
+                        <i class="fas fa-clock text-purple-400"></i> Operating Hours
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-400">Monday - Friday</span>
+                            <span class="text-white font-medium">9:00 AM - 9:00 PM</span>
+                        </div>
+                        <div class="w-full h-px bg-purple-500/10"></div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-400">Saturday</span>
+                            <span class="text-white font-medium">9:00 AM - 9:00 PM</span>
+                        </div>
+                        <div class="w-full h-px bg-purple-500/10"></div>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-gray-400">Sunday</span>
+                            <span class="text-white font-medium">10:00 AM - 8:00 PM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact -->
+                <div class="glass-panel p-8 mb-6">
+                    <h3 class="font-display text-lg font-semibold text-white mb-5 flex items-center gap-2">
+                        <i class="fas fa-phone-alt text-purple-400"></i> Need Help?
+                    </h3>
+                    <p class="text-gray-400 text-sm mb-4">Have questions about our services or need help picking the right treatment? Contact us!</p>
+                    <a href="tel:+639123456789" class="flex items-center gap-3 p-3 bg-purple-500/10 border border-purple-500/15 rounded-xl text-purple-300 hover:bg-purple-500/15 transition-all text-sm">
+                        <i class="fas fa-phone-alt"></i>
+                        <span>+63 912 345 6789</span>
+                    </a>
+                </div>
+
+                <!-- Booking Policy -->
+                <div class="glass-panel p-8">
+                    <h3 class="font-display text-lg font-semibold text-white mb-5 flex items-center gap-2">
+                        <i class="fas fa-info-circle text-purple-400"></i> Booking Policy
+                    </h3>
+                    <ul class="space-y-3 text-sm text-gray-400">
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
+                            <span>Bookings are confirmed via email or SMS within 1 hour.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
+                            <span>Please arrive 10 minutes before your appointment.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
+                            <span>Cancellations must be made at least 4 hours in advance.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
+                            <span>Walk-ins are welcome based on availability.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Set minimum date to today
+    document.addEventListener('DOMContentLoaded', () => {
+        const dateInput = document.getElementById('booking-date');
+        if (dateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.setAttribute('min', today);
+        }
+    });
+</script>
+{% endblock %}

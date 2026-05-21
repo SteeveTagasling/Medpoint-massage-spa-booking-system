@@ -1,0 +1,56 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}Booking Confirmed - MEDPOINT Massage &amp; Spa{% endblock %}
+
+{% block content %}
+<section class="min-h-screen flex items-center justify-center py-32 relative overflow-hidden">
+    <div class="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-500/8 rounded-full blur-3xl animate-pulse"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/5 rounded-full blur-3xl animate-pulse" style="animation-delay:1.5s"></div>
+
+    <div class="relative z-10 max-w-lg mx-auto px-4 text-center">
+        <div class="mb-8 animate-scale-in">
+            <svg class="w-24 h-24 mx-auto" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" stroke="#a855f7" stroke-width="2"/>
+                <path class="checkmark-check" fill="none" stroke="#a855f7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+            </svg>
+        </div>
+
+        <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4 animate-fade-in-up" style="animation-delay:0.3s">
+            Booking <span class="text-purple-400">Confirmed!</span>
+        </h1>
+        <p class="text-gray-400 text-lg mb-8 animate-fade-in-up" style="animation-delay:0.5s">
+            Your appointment has been received. We'll confirm your booking via email or SMS within 1 hour.
+        </p>
+
+        <div class="glass-panel p-8 mb-8 text-left animate-fade-in-up" style="animation-delay:0.7s">
+            <h3 class="text-white font-semibold mb-4 flex items-center gap-2">
+                <i class="fas fa-info-circle text-purple-400"></i> What's Next?
+            </h3>
+            <ul class="space-y-3 text-sm text-gray-400">
+                <li class="flex items-start gap-3">
+                    <div class="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-purple-400 text-xs font-bold">1</span></div>
+                    <span>We'll review and confirm your appointment shortly.</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <div class="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-purple-400 text-xs font-bold">2</span></div>
+                    <span>You'll receive a confirmation email with the details.</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <div class="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-purple-400 text-xs font-bold">3</span></div>
+                    <span>Please arrive 10 minutes before your scheduled time.</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 animate-fade-in-up" style="animation-delay:0.9s">
+            <a href="{% url 'website:home' %}" class="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-full transition-all duration-300 shadow-lg shadow-purple-500/25 hover:-translate-y-0.5">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+            <a href="{% url 'website:booking' %}" class="inline-flex items-center gap-2 px-8 py-3.5 border border-purple-500/30 text-purple-300 hover:bg-purple-500/10 rounded-full transition-all duration-300 hover:-translate-y-0.5">
+                <i class="fas fa-plus"></i> Book Another
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
