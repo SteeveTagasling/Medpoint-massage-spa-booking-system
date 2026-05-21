@@ -1,0 +1,43 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Services{% endblock %}
+{% block page_title %}Services{% endblock %}
+{% block page_subtitle %}Manage spa services and treatments{% endblock %}
+
+{% block content %}
+<div class="items-grid">
+    {% for service in services %}
+    <div class="item-card">
+        {% if service.image %}
+        <img src="{{ service.image.url }}" alt="{{ service.name }}" class="item-card-img">
+        {% else %}
+        <div class="item-card-img-placeholder">
+            <i class="fas fa-spa"></i>
+        </div>
+        {% endif %}
+        <div class="item-card-body">
+            <div class="item-card-title">{{ service.name }}</div>
+            <div class="item-card-sub">{{ service.get_category_display }}</div>
+            <div class="item-card-meta">
+                <span><i class="fas fa-clock"></i> {{ service.duration_minutes }} min</span>
+                <span><i class="fas fa-peso-sign"></i> {{ service.price }}</span>
+                <span>
+                    {% if service.is_active %}
+                    <i class="fas fa-circle" style="color: var(--green-400); font-size: 0.5rem;"></i> Active
+                    {% else %}
+                    <i class="fas fa-circle" style="color: var(--red-400); font-size: 0.5rem;"></i> Inactive
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card" style="grid-column: 1 / -1;">
+        <div class="empty-state">
+            <i class="fas fa-concierge-bell"></i>
+            <p>No services found</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

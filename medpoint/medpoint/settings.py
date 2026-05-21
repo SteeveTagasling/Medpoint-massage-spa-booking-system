@@ -65,6 +65,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'portals.context_processors.portal_counts',
             ],
         },
     },
@@ -78,8 +79,12 @@ WSGI_APPLICATION = 'medpoint.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'medpoint_db',       # your database name from Step 2
+        'USER': 'postgres',          # default pgAdmin/PostgreSQL user
+        'PASSWORD': '260615728', # the password you set during PostgreSQL install
+        'HOST': 'localhost',
+        'PORT': '5432',              # default PostgreSQL port
     }
 }
 
@@ -132,3 +137,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Authentication
+LOGIN_URL = 'portals:login'

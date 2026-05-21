@@ -1,0 +1,42 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Therapists{% endblock %}
+{% block page_title %}Therapists{% endblock %}
+{% block page_subtitle %}Manage therapists and staff{% endblock %}
+
+{% block content %}
+<div class="items-grid">
+    {% for therapist in therapists %}
+    <div class="item-card">
+        {% if therapist.photo %}
+        <img src="{{ therapist.photo.url }}" alt="{{ therapist.name }}" class="item-card-img">
+        {% else %}
+        <div class="item-card-img-placeholder">
+            <i class="fas fa-user"></i>
+        </div>
+        {% endif %}
+        <div class="item-card-body">
+            <div class="item-card-title">{{ therapist.name }}</div>
+            <div class="item-card-sub">{{ therapist.title }}</div>
+            <div class="item-card-meta">
+                <span><i class="fas fa-award"></i> {{ therapist.years_experience }} yrs exp.</span>
+                <span>
+                    {% if therapist.is_active %}
+                    <i class="fas fa-circle" style="color: var(--green-400); font-size: 0.5rem;"></i> Active
+                    {% else %}
+                    <i class="fas fa-circle" style="color: var(--red-400); font-size: 0.5rem;"></i> Inactive
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card" style="grid-column: 1 / -1;">
+        <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <p>No therapists found</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

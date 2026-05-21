@@ -1,0 +1,107 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Welcome back, {{ request.user.first_name|default:request.user.username }}{% endblock %}
+
+{% block content %}
+<!-- Metric Cards -->
+<div class="metrics-grid">
+    <div class="metric-card metric-purple">
+        <div class="metric-icon"><i class="fas fa-calendar-alt"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Total Bookings</div>
+            <div class="metric-value">{{ total_bookings }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-amber">
+        <div class="metric-icon"><i class="fas fa-clock"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Pending</div>
+            <div class="metric-value">{{ pending_bookings }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-blue">
+        <div class="metric-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Confirmed</div>
+            <div class="metric-value">{{ confirmed_bookings }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-green">
+        <div class="metric-icon"><i class="fas fa-calendar-day"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Today</div>
+            <div class="metric-value">{{ today_bookings }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Stats -->
+<div class="metrics-grid" style="margin-bottom: 2rem;">
+    <div class="metric-card metric-purple">
+        <div class="metric-icon"><i class="fas fa-concierge-bell"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Active Services</div>
+            <div class="metric-value">{{ total_services }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-blue">
+        <div class="metric-icon"><i class="fas fa-users"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Therapists</div>
+            <div class="metric-value">{{ total_therapists }}</div>
+        </div>
+    </div>
+    <div class="metric-card metric-amber">
+        <div class="metric-icon"><i class="fas fa-envelope"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Unread Messages</div>
+            <div class="metric-value">{{ unread_messages }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Bookings Table -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-header-title"><i class="fas fa-history" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i> Recent Bookings</span>
+        <a href="{% url 'portals:booking_list' %}" style="font-size: 0.75rem; color: var(--purple-400); text-decoration: none;">View All &rarr;</a>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Service</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in recent_bookings %}
+                <tr>
+                    <td style="color: var(--text-primary); font-weight: 500;">{{ booking.client_name }}</td>
+                    <td>{{ booking.service.name }}</td>
+                    <td>{{ booking.date|date:"M d, Y" }}</td>
+                    <td>{{ booking.get_time_display }}</td>
+                    <td>
+                        <span class="status status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-times"></i>
+                            <p>No bookings yet</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
