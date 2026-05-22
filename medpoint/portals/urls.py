@@ -30,20 +30,28 @@ urlpatterns = [
     path('therapists/<int:pk>/edit/', views.therapist_edit, name='therapist_edit'),
     path('therapists/<int:pk>/delete/', views.therapist_delete, name='therapist_delete'),
 
+    # ── Administrator management (admin only) ─────────
+    path('admins/', views.admin_management_list, name='admin_management_list'),
+    path('admins/register/', views.admin_management_create, name='admin_management_create'),
+    path('admins/<int:pk>/edit/', views.admin_management_edit, name='admin_management_edit'),
+    path('admins/<int:pk>/delete/', views.admin_management_delete, name='admin_management_delete'),
+
     # ── Schedule management ───────────────────────────
     path('schedules/', views.schedule_list, name='schedule_list'),
     path('schedules/assign/', views.schedule_create, name='schedule_create'),
-    path('schedules/<int:pk>/edit/', views.schedule_edit, name='schedule_edit'),
-    path('schedules/<int:pk>/delete/', views.schedule_delete, name='schedule_delete'),
-    path('schedules/<int:pk>/toggle/', views.schedule_toggle_availability, name='schedule_toggle'),
+    path('schedules/<str:pk>/edit/', views.schedule_edit, name='schedule_edit'),
+    path('schedules/<str:pk>/delete/', views.schedule_delete, name='schedule_delete'),
+    path('schedules/<str:pk>/toggle/', views.schedule_toggle_availability, name='schedule_toggle'),
 
     # ── Admin Reports ─────────────────────────────────
     path('reports/', views.admin_reports, name='admin_reports'),
+    path('admin-settings/', views.admin_settings, name='admin_settings'),
 
     # ── Staff views (therapist limited access) ────────
     path('my-bookings/', views.staff_my_bookings, name='staff_my_bookings'),
     path('my-schedule/', views.staff_my_schedule, name='staff_my_schedule'),
     path('my-reports/', views.staff_my_reports, name='staff_my_reports'),
+    path('staff-settings/', views.staff_settings, name='staff_settings'),
 
     # ── Messages ──────────────────────────────────────
     path('messages/', views.message_list, name='message_list'),

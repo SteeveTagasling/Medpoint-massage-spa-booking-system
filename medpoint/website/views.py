@@ -250,6 +250,7 @@ def get_therapists_by_preference(request):
     """
     pref = request.GET.get('preference', 'random')
     client_gender = request.GET.get('client_gender', 'male')
+    date_str = request.GET.get('date', None)
 
     if client_gender == 'female':
         # Female clients can only get female therapists
@@ -259,16 +260,96 @@ def get_therapists_by_preference(request):
     else:
         therapists = Therapist.objects.filter(is_active=True, gender=pref)
 
-    data = [
-        {
+    target_weekday = None
+    target_date = None
+    if date_str:
+        import datetime
+        try:
+            target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            target_weekday = target_date.weekday()
+        except ValueError:
+            pass
+
+    schedules_map = {}
+    if target_weekday is not None:
+        from .models import StaffSchedule
+        scheds = StaffSchedule.objects.filter(therapist__in=therapists, day_of_week=target_weekday)
+        for s in scheds:
+            if not s.is_available:
+                schedules_map[s.therapist_id] = True
+
+    overlap_map = {}
+    next_avail_map = {}
+    time_str = request.GET.get('time', None)
+    service_id = request.GET.get('service_id', None)
+    
+    if target_date and time_str and service_id:
+        from .models import Service, Booking
+        try:
+            req_start_time = datetime.datetime.strptime(time_str, '%H:%M').time()
+            svc = Service.objects.get(pk=service_id)
+            duration = datetime.timedelta(minutes=svc.duration_minutes)
+            req_start_dt = datetime.datetime.combine(target_date, req_start_time)
+            req_end_dt = req_start_dt + duration
+            
+            existing_bookings = Booking.objects.filter(
+                date=target_date,
+                status__in=['pending', 'confirmed']
+            ).select_related('service')
+
+            therapist_bookings = {}
+            for b in existing_bookings:
+                if not b.therapist_id:
+                    continue
+                if b.therapist_id not in therapist_bookings:
+                    therapist_bookings[b.therapist_id] = []
+                b_start_time = datetime.datetime.strptime(b.time, '%H:%M').time()
+                b_start_dt = datetime.datetime.combine(target_date, b_start_time)
+                b_dur = datetime.timedelta(minutes=b.service.duration_minutes)
+                b_end_dt = b_start_dt + b_dur
+                therapist_bookings[b.therapist_id].append((b_start_dt, b_end_dt))
+            
+            for t in therapists:
+                t_bookings = therapist_bookings.get(t.pk, [])
+                is_booked = False
+                for b_s, b_e in t_bookings:
+                    if max(req_start_dt, b_s) < min(req_end_dt, b_e):
+                        is_booked = True
+                        break
+                        
+                if is_booked:
+                    overlap_map[t.pk] = True
+                    for hour in range(req_start_dt.hour + 1, 21):
+                        test_start = datetime.datetime.combine(target_date, datetime.time(hour, 0))
+                        test_end = test_start + duration
+                        overlap = False
+                        for b_s, b_e in t_bookings:
+                            if max(test_start, b_s) < min(test_end, b_e):
+                                overlap = True
+                                break
+                        if not overlap:
+                            time_label = f"{hour - 12}:00 PM" if hour > 12 else (f"12:00 PM" if hour == 12 else f"{hour}:00 AM")
+                            next_avail_map[t.pk] = time_label
+                            break
+
+        except Exception:
+            pass
+
+    data = []
+    for t in therapists:
+        is_off = schedules_map.get(t.pk, False)
+        is_booked = overlap_map.get(t.pk, False)
+        next_avail = next_avail_map.get(t.pk, None)
+        data.append({
             'id': t.pk,
             'name': t.name,
             'title': t.title,
             'gender': t.gender,
             'photo': t.photo.url if t.photo else None,
-        }
-        for t in therapists
-    ]
+            'is_off': is_off,
+            'is_booked': is_booked,
+            'next_avail': next_avail,
+        })
     return JsonResponse({'therapists': data})
 
 

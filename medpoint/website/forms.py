@@ -95,6 +95,39 @@ class BookingForm(forms.ModelForm):
                     f"your gender preference ({therapist_preference})."
                 )
 
+        from .models import Booking
+        import datetime
+        date = cleaned_data.get('date')
+        time = cleaned_data.get('time')
+        service = cleaned_data.get('service')
+
+        if date and time and service and therapist:
+            try:
+                # Time is saved as string '09:00'
+                req_start_time = datetime.datetime.strptime(time, '%H:%M').time()
+                duration = datetime.timedelta(minutes=service.duration_minutes)
+                req_start_dt = datetime.datetime.combine(date, req_start_time)
+                req_end_dt = req_start_dt + duration
+
+                existing_bookings = Booking.objects.filter(
+                    date=date,
+                    therapist=therapist,
+                    status__in=['pending', 'confirmed']
+                ).select_related('service')
+
+                for b in existing_bookings:
+                    b_start_time = datetime.datetime.strptime(b.time, '%H:%M').time()
+                    b_start_dt = datetime.datetime.combine(date, b_start_time)
+                    b_dur = datetime.timedelta(minutes=b.service.duration_minutes)
+                    b_end_dt = b_start_dt + b_dur
+
+                    if max(req_start_dt, b_start_dt) < min(req_end_dt, b_end_dt):
+                        raise forms.ValidationError(
+                            f"The selected therapist ({therapist.name}) is fully booked during this specific timeframe. Please select a different time or therapist."
+                        )
+            except ValueError:
+                pass
+
         return cleaned_data
 
 

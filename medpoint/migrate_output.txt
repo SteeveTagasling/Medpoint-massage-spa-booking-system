@@ -1,0 +1,4 @@
+Operations to perform:
+  Apply all migrations: portals
+Running migrations:
+  Applying portals.0001_initial... OK

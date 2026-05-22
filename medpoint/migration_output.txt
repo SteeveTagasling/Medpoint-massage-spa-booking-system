@@ -1,0 +1,3 @@
+Migrations for 'portals':
+  portals\migrations\0001_initial.py
+    - Create model AdminProfile

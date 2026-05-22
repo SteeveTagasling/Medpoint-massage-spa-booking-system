@@ -208,6 +208,22 @@
                     </div>
                     {% if form.specialties.errors %}<span class="error-text">{{ form.specialties.errors.0 }}</span>{% endif %}
                 </div>
+                <div class="form-group full-width" style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 0.5rem;">
+                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary);">Portal Login Credentials</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; display: block;">Set up login access for this staff member so they can access the staff portal.</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="id_username">Login Username</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}<span class="error-text">{{ form.username.errors.0 }}</span>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="id_password">Login Password</label>
+                    {{ form.password }}
+                    {% if action == 'Edit' %}<span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem;">Leave blank to keep current password</span>{% endif %}
+                    {% if form.password.errors %}<span class="error-text">{{ form.password.errors.0 }}</span>{% endif %}
+                </div>
+                
                 <div class="form-group">
                     <label class="form-label" for="id_order">Display Order</label>
                     {{ form.order }}

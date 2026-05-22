@@ -14,7 +14,8 @@ from website.models import (
     Service, Therapist, Testimonial, GalleryImage,
     Booking, ContactMessage, StaffSchedule,
 )
-from .forms import ServiceForm, TherapistForm, WalkInBookingForm, StaffScheduleForm
+from .forms import ServiceForm, TherapistForm, WalkInBookingForm, StaffScheduleForm, AdminSettingsForm, AdminUserForm, StaffSettingsForm, BulkStaffScheduleForm
+from .models import AdminProfile
 
 
 # ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -69,8 +70,12 @@ def _require_admin(request):
 
 
 def _get_staff_therapist(request):
-    """Try to find the Therapist record linked to the current user by name or email."""
+    """Try to find the Therapist record linked to the current user."""
     user = request.user
+    if hasattr(user, 'therapist_profile'):
+        return user.therapist_profile
+    
+    # Fallback for old ones without user attached
     therapist = Therapist.objects.filter(
         Q(email=user.email, email__gt='') |
         Q(name__iexact=user.get_full_name()) |
@@ -143,6 +148,7 @@ def dashboard(request):
 
 def _staff_dashboard(request):
     """Dashboard for staff/therapist role."""
+    from decimal import Decimal
     therapist = _get_staff_therapist(request)
     today = timezone.now().date()
 
@@ -150,22 +156,41 @@ def _staff_dashboard(request):
         my_bookings_today = Booking.objects.filter(
             therapist=therapist, date=today
         ).exclude(status='cancelled').select_related('service').order_by('time')
-        my_total_completed = Booking.objects.filter(
+        my_completed_bookings = Booking.objects.filter(
             therapist=therapist, status='completed'
-        ).count()
+        ).select_related('service')
+        
+        my_total_completed = my_completed_bookings.count()
         my_pending = Booking.objects.filter(
             therapist=therapist, status='pending'
         ).count()
+        
+        # Calculate Unique Customers
+        # Using a set of lowercased emails for simplicity or names if email is blank
+        customers = set()
+        total_income = Decimal('0')
+        
+        for b in my_completed_bookings:
+            customers.add(b.client_email.lower().strip() or b.client_name.lower().strip())
+            total_income += b.service.discounted_price * (therapist.commission_percentage / Decimal('100'))
+            
+        my_unique_customers = len(customers)
+        my_services_income = total_income
+        
     else:
         my_bookings_today = Booking.objects.none()
         my_total_completed = 0
         my_pending = 0
+        my_unique_customers = 0
+        my_services_income = Decimal('0')
 
     context = {
         'therapist': therapist,
         'my_bookings_today': my_bookings_today,
         'my_total_completed': my_total_completed,
         'my_pending': my_pending,
+        'my_unique_customers': my_unique_customers,
+        'my_services_income': my_services_income,
         'today': today,
         'is_admin_role': False,
     }
@@ -404,6 +429,86 @@ def therapist_delete(request, pk):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  ADMINISTRATOR MANAGEMENT
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@login_required(login_url='portals:login')
+def admin_management_list(request):
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
+    
+    from django.contrib.auth.models import User
+    # Get all superusers
+    admins = User.objects.filter(is_superuser=True).order_by('username')
+    return render(request, 'portals/admin_list.html', {'admins': admins})
+
+@login_required(login_url='portals:login')
+def admin_management_create(request):
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
+
+    if request.method == 'POST':
+        form = AdminUserForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Admin account created successfully.')
+            return redirect('portals:admin_management_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = AdminUserForm()
+    return render(request, 'portals/admin_form.html', {'form': form, 'action': 'Register'})
+
+@login_required(login_url='portals:login')
+def admin_management_edit(request, pk):
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
+        
+    from django.contrib.auth.models import User
+    admin_user = get_object_or_404(User, pk=pk, is_superuser=True)
+    if request.method == 'POST':
+        form = AdminUserForm(request.POST, instance=admin_user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Admin account "{admin_user.username}" updated successfully.')
+            return redirect('portals:admin_management_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = AdminUserForm(instance=admin_user)
+    return render(request, 'portals/admin_form.html', {'form': form, 'action': 'Edit', 'admin_user': admin_user})
+
+@login_required(login_url='portals:login')
+def admin_management_delete(request, pk):
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
+        
+    from django.contrib.auth.models import User
+    admin_user = get_object_or_404(User, pk=pk, is_superuser=True)
+    if request.method == 'POST':
+        # Prevent self-deletion
+        if admin_user == request.user:
+            messages.error(request, 'You cannot delete your own admin account.')
+        else:
+            username = admin_user.username
+            admin_user.delete()
+            messages.success(request, f'Admin "{username}" removed successfully.')
+    return redirect('portals:admin_management_list')
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  SCHEDULE MANAGEMENT
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -412,14 +517,55 @@ def schedule_list(request):
     if not request.user.is_staff:
         return redirect('portals:login')
     therapist_filter = request.GET.get('therapist', '')
-    schedules = StaffSchedule.objects.select_related('therapist').all()
+    status_filter = request.GET.get('status', '')
+    
+    schedules = StaffSchedule.objects.select_related('therapist').order_by('therapist__name', 'start_time')
+    
     if therapist_filter:
         schedules = schedules.filter(therapist_id=therapist_filter)
+        
+    if status_filter == 'available':
+        schedules = schedules.filter(is_available=True)
+    elif status_filter == 'off':
+        schedules = schedules.filter(is_available=False)
+        
+    grouped_schedules = []
+    group_map = {}
+    day_map = dict(StaffSchedule.DAY_CHOICES)
+    
+    for s in schedules:
+        key = (s.therapist_id, s.start_time, s.end_time, s.is_available, s.notes)
+        if key not in group_map:
+            group_data = {
+                'ids': [str(s.pk)],
+                'therapist': s.therapist,
+                'days': [day_map[s.day_of_week]],
+                'day_ints': [s.day_of_week],
+                'start_time': s.start_time,
+                'end_time': s.end_time,
+                'is_available': s.is_available,
+                'notes': s.notes,
+                'primary_pk': s.pk,
+            }
+            grouped_schedules.append(group_data)
+            group_map[key] = group_data
+        else:
+            group_map[key]['ids'].append(str(s.pk))
+            group_map[key]['days'].append(day_map[s.day_of_week])
+            group_map[key]['day_ints'].append(s.day_of_week)
+            
+    for g in grouped_schedules:
+        g['ids_str'] = ",".join(g['ids'])
+        day_ints = sorted(g['day_ints'])
+        day_names = [day_map[d] for d in day_ints]
+        g['display_days'] = ", ".join(day_names)
+        
     therapists = Therapist.objects.filter(is_active=True)
     context = {
-        'schedules': schedules,
+        'grouped_schedules': grouped_schedules,
         'therapists': therapists,
         'therapist_filter': therapist_filter,
+        'status_filter': status_filter,
     }
     return render(request, 'portals/schedule_list.html', context)
 
@@ -432,15 +578,46 @@ def schedule_create(request):
     if check:
         return check
     if request.method == 'POST':
-        form = StaffScheduleForm(request.POST)
+        form = BulkStaffScheduleForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Schedule assigned successfully.')
+            therapist = form.cleaned_data['therapist']
+            days_of_week = form.cleaned_data['day_of_week']
+            is_available = form.cleaned_data.get('is_available', True)
+            start_time = form.cleaned_data['start_time']
+            end_time = form.cleaned_data['end_time']
+            notes = form.cleaned_data.get('notes', '')
+
+            for day_index in range(7):
+                if str(day_index) in days_of_week:
+                    StaffSchedule.objects.update_or_create(
+                        therapist=therapist,
+                        day_of_week=day_index,
+                        defaults={
+                            'start_time': start_time,
+                            'end_time': end_time,
+                            'is_available': is_available,
+                            'notes': notes,
+                        }
+                    )
+                else:
+                    # Auto-assign unchecked days as day off only if they don't already have one
+                    if not StaffSchedule.objects.filter(therapist=therapist, day_of_week=day_index).exists():
+                        import datetime
+                        StaffSchedule.objects.create(
+                            therapist=therapist,
+                            day_of_week=day_index,
+                            start_time=datetime.time(0,0),
+                            end_time=datetime.time(0,0),
+                            is_available=False,
+                            notes="Day off"
+                        )
+
+            messages.success(request, f'Schedule assigned for multiple days successfully.')
             return redirect('portals:schedule_list')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = StaffScheduleForm()
+        form = BulkStaffScheduleForm()
     return render(request, 'portals/schedule_form.html', {'form': form, 'action': 'Assign'})
 
 
@@ -451,18 +628,68 @@ def schedule_edit(request, pk):
     check = _require_admin(request)
     if check:
         return check
-    schedule = get_object_or_404(StaffSchedule, pk=pk)
+    ids = str(pk).split(',')
+    schedules = StaffSchedule.objects.filter(pk__in=ids)
+    if not schedules.exists():
+        messages.error(request, 'Schedule not found.')
+        return redirect('portals:schedule_list')
+        
+    first_schedule = schedules.first()
+
     if request.method == 'POST':
-        form = StaffScheduleForm(request.POST, instance=schedule)
+        form = BulkStaffScheduleForm(request.POST)
         if form.is_valid():
-            form.save()
+            therapist = form.cleaned_data['therapist']
+            days_of_week = form.cleaned_data['day_of_week']
+            is_available = form.cleaned_data.get('is_available', True)
+            start_time = form.cleaned_data['start_time']
+            end_time = form.cleaned_data['end_time']
+            notes = form.cleaned_data.get('notes', '')
+
+            previous_days = [s.day_of_week for s in schedules]
+            schedules.delete()
+
+            for day_index in range(7):
+                if str(day_index) in days_of_week:
+                    StaffSchedule.objects.update_or_create(
+                        therapist=therapist,
+                        day_of_week=day_index,
+                        defaults={
+                            'start_time': start_time,
+                            'end_time': end_time,
+                            'is_available': is_available,
+                            'notes': notes,
+                        }
+                    )
+                elif day_index in previous_days:
+                    # They unchecked this day during the edit. So it explicitly becomes a Day off!
+                    import datetime
+                    StaffSchedule.objects.update_or_create(
+                        therapist=therapist,
+                        day_of_week=day_index,
+                        defaults={
+                            'start_time': datetime.time(0, 0),
+                            'end_time': datetime.time(0, 0),
+                            'is_available': False,
+                            'notes': "Day off",
+                        }
+                    )
+
             messages.success(request, 'Schedule updated successfully.')
             return redirect('portals:schedule_list')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = StaffScheduleForm(instance=schedule)
-    return render(request, 'portals/schedule_form.html', {'form': form, 'action': 'Edit', 'schedule': schedule})
+        initial_days = [str(s.day_of_week) for s in schedules]
+        form = BulkStaffScheduleForm(initial={
+            'therapist': first_schedule.therapist,
+            'day_of_week': initial_days,
+            'start_time': first_schedule.start_time,
+            'end_time': first_schedule.end_time,
+            'is_available': first_schedule.is_available,
+            'notes': first_schedule.notes,
+        })
+    return render(request, 'portals/schedule_form.html', {'form': form, 'action': 'Edit', 'schedule': first_schedule})
 
 
 @login_required(login_url='portals:login')
@@ -472,9 +699,10 @@ def schedule_delete(request, pk):
     check = _require_admin(request)
     if check:
         return check
-    schedule = get_object_or_404(StaffSchedule, pk=pk)
+    
     if request.method == 'POST':
-        schedule.delete()
+        ids = str(pk).split(',')
+        StaffSchedule.objects.filter(pk__in=ids).delete()
         messages.success(request, 'Schedule entry removed.')
     return redirect('portals:schedule_list')
 
@@ -484,10 +712,12 @@ def schedule_toggle_availability(request, pk):
     if not request.user.is_staff:
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     if request.method == 'POST':
-        schedule = get_object_or_404(StaffSchedule, pk=pk)
-        schedule.is_available = not schedule.is_available
-        schedule.save()
-        return JsonResponse({'success': True, 'is_available': schedule.is_available})
+        ids = str(pk).split(',')
+        schedules = StaffSchedule.objects.filter(pk__in=ids)
+        if schedules.exists():
+            new_status = not schedules.first().is_available
+            schedules.update(is_available=new_status)
+            return JsonResponse({'success': True, 'is_available': new_status})
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
@@ -842,3 +1072,111 @@ def gallery_list(request):
         return check
     images = GalleryImage.objects.all()
     return render(request, 'portals/gallery_list.html', {'images': images})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  ADMIN SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@login_required(login_url='portals:login')
+def admin_settings(request):
+    """Admin settings page for profile, username, and password."""
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
+
+    user = request.user
+    profile, created = AdminProfile.objects.get_or_create(user=user)
+
+    if request.method == 'POST':
+        form = AdminSettingsForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Update User fields
+            username = form.cleaned_data.get('username')
+            first_name = form.cleaned_data.get('first_name')
+            last_name = form.cleaned_data.get('last_name')
+            password = form.cleaned_data.get('password')
+
+            if username:
+                user.username = username
+            user.first_name = first_name
+            user.last_name = last_name
+            if password:
+                user.set_password(password)
+            user.save()
+            
+            # If password changed, update session so user doesn't get logged out
+            if password:
+                from django.contrib.auth import update_session_auth_hash
+                update_session_auth_hash(request, user)
+
+            # Update Profile fields
+            photo = form.cleaned_data.get('photo')
+            if 'photo' in request.FILES:
+                profile.photo = request.FILES['photo']
+            # If the user cleared the photo
+            elif request.POST.get('photo-clear'):
+                profile.photo = None
+            profile.save()
+
+            messages.success(request, 'Admin settings updated successfully.')
+            return redirect('portals:admin_settings')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        initial_data = {
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+        }
+        form = AdminSettingsForm(initial=initial_data)
+
+    context = {
+        'form': form,
+        'profile': profile,
+    }
+    return render(request, 'portals/admin_settings.html', context)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  STAFF SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@login_required(login_url='portals:login')
+def staff_settings(request):
+    """Settings page for staff to update their profile and password."""
+    if not request.user.is_staff or request.user.is_superuser:
+        return redirect('portals:login')
+        
+    therapist = request.user.therapist_profile
+    if not therapist:
+        messages.error(request, 'No therapist profile associated with this account.')
+        return redirect('portals:dashboard')
+
+    if request.method == 'POST':
+        form = StaffSettingsForm(request.POST, request.FILES, instance=therapist)
+        if form.is_valid():
+            # Update password if provided
+            password = form.cleaned_data.get('password')
+            if password:
+                user = request.user
+                user.set_password(password)
+                user.save()
+                from django.contrib.auth import update_session_auth_hash
+                update_session_auth_hash(request, user)
+                
+            form.save()
+            messages.success(request, 'Your profile settings have been updated successfully.')
+            return redirect('portals:staff_settings')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = StaffSettingsForm(instance=therapist)
+
+    context = {
+        'form': form,
+        'therapist': therapist,
+    }
+    return render(request, 'portals/staff_settings.html', context)

@@ -49,6 +49,8 @@ class Service(models.Model):
         return self.discount_percentage and self.discount_percentage > 0
 
 
+from django.conf import settings
+
 class Therapist(models.Model):
     """Spa therapist/staff model."""
     GENDER_CHOICES = [
@@ -56,6 +58,7 @@ class Therapist(models.Model):
         ('female', 'Female'),
     ]
 
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='therapist_profile')
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     title = models.CharField(max_length=100, help_text="e.g. Senior Massage Therapist")

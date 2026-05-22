@@ -164,7 +164,7 @@
             font-family: 'Playfair Display', serif;
             font-weight: 700;
             font-size: 1.05rem;
-            color: #fff;
+            color: var(--text-primary);
             letter-spacing: 0.06em;
             white-space: nowrap;
         }
@@ -1242,6 +1242,15 @@
                 </a>
             </div>
 
+            <!-- System Section -->
+            <div class="nav-section">
+                <div class="nav-section-label">System</div>
+                <a href="{% url 'portals:admin_management_list' %}" class="nav-item {% if request.resolver_match.url_name == 'admin_management_list' or request.resolver_match.url_name == 'admin_management_create' or request.resolver_match.url_name == 'admin_management_edit' %}active{% endif %}" id="nav-admins">
+                    <i class="fas fa-user-shield"></i>
+                    <span class="nav-label">Administrators</span>
+                </a>
+            </div>
+
             <!-- Content Section -->
             <div class="nav-section">
                 <div class="nav-section-label">Content</div>
@@ -1308,17 +1317,38 @@
         </nav>
 
         <div class="sidebar-footer">
+        <div class="sidebar-footer">
+            {% if request.user.is_superuser %}
+            <a href="{% url 'portals:admin_settings' %}" class="sidebar-user" style="text-decoration: none; display: flex; align-items: center; gap: 0.75rem;">
+            {% elif request.user.is_staff and request.user.therapist_profile %}
+            <a href="{% url 'portals:staff_settings' %}" class="sidebar-user" style="text-decoration: none; display: flex; align-items: center; gap: 0.75rem;">
+            {% else %}
             <div class="sidebar-user">
+            {% endif %}
+                {% if request.user.admin_profile.photo %}
+                <img src="{{ request.user.admin_profile.photo.url }}" alt="Avatar" class="sidebar-user-avatar" style="object-fit: cover;">
+                {% elif request.user.therapist_profile and request.user.therapist_profile.photo %}
+                <img src="{{ request.user.therapist_profile.photo.url }}" alt="Avatar" class="sidebar-user-avatar" style="object-fit: cover;">
+                {% else %}
                 <div class="sidebar-user-avatar">
                     {{ request.user.first_name|default:request.user.username|first|upper }}
                 </div>
+                {% endif %}
                 <div class="sidebar-user-info">
                     <div class="sidebar-user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
-                    <div class="sidebar-user-role">
-                        {% if request.user.is_superuser %}Admin{% else %}Staff{% endif %}
+                    <div class="sidebar-user-role" style="display: flex; align-items: center; gap: 0.25rem;">
+                        {% if request.user.is_superuser %}
+                        Admin <i class="fas fa-cog" style="font-size: 0.6rem; opacity: 0.7;"></i>
+                        {% else %}
+                        Staff <i class="fas fa-cog" style="font-size: 0.6rem; opacity: 0.7;"></i>
+                        {% endif %}
                     </div>
                 </div>
+            {% if request.user.is_superuser or request.user.therapist_profile %}
+            </a>
+            {% else %}
             </div>
+            {% endif %}
             <a href="{% url 'portals:logout' %}" class="sidebar-logout-btn" id="logout-btn">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Sign Out</span>

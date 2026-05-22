@@ -114,6 +114,11 @@
             <option value="{{ t.pk }}" {% if therapist_filter == t.pk|stringformat:"d" %}selected{% endif %}>{{ t.name }}</option>
             {% endfor %}
         </select>
+        <select name="status" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            <option value="available" {% if status_filter == 'available' %}selected{% endif %}>Available</option>
+            <option value="off" {% if status_filter == 'off' %}selected{% endif %}>Day Off</option>
+        </select>
     </form>
 </div>
 
@@ -137,10 +142,14 @@
                 </tr>
             </thead>
             <tbody>
-                {% for schedule in schedules %}
-                <tr id="schedule-row-{{ schedule.pk }}">
+                {% for schedule in grouped_schedules %}
+                <tr id="schedule-row-{{ schedule.primary_pk }}">
                     <td style="color: var(--text-primary); font-weight: 500;">{{ schedule.therapist.name }}</td>
-                    <td><span class="day-badge">{{ schedule.get_day_of_week_display }}</span></td>
+                    <td>
+                        <div style="font-size: 0.75rem; font-weight: 600; color: var(--purple-500);">
+                            {{ schedule.display_days }}
+                        </div>
+                    </td>
                     <td><span class="time-range">{{ schedule.start_time|time:"g:i A" }} — {{ schedule.end_time|time:"g:i A" }}</span></td>
                     <td>
                         {% if schedule.notes %}
@@ -152,23 +161,25 @@
                     <td>
                         <button
                             class="availability-toggle {% if schedule.is_available %}available{% else %}unavailable{% endif %}"
-                            onclick="toggleAvailability({{ schedule.pk }}, this)"
-                            id="avail-btn-{{ schedule.pk }}"
+                            onclick="toggleAvailability('{{ schedule.ids_str }}', this)"
+                            id="avail-btn-{{ schedule.primary_pk }}"
                         >
-                            <i class="fas {% if schedule.is_available %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
-                            <span>{% if schedule.is_available %}Available{% else %}Unavailable{% endif %}</span>
+                            <i class="fas {% if schedule.is_available %}fa-check-circle{% else %}fa-bed{% endif %}"></i>
+                            <span>{% if schedule.is_available %}Available{% else %}Day Off{% endif %}</span>
                         </button>
                     </td>
-                    <td style="display: flex; align-items: center; gap: 0.5rem;">
-                        <a href="{% url 'portals:schedule_edit' schedule.pk %}" class="btn-sm">
-                            <i class="fas fa-pen"></i> Edit
-                        </a>
-                        <form method="post" action="{% url 'portals:schedule_delete' schedule.pk %}" style="display:inline;" onsubmit="return confirm('Remove this schedule?');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-sm btn-sm-danger">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </form>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <a href="{% url 'portals:schedule_edit' schedule.ids_str %}" class="btn-sm" title="Edit group">
+                                <i class="fas fa-pen"></i> Edit
+                            </a>
+                            <form method="post" action="{% url 'portals:schedule_delete' schedule.ids_str %}" style="margin: 0; display: flex; align-items: center;" onsubmit="return confirm('Remove all selected schedules from this group?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-sm btn-sm-danger" title="Delete entire group">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
@@ -208,8 +219,8 @@
                     label.textContent = 'Available';
                 } else {
                     btn.className = 'availability-toggle unavailable';
-                    icon.className = 'fas fa-times-circle';
-                    label.textContent = 'Unavailable';
+                    icon.className = 'fas fa-bed';
+                    label.textContent = 'Day Off';
                 }
             }
         })

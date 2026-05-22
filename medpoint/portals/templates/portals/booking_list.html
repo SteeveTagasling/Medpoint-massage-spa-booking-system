@@ -166,18 +166,20 @@
                     <td>
                         <span class="status status-{{ booking.status }}" id="status-badge-{{ booking.pk }}">{{ booking.get_status_display }}</span>
                     </td>
-                    <td style="display: flex; align-items: center; gap: 0.5rem;">
-                        <select class="status-select" onchange="updateBookingStatus({{ booking.pk }}, this.value)" id="status-select-{{ booking.pk }}">
-                            {% for value, label in status_choices %}
-                            <option value="{{ value }}" {% if booking.status == value %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                        <form method="post" action="{% url 'portals:booking_delete' booking.pk %}" style="display:inline;" onsubmit="return confirm('Delete booking #{{ booking.pk }}?');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-danger-sm" title="Delete booking">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </form>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <select class="status-select" onchange="updateBookingStatus({{ booking.pk }}, this.value)" id="status-select-{{ booking.pk }}">
+                                {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if booking.status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <form method="post" action="{% url 'portals:booking_delete' booking.pk %}" style="margin: 0; display: flex; align-items: center;" onsubmit="return confirm('Delete booking #{{ booking.pk }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-danger-sm" title="Delete booking" style="padding: 0.4rem 0.6rem;">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
