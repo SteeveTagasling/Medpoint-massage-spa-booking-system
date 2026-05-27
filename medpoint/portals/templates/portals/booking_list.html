@@ -127,7 +127,19 @@
             <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
+        <input type="date" name="date" class="filter-input" value="{{ date_filter }}" style="width: auto;">
+        <select name="service" class="filter-select">
+            <option value="">All Services</option>
+            {% for s in services %}
+            <option value="{{ s.id }}" {% if service_filter == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+        </select>
         <button type="submit" class="filter-btn"><i class="fas fa-filter" style="margin-right: 0.35rem;"></i> Filter</button>
+        {% if status_filter or type_filter or search or date_filter or service_filter %}
+        <a href="{% url 'portals:booking_list' %}" class="btn-outline" style="padding: 0.45rem 0.85rem; height: auto;" title="Clear Filters">
+            <i class="fas fa-times"></i>
+        </a>
+        {% endif %}
     </form>
 
     <!-- Bookings Table -->
@@ -173,12 +185,14 @@
                                 <option value="{{ value }}" {% if booking.status == value %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
+                            {% if request.session.portal_role == 'admin' %}
                             <form method="post" action="{% url 'portals:booking_delete' booking.pk %}" style="margin: 0; display: flex; align-items: center;" onsubmit="return confirm('Delete booking #{{ booking.pk }}?');">
                                 {% csrf_token %}
                                 <button type="submit" class="btn-danger-sm" title="Delete booking" style="padding: 0.4rem 0.6rem;">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </form>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

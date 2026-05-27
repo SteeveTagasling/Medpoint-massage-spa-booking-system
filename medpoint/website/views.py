@@ -8,6 +8,7 @@ from .models import (
     Booking, BookingNotification, ContactMessage,
 )
 from .forms import BookingForm, ContactForm
+from portals.models import StaffNotification
 
 
 def home(request):
@@ -36,7 +37,7 @@ def services(request):
     all_services = Service.objects.filter(is_active=True)
 
     if category:
-        all_services = all_services.filter(category=category)
+        all_services = all_services.filter(category__icontains=category)
 
     categories = Service.CATEGORY_CHOICES
 
@@ -51,8 +52,10 @@ def services(request):
 def service_detail(request, slug):
     """Individual service detail page."""
     service = get_object_or_404(Service, slug=slug, is_active=True)
+    cats = service.category.split(',')
+    first_cat = cats[0].strip() if cats else ''
     related_services = Service.objects.filter(
-        category=service.category, is_active=True
+        category__icontains=first_cat, is_active=True
     ).exclude(pk=service.pk)[:3]
 
     context = {
@@ -107,6 +110,13 @@ def booking(request):
                     booking_obj.therapist = available[0]
                     booking_obj.save()
 
+            from .models import ClosedDay
+            is_closed = ClosedDay.objects.filter(date=booking_obj.date).exists()
+            if is_closed:
+                booking_obj.delete()
+                messages.error(request, 'The selected date is a Holiday. The spa is closed. Please select another date.')
+                return redirect('website:booking')
+
             # Create notification
             BookingNotification.objects.create(
                 booking=booking_obj,
@@ -119,7 +129,21 @@ def booking(request):
                 ),
             )
 
-            # Store booking reference in session for the success page and My Bookings
+            from portals.models import StaffNotification
+            from django.urls import reverse
+            
+            # Notify portal admins
+            msg = f"New online booking #{booking_obj.pk:04d} from {booking_obj.client_name}"
+            target_t = booking_obj.therapist
+            
+            StaffNotification.objects.create(
+                notification_type='new_booking',
+                title='New Online Booking',
+                message=msg,
+                target_role='all',
+                target_therapist=target_t,
+                link=reverse('portals:booking_list')
+            )
             if 'my_bookings' not in request.session:
                 request.session['my_bookings'] = []
             request.session['my_bookings'].append(booking_obj.pk)
@@ -171,30 +195,17 @@ def my_bookings(request):
         bookings = Booking.objects.filter(
             client_email__iexact=email
         ).select_related('service', 'therapist').order_by('-date', '-time')
-        notifications = BookingNotification.objects.filter(
-            booking__client_email__iexact=email,
-            is_read=False,
-        ).select_related('booking')
-
-    # Also include session-based bookings
-    session_ids = request.session.get('my_bookings', [])
-    if session_ids and not email:
-        bookings = Booking.objects.filter(
-            pk__in=session_ids
-        ).select_related('service', 'therapist').order_by('-date', '-time')
-        notifications = BookingNotification.objects.filter(
-            booking__pk__in=session_ids,
-            is_read=False,
-        ).select_related('booking')
-        searched = len(session_ids) > 0
+    services = Service.objects.filter(is_active=True)
 
     context = {
         'bookings': bookings,
         'notifications': notifications,
         'email': email,
         'searched': searched,
+        'services': services,
     }
     return render(request, 'website/my_bookings.html', context)
+
 
 
 def cancel_booking(request, pk):
@@ -222,6 +233,16 @@ def cancel_booking(request, pk):
                 f"Your booking #{booking_obj.pk:04d} for {booking_obj.service.name} on "
                 f"{booking_obj.date.strftime('%B %d, %Y')} has been cancelled."
             ),
+        )
+        from portals.models import StaffNotification
+        from django.urls import reverse
+        StaffNotification.objects.create(
+            notification_type='booking_cancelled',
+            title='Booking Cancelled',
+            message=f"Booking #{booking_obj.pk:04d} was cancelled by the customer.",
+            target_role='all',
+            target_therapist=booking_obj.therapist,
+            link=reverse('portals:booking_list')
         )
 
         messages.success(
@@ -271,12 +292,18 @@ def get_therapists_by_preference(request):
             pass
 
     schedules_map = {}
-    if target_weekday is not None:
-        from .models import StaffSchedule
-        scheds = StaffSchedule.objects.filter(therapist__in=therapists, day_of_week=target_weekday)
-        for s in scheds:
-            if not s.is_available:
-                schedules_map[s.therapist_id] = True
+    closed_date_obj = None
+    if target_date:
+        from .models import StaffSchedule, ClosedDay
+        closed_date_obj = ClosedDay.objects.filter(date=target_date).first()
+        if closed_date_obj:
+            for t in therapists:
+                schedules_map[t.pk] = True
+        elif target_weekday is not None:
+            scheds = StaffSchedule.objects.filter(therapist__in=therapists, day_of_week=target_weekday)
+            for s in scheds:
+                if not s.is_available:
+                    schedules_map[s.therapist_id] = True
 
     overlap_map = {}
     next_avail_map = {}
@@ -337,9 +364,14 @@ def get_therapists_by_preference(request):
 
     data = []
     for t in therapists:
-        is_off = schedules_map.get(t.pk, False)
+        is_closed = closed_date_obj is not None
+        closed_reason = closed_date_obj.reason if closed_date_obj else None
+        
+        # Override is_off to True if it's a closed day, but we'll also pass the specific closed info
+        is_off = schedules_map.get(t.pk, False) or is_closed
         is_booked = overlap_map.get(t.pk, False)
         next_avail = next_avail_map.get(t.pk, None)
+        
         data.append({
             'id': t.pk,
             'name': t.name,
@@ -347,6 +379,8 @@ def get_therapists_by_preference(request):
             'gender': t.gender,
             'photo': t.photo.url if t.photo else None,
             'is_off': is_off,
+            'is_closed': is_closed,
+            'closed_reason': closed_reason,
             'is_booked': is_booked,
             'next_avail': next_avail,
         })
@@ -358,7 +392,16 @@ def contact(request):
     if request.method == 'POST':
         form = ContactForm(request.POST)
         if form.is_valid():
-            form.save()
+            obj = form.save()
+            from portals.models import StaffNotification
+            from django.urls import reverse
+            StaffNotification.objects.create(
+                notification_type='new_message',
+                title='New Contact Message',
+                message=f"Message from {obj.name}: {obj.subject}",
+                target_role='admin',
+                link=reverse('portals:message_list')
+            )
             messages.success(
                 request,
                 'Thank you for your message! We will get back to you shortly.'
@@ -373,3 +416,29 @@ def contact(request):
         'form': form,
     }
     return render(request, 'website/contact.html', context)
+
+
+def submit_testimonial(request):
+    """Customer: Submit a new testimonial."""
+    if request.method == 'POST':
+        client_name = request.POST.get('client_name')
+        service_id = request.POST.get('service')
+        rating = request.POST.get('rating')
+        content = request.POST.get('content')
+        
+        if client_name and rating and content:
+            service = Service.objects.filter(pk=service_id).first() if service_id else None
+            Testimonial.objects.create(
+                client_name=client_name,
+                service=service,
+                rating=int(rating),
+                content=content,
+                is_approved=False,
+                is_featured=False
+            )
+            messages.success(request, 'Thank you! Your testimonial has been submitted and is pending approval.')
+        else:
+            messages.error(request, 'Please provide your name, a rating, and your review.')
+            
+    referer = request.META.get('HTTP_REFERER')
+    return redirect(referer if referer else 'website:home')

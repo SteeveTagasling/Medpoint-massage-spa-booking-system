@@ -13,6 +13,7 @@ urlpatterns = [
     path('my-bookings/', views.my_bookings, name='my_bookings'),
     path('booking/<int:pk>/cancel/', views.cancel_booking, name='cancel_booking'),
     path('contact/', views.contact, name='contact'),
+    path('submit-testimonial/', views.submit_testimonial, name='submit_testimonial'),
     # API endpoints
     path('api/therapists/', views.get_therapists_by_preference, name='api_therapists'),
     path('api/notification/<int:pk>/read/', views.mark_notification_read, name='mark_notification_read'),

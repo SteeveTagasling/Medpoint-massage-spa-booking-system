@@ -501,7 +501,15 @@ document.addEventListener('DOMContentLoaded', () => {
             let clickHandler = `onclick="selectTherapist(${t.id})"`;
             let selectedClass = isSelected ? 'selected' : '';
 
-            if (t.is_off) {
+            if (t.is_closed) {
+                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                     <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.85rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2); margin-bottom: 4px;">CLOSED</span>
+                     <span style="color:#fca5a5; font-size:0.65rem; font-weight:600; text-align:center; padding:0 8px; line-height:1.2;">${t.closed_reason || 'Holiday'}</span>
+                   </div>`;
+                disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(239, 68, 68, 0.3);';
+                clickHandler = '';
+                selectedClass = '';
+            } else if (t.is_off) {
                 badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center;">
                      <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Day Off</span>
                    </div>`;

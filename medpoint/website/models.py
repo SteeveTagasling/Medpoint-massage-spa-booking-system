@@ -14,7 +14,7 @@ class Service(models.Model):
 
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='massage')
+    category = models.CharField(max_length=200, default='massage', help_text="Comma-separated categories")
     description = models.TextField()
     short_description = models.CharField(max_length=300, blank=True)
     duration_minutes = models.PositiveIntegerField(help_text="Duration in minutes")
@@ -47,6 +47,14 @@ class Service(models.Model):
     @property
     def has_discount(self):
         return self.discount_percentage and self.discount_percentage > 0
+
+    @property
+    def get_category_display(self):
+        if not self.category:
+            return ""
+        codes = self.category.split(',')
+        displays = dict(self.CATEGORY_CHOICES)
+        return ', '.join(str(displays.get(c.strip(), c.strip())) for c in codes if c.strip())
 
 
 from django.conf import settings
@@ -249,3 +257,16 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.subject}"
+
+
+class ClosedDay(models.Model):
+    """Specific dates where the spa is closed (e.g., holidays)."""
+    date = models.DateField(unique=True)
+    reason = models.CharField(max_length=200, default="Holiday")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['date']
+
+    def __str__(self):
+        return f"{self.date} - {self.reason}"

@@ -2,11 +2,53 @@
 
 {% block title %}Dashboard{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
-{% block page_subtitle %}Welcome back, {{ request.user.first_name|default:request.user.username }}{% endblock %}
+{% block page_subtitle %}Overview and live metrics for Medpoint Spa{% endblock %}
 
 {% block content %}
-<!-- Primary Metric Cards -->
-<div class="metrics-grid">
+<!-- Welcome & Live Data Header -->
+<div class="dashboard-hero card">
+    <div class="hero-content">
+        <h2>Welcome back, {{ request.user.get_full_name|default:request.user.username }}</h2>
+        <p>Here is your daily administrative overview. All systems are running smoothly.</p>
+    </div>
+    <div class="hero-live-clock">
+        <i class="fa-regular fa-clock clock-icon"></i>
+        <div class="clock-data">
+            <div id="date-display" class="clock-date">...</div>
+            <div id="clock-display" class="clock-time">...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Primary Action Metrics (Highlighted) -->
+<h3 class="section-heading">Priority Metrics</h3>
+<div class="metrics-grid priority-metrics">
+    <div class="metric-card premium-card metric-amber">
+        <div class="metric-icon"><i class="fas fa-clock"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Pending Approval</div>
+            <div class="metric-value">{{ pending_bookings }}</div>
+        </div>
+    </div>
+    <div class="metric-card premium-card metric-blue">
+        <div class="metric-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Confirmed Bookings</div>
+            <div class="metric-value">{{ confirmed_bookings }}</div>
+        </div>
+    </div>
+    <div class="metric-card premium-card metric-green">
+        <div class="metric-icon"><i class="fas fa-calendar-day"></i></div>
+        <div class="metric-info">
+            <div class="metric-label">Today's Appointments</div>
+            <div class="metric-value">{{ today_bookings }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Statistics -->
+<h3 class="section-heading">General Statistics</h3>
+<div class="metrics-grid" style="margin-bottom: 2rem;">
     <div class="metric-card metric-purple">
         <div class="metric-icon"><i class="fas fa-calendar-alt"></i></div>
         <div class="metric-info">
@@ -14,31 +56,6 @@
             <div class="metric-value">{{ total_bookings }}</div>
         </div>
     </div>
-    <div class="metric-card metric-amber">
-        <div class="metric-icon"><i class="fas fa-clock"></i></div>
-        <div class="metric-info">
-            <div class="metric-label">Pending</div>
-            <div class="metric-value">{{ pending_bookings }}</div>
-        </div>
-    </div>
-    <div class="metric-card metric-blue">
-        <div class="metric-icon"><i class="fas fa-check-circle"></i></div>
-        <div class="metric-info">
-            <div class="metric-label">Confirmed</div>
-            <div class="metric-value">{{ confirmed_bookings }}</div>
-        </div>
-    </div>
-    <div class="metric-card metric-green">
-        <div class="metric-icon"><i class="fas fa-calendar-day"></i></div>
-        <div class="metric-info">
-            <div class="metric-label">Today</div>
-            <div class="metric-value">{{ today_bookings }}</div>
-        </div>
-    </div>
-</div>
-
-<!-- Secondary Stats -->
-<div class="metrics-grid" style="margin-bottom: 2rem;">
     <div class="metric-card metric-purple">
         <div class="metric-icon"><i class="fas fa-concierge-bell"></i></div>
         <div class="metric-info">
@@ -60,20 +77,13 @@
             <div class="metric-value">{{ online_bookings }}</div>
         </div>
     </div>
-    <div class="metric-card metric-amber">
-        <div class="metric-icon"><i class="fas fa-walking"></i></div>
-        <div class="metric-info">
-            <div class="metric-label">Walk-in Bookings</div>
-            <div class="metric-value">{{ walkin_bookings }}</div>
-        </div>
-    </div>
 </div>
 
 <!-- Recent Bookings Table -->
 <div class="card">
     <div class="card-header">
         <span class="card-header-title"><i class="fas fa-history" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i> Recent Bookings</span>
-        <a href="{% url 'portals:booking_list' %}" style="font-size: 0.75rem; color: var(--purple-400); text-decoration: none;">View All &rarr;</a>
+        <a href="{% url 'portals:booking_list' %}" style="font-size: 0.75rem; font-weight: 500; color: var(--purple-400); text-decoration: none; padding: 0.2rem 0.5rem; border-radius: 4px; transition: background 0.2s;">View All &rarr;</a>
     </div>
     <div class="table-wrapper">
         <table class="data-table">
@@ -108,8 +118,8 @@
                 <tr>
                     <td colspan="6">
                         <div class="empty-state">
-                            <i class="fas fa-calendar-times"></i>
-                            <p>No bookings yet</p>
+                            <i class="fas fa-calendar-times" style="font-size: 2rem; color: var(--text-muted); margin-bottom: 0.5rem;"></i>
+                            <p>No recent bookings available</p>
                         </div>
                     </td>
                 </tr>
@@ -122,6 +132,111 @@
 
 {% block extra_css %}
 <style>
+    /* Hero Header */
+    .dashboard-hero {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.75rem 2rem;
+        margin-bottom: 2rem;
+        background: linear-gradient(135deg, var(--bg-card), rgba(168, 85, 247, 0.03));
+        border-left: 4px solid var(--purple-500);
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .hero-content h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0 0 0.25rem 0;
+        font-family: 'Playfair Display', serif;
+    }
+    .hero-content p {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+    
+    /* Live Clock Widget */
+    .hero-live-clock {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1.25rem;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        min-width: 200px;
+    }
+    .hero-live-clock .clock-icon {
+        font-size: 1.5rem;
+        color: var(--purple-400);
+    }
+    .hero-live-clock .clock-data {
+        display: flex;
+        flex-direction: column;
+    }
+    .hero-live-clock .clock-time {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        font-family: 'Inter', monospace;
+        line-height: 1.1;
+    }
+    .hero-live-clock .clock-date {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    /* Section Headings */
+    .section-heading {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 600;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .section-heading::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border-color);
+    }
+
+    /* Premium Highlight Cards */
+    .priority-metrics {
+        margin-bottom: 2.5rem;
+    }
+    .premium-card {
+        border-width: 0;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(145deg, var(--bg-secondary), var(--bg-card));
+        padding: 2rem 1.75rem;
+        align-items: center;
+    }
+    .premium-card.metric-amber { border-bottom: 3px solid var(--amber-400); }
+    .premium-card.metric-blue { border-bottom: 3px solid var(--blue-400); }
+    .premium-card.metric-green { border-bottom: 3px solid var(--green-400); }
+    
+    .premium-card .metric-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 1.35rem;
+        border-radius: 14px;
+    }
+    .premium-card .metric-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-top: 5px; }
+    .premium-card .metric-label { font-size: 0.8rem; }
+
+    /* Type Badges */
     .booking-type-badge {
         display: inline-flex;
         align-items: center;
@@ -142,5 +257,29 @@
         background: rgba(251, 191, 36, 0.12);
         color: var(--amber-400);
     }
+    
+    .empty-state { text-align: center; padding: 2rem; }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function updateClock() {
+            const dateEl = document.getElementById('date-display');
+            const clockEl = document.getElementById('clock-display');
+            if(!dateEl || !clockEl) return;
+            
+            const now = new Date();
+            const dateOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+            dateEl.textContent = now.toLocaleDateString(undefined, dateOptions);
+            
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            clockEl.textContent = now.toLocaleTimeString(undefined, timeOptions);
+        }
+        
+        updateClock();
+        setInterval(updateClock, 1000);
+    });
+</script>
 {% endblock %}

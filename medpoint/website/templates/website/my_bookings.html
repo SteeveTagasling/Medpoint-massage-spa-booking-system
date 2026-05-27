@@ -246,7 +246,60 @@
         </div>
         {% endif %}
     </div>
+<!-- Write a Review Section -->
+<section class="py-12 relative border-t border-purple-500/10 mt-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="glass-panel p-8 sm:p-10 scroll-reveal">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-star text-purple-400 text-xl"></i>
+                </div>
+                <h3 class="font-display text-2xl font-semibold text-white mb-2">Share Your Experience</h3>
+                <p class="text-gray-400 text-sm">We'd love to hear about your spa experience at Medpoint.</p>
+            </div>
+            
+            <form action="{% url 'website:submit_testimonial' %}" method="POST" class="space-y-6">
+                {% csrf_token %}
+                <div class="grid sm:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Your Name</label>
+                        <input type="text" name="client_name" required class="form-input w-full bg-dark-100/50 border border-purple-500/20 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500/50 transition-colors" placeholder="Full Name">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Rating</label>
+                        <select name="rating" required class="form-input w-full bg-dark-100/50 border border-purple-500/20 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500/50 transition-colors">
+                            <option value="5" class="bg-dark-50">⭐⭐⭐⭐⭐ Outstanding</option>
+                            <option value="4" class="bg-dark-50">⭐⭐⭐⭐ Very Good</option>
+                            <option value="3" class="bg-dark-50">⭐⭐⭐ Good</option>
+                            <option value="2" class="bg-dark-50">⭐⭐ Fair</option>
+                            <option value="1" class="bg-dark-50">⭐ Poor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Service (Optional)</label>
+                    <select name="service" class="form-input w-full bg-dark-100/50 border border-purple-500/20 text-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500/50 transition-colors">
+                        <option value="" class="bg-dark-50 text-gray-400">General Spa Experience</option>
+                        {% for s in services %}
+                        <option value="{{ s.pk }}" class="bg-dark-50">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Your Review</label>
+                    <textarea name="content" required rows="4" class="form-input w-full bg-dark-100/50 border border-purple-500/20 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500/50 transition-colors resize-none text-sm" placeholder="Tell us what you loved..."></textarea>
+                </div>
+                
+                <button type="submit" class="w-full py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 mt-4">
+                    <i class="fas fa-paper-plane text-sm"></i> Submit Review
+                </button>
+            </form>
+        </div>
+    </div>
 </section>
+
 {% endblock %}
 
 {% block extra_js %}

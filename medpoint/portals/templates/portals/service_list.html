@@ -91,9 +91,11 @@
 {% block content %}
 <!-- Header -->
 <div class="header-actions">
+    {% if request.session.portal_role == 'admin' %}
     <a href="{% url 'portals:service_create' %}" class="btn-primary">
         <i class="fas fa-plus"></i> Add New Service
     </a>
+    {% endif %}
     <form method="get" action="{% url 'portals:service_list' %}" style="display: flex; gap: 0.5rem; align-items: center;">
         <select name="category" class="filter-select" onchange="this.form.submit()">
             <option value="">All Categories</option>
@@ -138,6 +140,7 @@
                     {% endif %}
                 </span>
             </div>
+            {% if request.session.portal_role == 'admin' %}
             <div class="item-card-actions">
                 <a href="{% url 'portals:service_edit' service.pk %}" class="btn-sm">
                     <i class="fas fa-pen"></i> Edit
@@ -149,6 +152,7 @@
                     </button>
                 </form>
             </div>
+            {% endif %}
         </div>
     </div>
     {% empty %}

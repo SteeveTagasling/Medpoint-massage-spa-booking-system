@@ -139,6 +139,7 @@
                 <div class="form-group">
                     <label class="form-label" for="id_category">Category</label>
                     {{ form.category }}
+                    {% if form.category.help_text %}<span class="form-hint">{{ form.category.help_text }}</span>{% endif %}
                     {% if form.category.errors %}<span class="error-text">{{ form.category.errors.0 }}</span>{% endif %}
                 </div>
                 <div class="form-group">

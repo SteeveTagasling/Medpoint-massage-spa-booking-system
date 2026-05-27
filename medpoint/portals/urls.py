@@ -17,6 +17,7 @@ urlpatterns = [
     path('bookings/<int:pk>/update-status/', views.booking_update_status, name='booking_update_status'),
     path('bookings/<int:pk>/delete/', views.booking_delete, name='booking_delete'),
     path('bookings/calendar/', views.booking_calendar, name='booking_calendar'),
+    path('bookings/calendar/toggle-holiday/', views.toggle_holiday, name='toggle_holiday'),
 
     # ── Service management ────────────────────────────
     path('services/', views.service_list, name='service_list'),
@@ -59,7 +60,14 @@ urlpatterns = [
 
     # ── Testimonials (admin only) ─────────────────────
     path('testimonials/', views.testimonial_list, name='testimonial_list'),
+    path('testimonials/<int:pk>/toggle-featured/', views.testimonial_toggle_featured, name='testimonial_toggle_featured'),
+    path('testimonials/<int:pk>/toggle-approved/', views.testimonial_toggle_approved, name='testimonial_toggle_approved'),
 
     # ── Gallery (admin only) ──────────────────────────
     path('gallery/', views.gallery_list, name='gallery_list'),
+
+    # ── Notifications ─────────────────────────────────────
+    path('notifications/', views.notification_list, name='notification_list'),
+    path('notifications/<int:pk>/mark-read/', views.notification_mark_read, name='notification_mark_read'),
+    path('api/live-counts/', views.live_counts, name='live_counts'),
 ]

@@ -123,11 +123,62 @@
         align-items: center;
         justify-content: center;
     }
+    .calendar-cell.closed-day {
+        background: rgba(239, 68, 68, 0.05);
+    }
+    .calendar-cell.closed-day::before {
+        content: "Holiday / Closed";
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        font-size: 0.6rem;
+        color: var(--red-400);
+        font-weight: 600;
+        opacity: 0.7;
+        pointer-events: none;
+    }
+    .calendar-cell.closed-day .day-number {
+        color: var(--red-400);
+    }
+    .holiday-btn {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        background: var(--bg-card);
+        color: var(--text-muted);
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        opacity: 0;
+        transition: var(--transition);
+        z-index: 5;
+    }
+    .calendar-cell:hover .holiday-btn {
+        opacity: 1;
+    }
+    .holiday-btn:hover {
+        background: var(--sidebar-hover-bg);
+        color: var(--purple-500);
+        border-color: var(--purple-400);
+    }
+    .holiday-btn.remove-holiday {
+        opacity: 1;
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--red-500);
+        border-color: transparent;
+    }
+    .holiday-btn.remove-holiday:hover {
+        background: var(--red-500);
+        color: white;
+    }
     .day-number {
         font-size: 0.8rem;
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 0.35rem;
+        display: inline-block;
     }
     .calendar-booking {
         display: flex;
@@ -262,8 +313,15 @@
             {% if day == 0 %}
             <div class="calendar-cell empty"></div>
             {% else %}
-            <div class="calendar-cell {% if day == today.day and month == today.month and year == today.year %}today{% endif %}">
+            <div class="calendar-cell {% if day == today.day and month == today.month and year == today.year %}today{% endif %} {% if day in closed_days %}closed-day{% endif %}">
                 <div class="day-number">{{ day }}</div>
+                {% if request.session.portal_role == 'admin' %}
+                    {% if day in closed_days %}
+                        <button class="holiday-btn remove-holiday" onclick="toggleHoliday({{ year }}, {{ month }}, {{ day }}, 'remove')" title="Remove Holiday"><i class="fas fa-times"></i> Re-open</button>
+                    {% else %}
+                        <button class="holiday-btn" onclick="toggleHoliday({{ year }}, {{ month }}, {{ day }}, 'add')" title="Mark as Holiday"><i class="fas fa-umbrella-beach"></i> Close Spa</button>
+                    {% endif %}
+                {% endif %}
                 {% with day_bookings=bookings_by_date %}
                 {% for b in day_bookings|default_if_none:"" %}
                 {% endfor %}
@@ -392,5 +450,58 @@
             }
         });
     })();
+    
+    // Function to get CSRF token from cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Toggle Holiday feature for Administrators
+    function toggleHoliday(year, month, day, action) {
+        let reason = 'Holiday / Closed Date';
+        
+        if (action === 'add') {
+            reason = prompt(`Please enter the reason for closing the spa on ${year}-${month}-${day} (e.g. National Holiday, Facility Maintenance):`);
+            if (reason === null) return; // User cancelled
+            reason = reason.trim() || 'Holiday / Closed Date';
+        } else {
+            if (!confirm(`Are you sure you want to RE-OPEN the spa on ${year}-${month}-${day}?`)) return;
+            reason = ''; // not needed for removal, but pass it anyway
+        }
+        
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        fetch('{% url "portals:toggle_holiday" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ date: dateStr, reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to update holiday'));
+            }
+        })
+        .catch(err => {
+            console.error('Error updating holiday:', err);
+            alert('An error occurred while updating the holiday.');
+        });
+    }
 </script>
 {% endblock %}

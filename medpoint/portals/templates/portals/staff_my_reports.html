@@ -2,7 +2,7 @@
 
 {% block title %}My Reports{% endblock %}
 {% block page_title %}My Reports{% endblock %}
-{% block page_subtitle %}{{ period_label }} — Track your work and activities{% endblock %}
+{% block page_subtitle %}{{ period_label }} — Track your work and activities <span class="print-staff-name" style="display:none;">| Staff: {{ therapist.name|default:request.user.get_full_name }}</span>{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -82,17 +82,167 @@
     }
     .no-profile-alert i { font-size: 1.1rem; }
 
+    /* Custom Date Filter */
+    .custom-date-filter {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 0.35rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        gap: 0.25rem;
+    }
+    .date-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        padding: 0 0.5rem;
+        transition: var(--transition);
+        border: 1px solid transparent;
+    }
+    .date-input-wrapper:focus-within {
+        border-color: var(--purple-400);
+        background: var(--bg-card);
+    }
+    .date-input-wrapper input[type="date"] {
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        padding: 0.4rem 0.2rem;
+        outline: none;
+        font-family: inherit;
+        cursor: pointer;
+    }
+    .date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        opacity: 0.6;
+        transition: 0.2s;
+    }
+    .date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+    }
+    .date-separator {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        padding: 0 0.25rem;
+    }
+    .filter-submit-btn {
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.4rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: var(--transition);
+        box-shadow: 0 2px 6px rgba(168, 85, 247, 0.3);
+        font-family: inherit;
+        height: 100%;
+    }
+    .filter-submit-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+    }
+
     @media print {
-        body { background: #fff !important; color: #111 !important; }
-        .sidebar, .mobile-header, .sidebar-footer, .print-btn,
-        .period-tabs, .mobile-toggle { display: none !important; }
-        .main-content { margin-left: 0 !important; padding: 1rem !important; }
-        .card { border: 1px solid #ddd !important; box-shadow: none !important; background: #fff !important; }
-        .data-table th, .data-table td { color: #111 !important; border-color: #ddd !important; }
-        .metrics-grid { grid-template-columns: repeat(3, 1fr) !important; }
-        .metric-card { background: #f9f9f9 !important; border-color: #ddd !important; }
-        .metric-value, .metric-label { color: #111 !important; }
-        .status { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+        @page { size: portrait; margin: 10mm; }
+        body { background: #fff !important; color: #000 !important; font-family: 'Inter', sans-serif !important; line-height: 1.1 !important; }
+        
+        /* Hide all non-essential UI */
+        .sidebar, .topbar-actions, .mobile-header, .sidebar-footer, .print-btn,
+        .period-tabs, .sidebar-toggle, .no-profile-alert, .header-row { display: none !important; }
+        
+        .print-staff-name { display: inline !important; }
+        
+        .main-content { margin: 0 !important; padding: 0 !important; }
+        
+        /* Minimalist Header */
+        .topbar { 
+            padding: 0 0 4px 0 !important; 
+            border-bottom: 1px solid #000 !important; 
+            margin-bottom: 10px !important; 
+            position: static !important; 
+            background: transparent !important;
+        }
+        .topbar-title { color: #000 !important; font-size: 14pt !important; font-weight: bold !important; margin: 0 !important; }
+        .topbar-subtitle { color: #333 !important; font-size: 8pt !important; margin: 2px 0 0 0 !important; }
+
+        /* Compact Metrics */
+        .metrics-grid { 
+            display: flex !important; 
+            gap: 10px !important; 
+            margin-bottom: 10px !important; 
+        }
+        .metric-card { 
+            flex: 1 !important;
+            border: 1px solid #000 !important; 
+            padding: 5px !important;
+            text-align: center !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background: #fff !important;
+        }
+        .metric-card::before, .metric-icon { display: none !important; }
+        .metric-label { font-size: 7pt !important; text-transform: uppercase !important; font-weight: bold !important; margin-bottom: 3px !important; color: #000 !important; }
+        .metric-value { font-size: 11pt !important; font-weight: bold !important; color: #000 !important; }
+
+        /* General Card adjustments (Remove bloated wrappers) */
+        .card { 
+            border: none !important; 
+            background: transparent !important; 
+            margin-bottom: 10px !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+        }
+        .card-header { padding: 0 0 4px 0 !important; border: none !important; background: transparent !important; margin-bottom: 5px !important; border-bottom: 1px solid #ccc !important; }
+        .card-header-title { font-size: 9pt !important; font-weight: bold !important; }
+        .card-header-title i, .fa-info-circle { display: none !important; }
+        .card > div:not(.card-header) { padding: 0 !important; }
+
+        /* Ultra-compact Tables */
+        .table-wrapper { overflow: visible !important; }
+        table.data-table { 
+            width: 100% !important; 
+            border-collapse: collapse !important; 
+            margin: 0 !important;
+        }
+        table.data-table tr { page-break-inside: avoid !important; }
+        table.data-table thead { display: table-header-group !important; }
+        table.data-table tfoot { display: table-footer-group !important; }
+        
+        table.data-table th, table.data-table td { 
+            color: #000 !important; 
+            border: 1px solid #666 !important; 
+            padding: 2px 4px !important; 
+            font-size: 7.5pt !important;
+        }
+        table.data-table th { 
+            background-color: #ededed !important; 
+            font-weight: bold !important; 
+            text-transform: uppercase !important;
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important;
+        }
+        table.data-table tfoot td {
+            background-color: #f7f7f7 !important;
+            border-top: 1.5px solid #000 !important;
+            -webkit-print-color-adjust: exact !important; 
+            print-color-adjust: exact !important;
+            font-weight: bold !important;
+        }
+        
+        .revenue-highlight, .commission-highlight { color: #000 !important; font-weight: bold !important; }
+        .status, .commission-badge { padding: 0 !important; border: none !important; font-size: 7.5pt !important; font-weight: normal !important; text-transform: none !important; }
+        .status::before, .commission-badge i { display: none !important; }
     }
 </style>
 {% endblock %}
@@ -107,16 +257,32 @@
 
 <!-- Header -->
 <div class="header-row">
-    <div class="period-tabs">
-        <a href="?period=today" class="{% if period == 'today' %}active{% endif %}">
-            <i class="fas fa-sun"></i> Today
-        </a>
-        <a href="?period=weekly" class="{% if period == 'weekly' %}active{% endif %}">
-            <i class="fas fa-calendar-week"></i> This Week
-        </a>
-        <a href="?period=monthly" class="{% if period == 'monthly' %}active{% endif %}">
-            <i class="fas fa-calendar-alt"></i> This Month
-        </a>
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+        <div class="period-tabs" style="margin-bottom: 0;">
+            <a href="?period=today" class="{% if period == 'today' %}active{% endif %}">
+                <i class="fas fa-sun"></i> Today
+            </a>
+            <a href="?period=weekly" class="{% if period == 'weekly' %}active{% endif %}">
+                <i class="fas fa-calendar-week"></i> This Week
+            </a>
+            <a href="?period=monthly" class="{% if period == 'monthly' %}active{% endif %}">
+                <i class="fas fa-calendar-alt"></i> This Month
+            </a>
+        </div>
+        <form method="get" class="custom-date-filter">
+            <div class="date-input-wrapper">
+                <i class="fas fa-calendar-day" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
+                <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" required title="Start Date">
+            </div>
+            <span class="date-separator"><i class="fas fa-arrow-right"></i></span>
+            <div class="date-input-wrapper">
+                <i class="fas fa-calendar-day" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
+                <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" required title="End Date">
+            </div>
+            <button type="submit" class="filter-submit-btn">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+        </form>
     </div>
     <button class="print-btn" onclick="window.print()">
         <i class="fas fa-print"></i> Print Report

@@ -6,6 +6,11 @@ from website.models import Service, Therapist, Booking, StaffSchedule
 
 class ServiceForm(forms.ModelForm):
     """Admin form for creating/editing services."""
+    category = forms.MultipleChoiceField(
+        choices=Service.CATEGORY_CHOICES,
+        widget=forms.SelectMultiple(attrs={'class': 'portal-input', 'style': 'height: auto; min-height: 120px;'}),
+        help_text="Hold Ctrl (or Cmd) to select multiple categories."
+    )
 
     class Meta:
         model = Service
@@ -18,7 +23,6 @@ class ServiceForm(forms.ModelForm):
             'name': forms.TextInput(attrs={
                 'class': 'portal-input', 'placeholder': 'Service name',
             }),
-            'category': forms.Select(attrs={'class': 'portal-input'}),
             'description': forms.Textarea(attrs={
                 'class': 'portal-input', 'rows': 4,
                 'placeholder': 'Detailed description...',
@@ -42,6 +46,15 @@ class ServiceForm(forms.ModelForm):
                 'class': 'portal-input', 'placeholder': '0', 'min': 0,
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and self.instance.category:
+            self.initial['category'] = [c.strip() for c in self.instance.category.split(',')]
+
+    def clean_category(self):
+        data = self.cleaned_data['category']
+        return ','.join(data)
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -159,13 +172,14 @@ class WalkInBookingForm(forms.ModelForm):
     class Meta:
         model = Booking
         fields = [
-            'client_name', 'client_email', 'client_phone',
-            'service', 'therapist', 'date', 'time', 'notes', 'status'
+            'client_name', 'client_gender', 'client_email', 'client_phone',
+            'service', 'therapist_preference', 'therapist', 'date', 'time', 'notes', 'status'
         ]
         widgets = {
             'client_name': forms.TextInput(attrs={
                 'class': 'portal-input', 'placeholder': 'Client full name',
             }),
+            'client_gender': forms.Select(attrs={'class': 'portal-input'}),
             'client_email': forms.EmailInput(attrs={
                 'class': 'portal-input', 'placeholder': 'client@example.com',
             }),
@@ -173,6 +187,7 @@ class WalkInBookingForm(forms.ModelForm):
                 'class': 'portal-input', 'placeholder': '+63 9XX XXX XXXX',
             }),
             'service': forms.Select(attrs={'class': 'portal-input'}),
+            'therapist_preference': forms.Select(attrs={'class': 'portal-input'}),
             'therapist': forms.Select(attrs={'class': 'portal-input'}),
             'time': forms.Select(attrs={'class': 'portal-input'}),
             'notes': forms.Textarea(attrs={

@@ -15,7 +15,7 @@ from website.models import (
     Booking, ContactMessage, StaffSchedule,
 )
 from .forms import ServiceForm, TherapistForm, WalkInBookingForm, StaffScheduleForm, AdminSettingsForm, AdminUserForm, StaffSettingsForm, BulkStaffScheduleForm
-from .models import AdminProfile
+from .models import AdminProfile, StaffNotification
 
 
 # ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -84,9 +84,27 @@ def _get_staff_therapist(request):
     return therapist
 
 
-def _get_date_range(period):
-    """Return (start_date, end_date, label) for a given period."""
+def _get_date_range(request):
+    """Return (start_date, end_date, label) for a given request."""
     today = timezone.now().date()
+    
+    start_str = request.GET.get('start_date')
+    end_str = request.GET.get('end_date')
+    
+    if start_str and end_str:
+        try:
+            from datetime import datetime
+            start = datetime.strptime(start_str, '%Y-%m-%d').date()
+            end = datetime.strptime(end_str, '%Y-%m-%d').date()
+            if start == end:
+                label = start.strftime('%B %d, %Y')
+            else:
+                label = f"{start.strftime('%b %d, %Y')} – {end.strftime('%b %d, %Y')}"
+            return start, end, label
+        except ValueError:
+            pass
+
+    period = request.GET.get('period', 'today')
     if period == 'weekly':
         start = today - timedelta(days=today.weekday())
         end = start + timedelta(days=6)
@@ -209,6 +227,8 @@ def booking_list(request):
     status_filter = request.GET.get('status', '')
     type_filter = request.GET.get('type', '')
     search = request.GET.get('search', '')
+    date_filter = request.GET.get('date', '')
+    service_filter = request.GET.get('service', '')
 
     bookings = Booking.objects.select_related('service', 'therapist').all()
 
@@ -222,14 +242,23 @@ def booking_list(request):
             Q(client_email__icontains=search) |
             Q(client_phone__icontains=search)
         )
+    if date_filter:
+        bookings = bookings.filter(date=date_filter)
+    if service_filter:
+        bookings = bookings.filter(service_id=service_filter)
+        
+    services = Service.objects.all()
 
     context = {
         'bookings': bookings,
         'status_filter': status_filter,
         'type_filter': type_filter,
+        'date_filter': date_filter,
+        'service_filter': service_filter,
         'search': search,
         'status_choices': Booking.STATUS_CHOICES,
         'type_choices': Booking.BOOKING_TYPE_CHOICES,
+        'services': services,
     }
     return render(request, 'portals/booking_list.html', context)
 
@@ -244,6 +273,18 @@ def booking_update_status(request, pk):
         if new_status in dict(Booking.STATUS_CHOICES):
             booking.status = new_status
             booking.save()
+            
+            if booking.therapist:
+                from django.urls import reverse
+                StaffNotification.objects.create(
+                    notification_type='booking_status',
+                    title='Booking Status Updated',
+                    message=f"Booking #{booking.pk:04d} status has been changed to {new_status}.",
+                    target_role='staff',
+                    target_therapist=booking.therapist,
+                    link=reverse('portals:staff_my_bookings')
+                )
+                
             return JsonResponse({'success': True, 'status': new_status})
         return JsonResponse({'error': 'Invalid status'}, status=400)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -256,8 +297,63 @@ def booking_create_walkin(request):
     if request.method == 'POST':
         form = WalkInBookingForm(request.POST)
         if form.is_valid():
-            booking = form.save()
-            messages.success(request, f'Walk-in booking #{booking.pk:04d} created successfully.')
+            booking_obj = form.save()
+
+            # Auto-assign therapist if preference is set but no specific therapist chosen
+            if not booking_obj.therapist and booking_obj.therapist_preference != 'random':
+                matching = Therapist.objects.filter(
+                    is_active=True, gender=booking_obj.therapist_preference
+                )
+                if matching.exists():
+                    import random as rand_module
+                    available = list(matching)
+                    rand_module.shuffle(available)
+                    booking_obj.therapist = available[0]
+                    booking_obj.save()
+            elif not booking_obj.therapist and booking_obj.therapist_preference == 'random':
+                # For female clients, only assign female therapists even on random
+                if booking_obj.client_gender == 'female':
+                    matching = Therapist.objects.filter(is_active=True, gender='female')
+                else:
+                    matching = Therapist.objects.filter(is_active=True)
+                if matching.exists():
+                    import random as rand_module
+                    available = list(matching)
+                    rand_module.shuffle(available)
+                    booking_obj.therapist = available[0]
+                    booking_obj.save()
+
+            from website.models import ClosedDay, BookingNotification
+            is_closed = ClosedDay.objects.filter(date=booking_obj.date).exists()
+            if is_closed:
+                booking_obj.delete()
+                messages.error(request, 'The selected date is a Holiday. The spa is closed. Please select another date.')
+                return redirect('portals:booking_list')
+
+            # Create notification for client
+            BookingNotification.objects.create(
+                booking=booking_obj,
+                notification_type='confirmed',
+                message=(
+                    f"Your walk-in booking for {booking_obj.service.name} on "
+                    f"{booking_obj.date.strftime('%B %d, %Y')} at "
+                    f"{booking_obj.get_time_display()} has been registered."
+                ),
+            )
+
+            # Create portal notification for assigned therapist
+            if booking_obj.therapist:
+                from django.urls import reverse
+                StaffNotification.objects.create(
+                    notification_type='new_booking',
+                    title='Walk-in Assigned',
+                    message=f"Walk-in booking #{booking_obj.pk:04d} has been assigned to you.",
+                    target_role='staff',
+                    target_therapist=booking_obj.therapist,
+                    link=reverse('portals:staff_my_bookings')
+                )
+
+            messages.success(request, f'Walk-in booking #{booking_obj.pk:04d} created successfully.')
             return redirect('portals:booking_list')
         else:
             messages.error(request, 'Please correct the errors below.')
@@ -295,7 +391,7 @@ def service_list(request):
     category_filter = request.GET.get('category', '')
     services = Service.objects.all()
     if category_filter:
-        services = services.filter(category=category_filter)
+        services = services.filter(category__icontains=category_filter)
     context = {
         'services': services,
         'categories': Service.CATEGORY_CHOICES,
@@ -328,6 +424,9 @@ def service_create(request):
 def service_edit(request, pk):
     if not request.user.is_staff:
         return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
     service = get_object_or_404(Service, pk=pk)
     if request.method == 'POST':
         form = ServiceForm(request.POST, request.FILES, instance=service)
@@ -766,6 +865,12 @@ def booking_calendar(request):
     prev_month, prev_year = (month - 1, year) if month > 1 else (12, year - 1)
     next_month, next_year = (month + 1, year) if month < 12 else (1, year + 1)
 
+    from website.models import ClosedDay
+    closed_dates = ClosedDay.objects.filter(
+        date__gte=month_start, date__lte=month_end
+    ).values_list('date', flat=True)
+    closed_days = [d.day for d in closed_dates]
+
     context = {
         'month_days': month_days,
         'month_name': calendar.month_name[month],
@@ -777,8 +882,30 @@ def booking_calendar(request):
         'view_mode': view_mode,
         'list_bookings': bookings if view_mode == 'list' else None,
         'weekday_names': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        'closed_days': closed_days,
     }
     return render(request, 'portals/booking_calendar.html', context)
+
+@login_required(login_url='portals:login')
+def toggle_holiday(request):
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method == 'POST':
+        import json
+        try:
+            data = json.loads(request.body)
+            date_str = data.get('date')
+            import datetime
+            target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            from website.models import ClosedDay
+            reason = data.get('reason') or 'Holiday / Closed Date'
+            obj, created = ClosedDay.objects.get_or_create(date=target_date, defaults={'reason': reason})
+            if not created:
+                obj.delete()
+            return JsonResponse({'success': True, 'is_holiday': created})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -795,7 +922,10 @@ def admin_reports(request):
         return check
 
     period = request.GET.get('period', 'today')
-    start_date, end_date, period_label = _get_date_range(period)
+    if request.GET.get('start_date') and request.GET.get('end_date'):
+        period = 'custom'
+        messages.success(request, "Report filtered by custom date range.")
+    start_date, end_date, period_label = _get_date_range(request)
 
     # All completed bookings in period
     completed = Booking.objects.filter(
@@ -980,7 +1110,10 @@ def staff_my_reports(request):
 
     therapist = _get_staff_therapist(request)
     period = request.GET.get('period', 'today')
-    start_date, end_date, period_label = _get_date_range(period)
+    if request.GET.get('start_date') and request.GET.get('end_date'):
+        period = 'custom'
+        messages.success(request, "Report filtered by custom date range.")
+    start_date, end_date, period_label = _get_date_range(request)
 
     services_rendered = 0
     total_revenue = Decimal('0')
@@ -1025,6 +1158,9 @@ def staff_my_reports(request):
 def message_list(request):
     if not request.user.is_staff:
         return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
     read_filter = request.GET.get('read', '')
     contact_messages = ContactMessage.objects.all()
     if read_filter == 'unread':
@@ -1042,7 +1178,7 @@ def message_list(request):
 
 @login_required(login_url='portals:login')
 def message_toggle_read(request, pk):
-    if not request.user.is_staff:
+    if not request.user.is_staff or not _is_admin(request):
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     if request.method == 'POST':
         msg = get_object_or_404(ContactMessage, pk=pk)
@@ -1061,6 +1197,32 @@ def testimonial_list(request):
         return check
     testimonials = Testimonial.objects.all()
     return render(request, 'portals/testimonial_list.html', {'testimonials': testimonials})
+
+
+@login_required(login_url='portals:login')
+def testimonial_toggle_featured(request, pk):
+    if request.method == 'POST':
+        check = _require_admin(request)
+        if check:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        t = get_object_or_404(Testimonial, pk=pk)
+        t.is_featured = not t.is_featured
+        t.save()
+        return JsonResponse({'success': True, 'is_featured': t.is_featured})
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@login_required(login_url='portals:login')
+def testimonial_toggle_approved(request, pk):
+    if request.method == 'POST':
+        check = _require_admin(request)
+        if check:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        t = get_object_or_404(Testimonial, pk=pk)
+        t.is_approved = not t.is_approved
+        t.save()
+        return JsonResponse({'success': True, 'is_approved': t.is_approved})
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 @login_required(login_url='portals:login')
@@ -1180,3 +1342,121 @@ def staff_settings(request):
         'therapist': therapist,
     }
     return render(request, 'portals/staff_settings.html', context)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  NOTIFICATIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@login_required(login_url='portals:login')
+def notification_list(request):
+    """View to list all notifications for the current user."""
+    if not request.user.is_staff:
+        return redirect('portals:login')
+
+    role = request.session.get('portal_role', 'staff')
+    
+    if role == 'admin':
+        notifications = StaffNotification.objects.filter(
+            target_role__in=['admin', 'all']
+        )
+    else:
+        from django.db.models import Q
+        notifications = StaffNotification.objects.filter(
+            target_role__in=['staff', 'all']
+        )
+        if hasattr(request.user, 'therapist_profile') and request.user.therapist_profile:
+            notifications = notifications.filter(
+                Q(target_therapist=request.user.therapist_profile) |
+                Q(target_therapist__isnull=True)
+            )
+        else:
+            notifications = notifications.filter(target_therapist__isnull=True)
+
+    # Mark all unread notifications as read if button is pressed
+    if request.method == 'POST' and request.POST.get('action') == 'mark_all_read':
+        notifications.filter(is_read=False).update(is_read=True)
+        return JsonResponse({'success': True})
+
+    return render(request, 'portals/notification_list.html', {
+        'notifications': notifications,
+        'page_title': 'Notifications'
+    })
+
+
+@login_required(login_url='portals:login')
+def notification_mark_read(request, pk):
+    """AJAX endpoint to mark a single notification as read."""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+        
+    if request.method == 'POST':
+        notification = get_object_or_404(StaffNotification, pk=pk)
+        
+        # Verify access
+        role = request.session.get('portal_role', 'staff')
+        if role == 'admin' and notification.target_role not in ['admin', 'all']:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        elif role == 'staff':
+            if notification.target_role not in ['staff', 'all']:
+                return JsonResponse({'error': 'Unauthorized'}, status=403)
+            if notification.target_therapist and hasattr(request.user, 'therapist_profile'):
+                if notification.target_therapist != request.user.therapist_profile:
+                    return JsonResponse({'error': 'Unauthorized'}, status=403)
+                    
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@login_required(login_url='portals:login')
+def live_counts(request):
+    """AJAX endpoint that returns live notification/booking/message counts
+    and the latest unread notifications for toast display."""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    role = request.session.get('portal_role', 'staff')
+
+    # ── Notification count ──
+    if role == 'admin':
+        notif_qs = StaffNotification.objects.filter(
+            is_read=False, target_role__in=['admin', 'all']
+        )
+    else:
+        notif_qs = StaffNotification.objects.filter(
+            is_read=False, target_role__in=['staff', 'all']
+        )
+        if hasattr(request.user, 'therapist_profile') and request.user.therapist_profile:
+            notif_qs = notif_qs.filter(
+                Q(target_therapist=request.user.therapist_profile) |
+                Q(target_therapist__isnull=True)
+            )
+        else:
+            notif_qs = notif_qs.filter(target_therapist__isnull=True)
+
+    notif_count = notif_qs.count()
+
+    # Get up to 5 latest unread notifications for toast display
+    latest_notifs = list(notif_qs.order_by('-created_at')[:5].values(
+        'id', 'title', 'message', 'notification_type', 'created_at'
+    ))
+    # Convert datetime to string for JSON serialization
+    for n in latest_notifs:
+        n['created_at'] = n['created_at'].isoformat()
+        n['icon'] = StaffNotification.ICON_MAP.get(n['notification_type'], 'fa-bell')
+        n['color'] = StaffNotification.COLOR_MAP.get(n['notification_type'], 'purple')
+
+    # ── Other counts ──
+    pending_count = Booking.objects.filter(status='pending').count()
+    messages_count = ContactMessage.objects.filter(is_read=False).count() if role == 'admin' else 0
+
+    return JsonResponse({
+        'unread_notifications': notif_count,
+        'pending_bookings': pending_count,
+        'unread_messages': messages_count,
+        'latest_notifications': latest_notifs,
+    })
+
