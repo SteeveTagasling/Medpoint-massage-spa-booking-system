@@ -1,0 +1,138 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}Contact Us - MEDPOINT Massage &amp; Spa{% endblock %}
+
+{% block content %}
+<!-- Page Hero -->
+<section class="page-hero">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="flex items-center gap-3 mb-4 animate-fade-in">
+            <div class="w-8 h-px bg-purple-500"></div>
+            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Get In Touch</span>
+        </div>
+        <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in-up">
+            Contact <span class="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">Us</span>
+        </h1>
+        <p class="text-gray-400 text-lg max-w-xl animate-fade-in-up" style="animation-delay:0.2s">
+            Have questions or want to learn more? We'd love to hear from you.
+        </p>
+        <div class="flex items-center gap-2 mt-6 text-sm animate-fade-in" style="animation-delay:0.3s">
+            <a href="{% url 'website:home' %}" class="text-gray-500 hover:text-purple-400 transition-colors">Home</a>
+            <span class="breadcrumb-sep">/</span>
+            <span class="text-purple-400">Contact</span>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Cards -->
+<section class="py-12 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="glass-panel p-6 text-center hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-100">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/15 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-map-marker-alt text-purple-400 text-lg"></i>
+                </div>
+                <h3 class="text-white font-semibold text-sm mb-1">Visit Us</h3>
+                <p class="text-gray-400 text-sm">123 Wellness Ave,<br>Makati City, Philippines</p>
+            </div>
+            <div class="glass-panel p-6 text-center hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-200">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/15 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-phone-alt text-purple-400 text-lg"></i>
+                </div>
+                <h3 class="text-white font-semibold text-sm mb-1">Call Us</h3>
+                <p class="text-gray-400 text-sm">+63 912 345 6789<br>+63 2 8123 4567</p>
+            </div>
+            <div class="glass-panel p-6 text-center hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-300">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/15 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-envelope text-purple-400 text-lg"></i>
+                </div>
+                <h3 class="text-white font-semibold text-sm mb-1">Email Us</h3>
+                <p class="text-gray-400 text-sm">info@medpointspa.com<br>book@medpointspa.com</p>
+            </div>
+            <div class="glass-panel p-6 text-center hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-400">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/15 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-clock text-purple-400 text-lg"></i>
+                </div>
+                <h3 class="text-white font-semibold text-sm mb-1">Open Hours</h3>
+                <p class="text-gray-400 text-sm">Mon - Sat: 9AM - 9PM<br>Sunday: 10AM - 8PM</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact Form + Map -->
+<section class="py-12 pb-24 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-5 gap-12">
+            <!-- Form -->
+            <div class="lg:col-span-3 scroll-reveal">
+                <div class="glass-panel p-8 sm:p-10">
+                    <h2 class="font-display text-2xl font-semibold text-white mb-2">Send Us a Message</h2>
+                    <p class="text-gray-400 text-sm mb-8">We'll get back to you within 24 hours.</p>
+
+                    <form method="post" action="{% url 'website:contact' %}" id="contact-form">
+                        {% csrf_token %}
+                        <div class="grid sm:grid-cols-2 gap-5 mb-5">
+                            <div>
+                                <label for="contact-name" class="form-label">Full Name <span class="text-red-400">*</span></label>
+                                {{ form.name }}
+                                {% if form.name.errors %}<span class="form-error">{{ form.name.errors.0 }}</span>{% endif %}
+                            </div>
+                            <div>
+                                <label for="contact-email" class="form-label">Email <span class="text-red-400">*</span></label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<span class="form-error">{{ form.email.errors.0 }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-5 mb-5">
+                            <div>
+                                <label for="contact-phone" class="form-label">Phone</label>
+                                {{ form.phone }}
+                            </div>
+                            <div>
+                                <label for="contact-subject" class="form-label">Subject <span class="text-red-400">*</span></label>
+                                {{ form.subject }}
+                                {% if form.subject.errors %}<span class="form-error">{{ form.subject.errors.0 }}</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-6">
+                            <label for="contact-message" class="form-label">Message <span class="text-red-400">*</span></label>
+                            {{ form.message }}
+                            {% if form.message.errors %}<span class="form-error">{{ form.message.errors.0 }}</span>{% endif %}
+                        </div>
+                        <button type="submit" id="contact-submit" class="px-10 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center gap-2">
+                            <i class="fas fa-paper-plane"></i> Send Message
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Map -->
+            <div class="lg:col-span-2 scroll-reveal delay-200">
+                <div class="glass-panel p-6 mb-6">
+                    <h3 class="font-display text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <i class="fas fa-map text-purple-400"></i> Find Us
+                    </h3>
+                    <div class="map-container">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.802548850001!2d121.0133!3d14.5547!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTTCsDMzJzE2LjkiTiAxMjHCsDAwJzQ3LjkiRQ!5e0!3m2!1sen!2sph!4v1" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                </div>
+
+                <!-- Social -->
+                <div class="glass-panel p-6">
+                    <h3 class="font-display text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <i class="fas fa-share-alt text-purple-400"></i> Follow Us
+                    </h3>
+                    <div class="flex gap-3">
+                        <a href="#" class="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 hover:bg-purple-500 hover:text-white transition-all"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 hover:bg-purple-500 hover:text-white transition-all"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 hover:bg-purple-500 hover:text-white transition-all"><i class="fab fa-tiktok"></i></a>
+                        <a href="#" class="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 hover:bg-purple-500 hover:text-white transition-all"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

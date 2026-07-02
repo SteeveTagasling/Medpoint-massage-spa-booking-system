@@ -1,0 +1,373 @@
+{% extends "portals/base.html" %}
+
+{% block title %}My Schedule{% endblock %}
+{% block page_title %}My Schedule{% endblock %}
+{% block page_subtitle %}{{ month_name }} {{ year }} — Your schedule and availability{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Calendar Navigation */
+    .calendar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .calendar-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .calendar-nav-btn {
+        width: 36px; height: 36px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition);
+        text-decoration: none;
+    }
+    .calendar-nav-btn:hover {
+        border-color: var(--border-hover);
+        color: var(--purple-400);
+        background: var(--sidebar-hover-bg);
+    }
+    .calendar-month-label {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        min-width: 180px;
+        text-align: center;
+    }
+
+    /* Legend */
+    .legend {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+    .legend-dot {
+        width: 10px; height: 10px;
+        border-radius: 3px;
+    }
+    .legend-dot.avail { background: rgba(34, 197, 94, 0.3); border: 1px solid var(--green-400); }
+    .legend-dot.booked { background: rgba(251, 191, 36, 0.3); border: 1px solid var(--amber-400); }
+    .legend-dot.unavail { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* Calendar Grid */
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        overflow: hidden;
+        background: var(--bg-card);
+        margin-bottom: 1.5rem;
+    }
+    .calendar-day-header {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        text-align: center;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+    }
+    .calendar-cell {
+        min-height: 100px;
+        padding: 0.5rem;
+        border-right: 1px solid var(--table-border);
+        border-bottom: 1px solid var(--table-border);
+        position: relative;
+        transition: var(--transition);
+    }
+    .calendar-cell:nth-child(7n) { border-right: none; }
+    .calendar-cell:hover { background: var(--table-row-hover); }
+    .calendar-cell.empty { background: var(--bg-primary); opacity: 0.4; }
+    .calendar-cell.today { background: rgba(168, 85, 247, 0.04); }
+    .calendar-cell.today .day-number {
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        border-radius: 50%;
+        width: 26px; height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .day-number {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.35rem;
+    }
+
+    /* Slot indicators */
+    .slot-booked {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem 0.4rem;
+        border-radius: 5px;
+        font-size: 0.6rem;
+        font-weight: 500;
+        margin-bottom: 0.2rem;
+        background: rgba(251, 191, 36, 0.15);
+        color: var(--amber-400);
+    }
+    .slot-booked i { font-size: 0.5rem; }
+    .slot-unavailable {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem 0.4rem;
+        border-radius: 5px;
+        font-size: 0.55rem;
+        font-weight: 500;
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--red-400);
+    }
+    .slot-available-indicator {
+        position: absolute;
+        top: 0.4rem;
+        right: 0.4rem;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--green-400);
+    }
+    .slot-unavailable-indicator {
+        position: absolute;
+        top: 0.4rem;
+        right: 0.4rem;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--red-400);
+        opacity: 0.5;
+    }
+
+    /* Weekly Schedule Table */
+    .schedule-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .no-profile-alert {
+        padding: 1.25rem;
+        border-radius: 12px;
+        border: 1px solid rgba(251, 191, 36, 0.3);
+        background: rgba(251, 191, 36, 0.06);
+        color: var(--amber-400);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+    }
+    .no-profile-alert i { font-size: 1.1rem; }
+    .day-badge {
+        display: inline-flex;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(168, 85, 247, 0.1);
+        color: var(--purple-400);
+    }
+    .availability-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    .availability-status.available { color: var(--green-400); }
+    .availability-status.unavailable { color: var(--red-400); }
+
+    @media (max-width: 768px) {
+        .calendar-cell { min-height: 60px; padding: 0.3rem; }
+        .slot-booked { font-size: 0.5rem; padding: 0.15rem 0.25rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% if not therapist %}
+<div class="no-profile-alert">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span>Your user account is not linked to a therapist profile. Contact your admin to set up your profile.</span>
+</div>
+{% endif %}
+
+<!-- Calendar Header -->
+<div class="calendar-header">
+    <div class="calendar-nav">
+        <a href="?year={{ prev_year }}&month={{ prev_month }}" class="calendar-nav-btn">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        <span class="calendar-month-label">{{ month_name }} {{ year }}</span>
+        <a href="?year={{ next_year }}&month={{ next_month }}" class="calendar-nav-btn">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+    </div>
+    <div class="legend">
+        <div class="legend-item"><span class="legend-dot avail"></span> Available</div>
+        <div class="legend-item"><span class="legend-dot booked"></span> Booked</div>
+        <div class="legend-item"><span class="legend-dot unavail"></span> Unavailable</div>
+    </div>
+</div>
+
+<!-- Calendar Grid -->
+<div class="calendar-grid">
+    {% for day_name in weekday_names %}
+    <div class="calendar-day-header">{{ day_name }}</div>
+    {% endfor %}
+
+    {% for week in month_days %}
+        {% for day in week %}
+            {% if day == 0 %}
+            <div class="calendar-cell empty"></div>
+            {% else %}
+            <div class="calendar-cell {% if day == today.day and month == today.month and year == today.year %}today{% endif %}" data-day="{{ day }}" data-weekday="{{ forloop.counter0 }}">
+                <div class="day-number">{{ day }}</div>
+                <div class="day-slots"></div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+</div>
+
+<!-- Weekly Schedule Reference -->
+{% if my_schedules %}
+<div class="card">
+    <div class="card-header">
+        <span class="card-header-title">
+            <i class="fas fa-clock" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+            Your Weekly Schedule
+        </span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sched in my_schedules %}
+                <tr>
+                    <td><span class="day-badge">{{ sched.get_day_of_week_display }}</span></td>
+                    <td style="font-weight: 500; color: var(--text-primary);">{{ sched.start_time|time:"g:i A" }}</td>
+                    <td style="font-weight: 500; color: var(--text-primary);">{{ sched.end_time|time:"g:i A" }}</td>
+                    <td>
+                        <span class="availability-status {% if sched.is_available %}available{% else %}unavailable{% endif %}">
+                            <i class="fas {% if sched.is_available %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
+                            {% if sched.is_available %}Available{% else %}Unavailable{% endif %}
+                        </span>
+                    </td>
+                    <td style="color: var(--text-muted); font-style: italic;">{{ sched.notes|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    // Booked slots from context
+    const bookedSlots = {};
+    {% for day, slots in booked_slots.items %}
+    bookedSlots[{{ day }}] = [
+        {% for slot in slots %}
+        {
+            time: '{{ slot.time|escapejs }}',
+            service: '{{ slot.service|escapejs }}',
+            client: '{{ slot.client|escapejs }}',
+            status: '{{ slot.status|escapejs }}',
+        },
+        {% endfor %}
+    ];
+    {% endfor %}
+
+    // Schedule map (day_of_week -> available/unavailable)
+    const scheduleMap = {};
+    {% for sched in my_schedules %}
+    if (!scheduleMap[{{ sched.day_of_week }}]) scheduleMap[{{ sched.day_of_week }}] = [];
+    scheduleMap[{{ sched.day_of_week }}].push({
+        available: {{ sched.is_available|yesno:"true,false" }},
+        start: '{{ sched.start_time|time:"H:i" }}',
+        end: '{{ sched.end_time|time:"H:i" }}',
+    });
+    {% endfor %}
+
+    // Populate calendar cells
+    document.querySelectorAll('.calendar-cell[data-day]').forEach(cell => {
+        const day = parseInt(cell.getAttribute('data-day'));
+        const weekday = parseInt(cell.getAttribute('data-weekday'));
+        const slotsContainer = cell.querySelector('.day-slots');
+
+        // Check schedule availability for this weekday
+        const daySchedules = scheduleMap[weekday] || [];
+        let hasSchedule = daySchedules.length > 0;
+        let isAvailable = daySchedules.some(s => s.available);
+
+        // Show schedule availability indicator
+        if (hasSchedule) {
+            if (isAvailable) {
+                const dot = document.createElement('span');
+                dot.className = 'slot-available-indicator';
+                dot.title = 'Scheduled & Available';
+                cell.appendChild(dot);
+            } else {
+                const dot = document.createElement('span');
+                dot.className = 'slot-unavailable-indicator';
+                dot.title = 'Marked Unavailable';
+                cell.appendChild(dot);
+            }
+        }
+
+        // Show booked slots
+        const dayBookings = bookedSlots[day] || [];
+        dayBookings.forEach(b => {
+            const el = document.createElement('div');
+            el.className = 'slot-booked';
+            el.innerHTML = `<i class="fas fa-circle"></i> ${b.time}`;
+            el.title = `${b.client} — ${b.service} (${b.status})\nThis time slot is BOOKED — you are NOT available`;
+            slotsContainer.appendChild(el);
+        });
+
+        // If booked slots exist, mark as unavailable for those times
+        if (dayBookings.length > 0 && hasSchedule) {
+            // Remove available indicator if fully booked
+            const availDot = cell.querySelector('.slot-available-indicator');
+            // Keep the green dot — partial availability is still possible
+        }
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,249 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Bookings{% endblock %}
+{% block page_title %}Bookings{% endblock %}
+{% block page_subtitle %}Manage walk-in and online booking records{% endblock %}
+
+{% block extra_css %}
+<style>
+    .booking-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.65rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .booking-type-badge i { font-size: 0.6rem; }
+    .booking-type-online {
+        background: rgba(96, 165, 250, 0.12);
+        color: var(--blue-400);
+    }
+    .booking-type-walk_in {
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--amber-400);
+    }
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.25rem;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-decoration: none;
+        font-family: inherit;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .btn-primary:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+    .btn-primary i { font-size: 0.75rem; }
+    .btn-outline {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.25rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        text-decoration: none;
+        font-family: inherit;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .btn-outline:hover {
+        border-color: var(--border-hover);
+        color: var(--purple-400);
+        background: var(--sidebar-hover-bg);
+    }
+    .btn-outline i { font-size: 0.75rem; }
+    .btn-danger-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        background: rgba(239, 68, 68, 0.08);
+        color: var(--red-400);
+        font-size: 0.7rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: inherit;
+    }
+    .btn-danger-sm:hover {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.35);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header Actions -->
+<div class="header-actions">
+    <a href="{% url 'portals:booking_walkin' %}" class="btn-primary">
+        <i class="fas fa-plus"></i> New Walk-in Booking
+    </a>
+    <a href="{% url 'portals:booking_calendar' %}" class="btn-outline">
+        <i class="fas fa-calendar-week"></i> Calendar View
+    </a>
+</div>
+
+<div class="card">
+    <!-- Filter Bar -->
+    <form class="filter-bar" method="get" action="{% url 'portals:booking_list' %}">
+        <div class="filter-input-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" class="filter-input" placeholder="Search by name, email, phone..." value="{{ search }}">
+        </div>
+        <select name="status" class="filter-select">
+            <option value="">All Statuses</option>
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select name="type" class="filter-select">
+            <option value="">All Types</option>
+            {% for value, label in type_choices %}
+            <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <input type="date" name="date" class="filter-input" value="{{ date_filter }}" style="width: auto;">
+        <select name="service" class="filter-select">
+            <option value="">All Services</option>
+            {% for s in services %}
+            <option value="{{ s.id }}" {% if service_filter == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="filter-btn"><i class="fas fa-filter" style="margin-right: 0.35rem;"></i> Filter</button>
+        {% if status_filter or type_filter or search or date_filter or service_filter %}
+        <a href="{% url 'portals:booking_list' %}" class="btn-outline" style="padding: 0.45rem 0.85rem; height: auto;" title="Clear Filters">
+            <i class="fas fa-times"></i>
+        </a>
+        {% endif %}
+    </form>
+
+    <!-- Bookings Table -->
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Client</th>
+                    <th>Email</th>
+                    <th>Service</th>
+                    <th>Therapist</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr id="booking-row-{{ booking.pk }}">
+                    <td style="color: var(--text-muted);">{{ booking.pk }}</td>
+                    <td style="color: var(--text-primary); font-weight: 500;">{{ booking.client_name }}</td>
+                    <td>{{ booking.client_email }}</td>
+                    <td>{{ booking.service.name }}</td>
+                    <td>{{ booking.therapist.name|default:"—" }}</td>
+                    <td>
+                        <span class="booking-type-badge booking-type-{{ booking.booking_type }}">
+                            <i class="fas {% if booking.booking_type == 'online' %}fa-globe{% else %}fa-walking{% endif %}"></i>
+                            {{ booking.get_booking_type_display }}
+                        </span>
+                    </td>
+                    <td>{{ booking.date|date:"M d, Y" }}</td>
+                    <td>{{ booking.get_time_display }}</td>
+                    <td>
+                        <span class="status status-{{ booking.status }}" id="status-badge-{{ booking.pk }}">{{ booking.get_status_display }}</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <select class="status-select" onchange="updateBookingStatus({{ booking.pk }}, this.value)" id="status-select-{{ booking.pk }}">
+                                {% for value, label in status_choices %}
+                                <option value="{{ value }}" {% if booking.status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if request.session.portal_role == 'admin' %}
+                            <form method="post" action="{% url 'portals:booking_delete' booking.pk %}" style="margin: 0; display: flex; align-items: center;" onsubmit="return confirm('Delete booking #{{ booking.pk }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-danger-sm" title="Delete booking" style="padding: 0.4rem 0.6rem;">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10">
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-times"></i>
+                            <p>No bookings found</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateBookingStatus(bookingId, newStatus) {
+        fetch(`/portal/bookings/${bookingId}/update-status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: `status=${newStatus}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const badge = document.getElementById(`status-badge-${bookingId}`);
+                if (badge) {
+                    badge.className = `status status-${newStatus}`;
+                    const labels = { pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled' };
+                    badge.textContent = labels[newStatus] || newStatus;
+                }
+            }
+        })
+        .catch(err => console.error('Error:', err));
+    }
+
+    function getCookie(name) {
+        let value = null;
+        document.cookie.split(';').forEach(c => {
+            c = c.trim();
+            if (c.startsWith(name + '=')) value = decodeURIComponent(c.substring(name.length + 1));
+        });
+        return value;
+    }
+</script>
+{% endblock %}

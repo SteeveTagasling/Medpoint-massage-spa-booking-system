@@ -1,0 +1,183 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Administrator Management{% endblock %}
+{% block page_title %}Administrators{% endblock %}
+{% block page_subtitle %}Manage system administrators with full portal access{% endblock %}
+
+{% block extra_css %}
+<style>
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.25rem;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-decoration: none;
+        font-family: inherit;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary i { font-size: 0.75rem; }
+    
+    .admin-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        transition: var(--transition);
+        margin-bottom: 1rem;
+    }
+    .admin-card:hover {
+        border-color: var(--border-hover);
+        box-shadow: var(--item-hover-shadow);
+        transform: translateY(-2px);
+    }
+    
+    .admin-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        flex-shrink: 0;
+        object-fit: cover;
+    }
+    
+    .admin-info {
+        flex: 1;
+    }
+    .admin-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+    .admin-meta {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .admin-meta span {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    
+    .admin-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .btn-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        font-family: inherit;
+    }
+    .btn-sm:hover { border-color: var(--border-hover); color: var(--purple-400); }
+    .btn-sm-danger {
+        border-color: rgba(239, 68, 68, 0.2);
+        color: var(--red-400);
+        background: rgba(239, 68, 68, 0.05);
+    }
+    .btn-sm-danger:hover {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.35);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header-actions">
+    <a href="{% url 'portals:admin_management_create' %}" class="btn-primary">
+        <i class="fas fa-user-shield"></i> Add Administrator
+    </a>
+</div>
+
+<div class="admin-list">
+    {% for admin_user in admins %}
+    <div class="admin-card">
+        {% if admin_user.admin_profile.photo %}
+        <img src="{{ admin_user.admin_profile.photo.url }}" class="admin-avatar">
+        {% else %}
+        <div class="admin-avatar">
+            {{ admin_user.first_name|default:admin_user.username|first|upper }}
+        </div>
+        {% endif %}
+        
+        <div class="admin-info">
+            <div class="admin-name">
+                {{ admin_user.get_full_name|default:admin_user.username }}
+                {% if admin_user == request.user %}
+                <span style="font-size: 0.7rem; background: rgba(168, 85, 247, 0.2); color: var(--purple-400); padding: 0.1rem 0.5rem; border-radius: 8px; margin-left: 0.5rem;">You</span>
+                {% endif %}
+            </div>
+            <div class="admin-meta">
+                <span><i class="fas fa-id-badge" style="color: var(--purple-400);"></i> @{{ admin_user.username }}</span>
+                {% if admin_user.email %}
+                <span><i class="fas fa-envelope" style="color: var(--text-muted);"></i> {{ admin_user.email }}</span>
+                {% endif %}
+                <span><i class="fas fa-shield-alt" style="color: var(--green-400);"></i> Superuser</span>
+            </div>
+        </div>
+        
+        <div class="admin-actions">
+            <a href="{% url 'portals:admin_management_edit' admin_user.pk %}" class="btn-sm">
+                <i class="fas fa-pen"></i> Edit
+            </a>
+            {% if admin_user != request.user %}
+            <form method="post" action="{% url 'portals:admin_management_delete' admin_user.pk %}" style="display:inline;" onsubmit="return confirm('Remove administrator {{ admin_user.username }}?');">
+                {% csrf_token %}
+                <button type="submit" class="btn-sm btn-sm-danger">
+                    <i class="fas fa-trash-alt"></i> Remove
+                </button>
+            </form>
+            {% else %}
+            <button class="btn-sm" style="opacity: 0.5; cursor: not-allowed;" title="You cannot delete yourself">
+                <i class="fas fa-trash-alt"></i> Remove
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="card">
+        <div class="empty-state">
+            <i class="fas fa-user-shield"></i>
+            <p>No administrators found</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

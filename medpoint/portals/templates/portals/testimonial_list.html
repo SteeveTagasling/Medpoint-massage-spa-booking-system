@@ -1,0 +1,71 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Testimonials{% endblock %}
+{% block page_title %}Testimonials{% endblock %}
+{% block page_subtitle %}Customer reviews and feedback{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Service</th>
+                    <th>Rating</th>
+                    <th>Content</th>
+                    <th>Featured</th>
+                    <th>Approved</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for testimonial in testimonials %}
+                <tr>
+                    <td style="color: var(--text-primary); font-weight: 500;">{{ testimonial.client_name }}</td>
+                    <td>{{ testimonial.service.name|default:"—" }}</td>
+                    <td>
+                        <span style="color: var(--amber-400);">
+                            {% for i in "12345" %}
+                            {% if forloop.counter <= testimonial.rating %} <i class="fas fa-star"
+                                style="font-size: 0.7rem;"></i>
+                                {% else %}
+                                <i class="far fa-star" style="font-size: 0.7rem; opacity: 0.3;"></i>
+                                {% endif %}
+                                {% endfor %}
+                        </span>
+                    </td>
+                    <td style="max-width: 300px;">
+                        <span style="font-size: 0.8rem;">{{ testimonial.content|truncatewords:15 }}</span>
+                    </td>
+                    <td>
+                        {% if testimonial.is_featured %}
+                        <i class="fas fa-check-circle" style="color: var(--green-400);"></i>
+                        {% else %}
+                        <i class="fas fa-minus-circle" style="color: var(--text-muted); opacity: 0.4;"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if testimonial.is_approved %}
+                        <i class="fas fa-check-circle" style="color: var(--green-400);"></i>
+                        {% else %}
+                        <i class="fas fa-times-circle" style="color: var(--red-400);"></i>
+                        {% endif %}
+                    </td>
+                    <td>{{ testimonial.created_at|date:"M d, Y" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <i class="fas fa-star"></i>
+                            <p>No testimonials found</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

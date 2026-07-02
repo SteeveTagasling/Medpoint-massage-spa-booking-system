@@ -1,0 +1,333 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}My Bookings - MEDPOINT Massage &amp; Spa{% endblock %}
+
+{% block extra_css %}
+<style>
+    .booking-card {
+        background: rgba(139, 92, 246, 0.05);
+        border: 1px solid rgba(139, 92, 246, 0.1);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    .booking-card:hover {
+        border-color: rgba(139, 92, 246, 0.25);
+        box-shadow: 0 4px 20px rgba(139, 92, 246, 0.08);
+    }
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .status-pending {
+        background: rgba(234, 179, 8, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(234, 179, 8, 0.25);
+    }
+    .status-confirmed {
+        background: rgba(34, 197, 94, 0.12);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.25);
+    }
+    .status-completed {
+        background: rgba(96, 165, 250, 0.12);
+        color: #60a5fa;
+        border: 1px solid rgba(96, 165, 250, 0.25);
+    }
+    .status-cancelled {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+    .notification-card {
+        background: rgba(139, 92, 246, 0.08);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-left: 3px solid #a855f7;
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        transition: all 0.3s ease;
+    }
+    .notification-card:hover {
+        background: rgba(139, 92, 246, 0.12);
+    }
+    .search-input-wrapper {
+        position: relative;
+    }
+    .search-input-wrapper i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(168, 85, 247, 0.4);
+    }
+    .search-input-wrapper input {
+        padding-left: 2.75rem !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Hero -->
+<section class="page-hero">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="flex items-center gap-3 mb-4 animate-fade-in">
+            <div class="w-8 h-px bg-purple-500"></div>
+            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Your Appointments</span>
+        </div>
+        <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in-up">
+            My <span class="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">Bookings</span>
+        </h1>
+        <p class="text-gray-400 text-lg max-w-xl animate-fade-in-up" style="animation-delay:0.2s">
+            Track your appointments, view status updates, and manage your bookings.
+        </p>
+        <div class="flex items-center gap-2 mt-6 text-sm animate-fade-in" style="animation-delay:0.3s">
+            <a href="{% url 'website:home' %}" class="text-gray-500 hover:text-purple-400 transition-colors">Home</a>
+            <span class="breadcrumb-sep">/</span>
+            <span class="text-purple-400">My Bookings</span>
+        </div>
+    </div>
+</section>
+
+<!-- Search & Bookings -->
+<section class="py-16 relative">
+    <div class="absolute top-0 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+        <!-- Email Search -->
+        <div class="glass-panel p-8 mb-10 scroll-reveal">
+            <h2 class="font-display text-xl font-semibold text-white mb-2 flex items-center gap-2">
+                <i class="fas fa-search text-purple-400"></i> Look Up Your Bookings
+            </h2>
+            <p class="text-gray-400 text-sm mb-6">Enter the email address you used when booking to view your appointment history.</p>
+            <form method="get" action="{% url 'website:my_bookings' %}" class="flex flex-col sm:flex-row gap-4">
+                <div class="flex-1 search-input-wrapper">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" name="email" value="{{ email }}" placeholder="your.email@example.com"
+                           class="form-input w-full" required id="my-bookings-email">
+                </div>
+                <button type="submit" class="px-8 py-3 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center gap-2 whitespace-nowrap" id="my-bookings-search-btn">
+                    <i class="fas fa-search text-sm"></i> Search
+                </button>
+            </form>
+        </div>
+
+        {% if searched %}
+        <!-- Notifications -->
+        {% if notifications %}
+        <div class="mb-10 scroll-reveal">
+            <h3 class="font-display text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <i class="fas fa-bell text-purple-400"></i> Notifications
+                <span class="ml-2 bg-purple-500/20 text-purple-300 text-xs px-2.5 py-1 rounded-full font-medium">{{ notifications|length }} new</span>
+            </h3>
+            <div class="space-y-3">
+                {% for notif in notifications %}
+                <div class="notification-card" id="notification-{{ notif.pk }}">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-full bg-purple-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <i class="fas {% if notif.notification_type == 'confirmed' %}fa-check{% elif notif.notification_type == 'cancelled' %}fa-times{% elif notif.notification_type == 'completed' %}fa-star{% else %}fa-bell{% endif %} text-purple-400 text-xs"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-200 text-sm">{{ notif.message }}</p>
+                                <p class="text-gray-500 text-xs mt-1.5">{{ notif.created_at|timesince }} ago</p>
+                            </div>
+                        </div>
+                        <button onclick="markNotificationRead({{ notif.pk }}, this)" class="text-gray-500 hover:text-purple-400 transition-colors p-1 flex-shrink-0" title="Dismiss">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Bookings List -->
+        <div class="scroll-reveal">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="font-display text-lg font-semibold text-white flex items-center gap-2">
+                    <i class="fas fa-calendar-alt text-purple-400"></i> Your Appointments
+                </h3>
+                {% if bookings %}
+                <span class="text-gray-500 text-sm">{{ bookings|length }} booking{{ bookings|length|pluralize }}</span>
+                {% endif %}
+            </div>
+
+            {% if bookings %}
+            <div class="space-y-4">
+                {% for b in bookings %}
+                <div class="booking-card">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/15 to-violet-500/15 flex items-center justify-center">
+                                <i class="fas fa-spa text-purple-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-white font-semibold">{{ b.service.name }}</h4>
+                                <p class="text-gray-500 text-xs">Ref: #{{ b.pk|stringformat:"04d" }}</p>
+                            </div>
+                        </div>
+                        <span class="status-badge status-{{ b.status }}">
+                            <i class="fas {% if b.status == 'pending' %}fa-clock{% elif b.status == 'confirmed' %}fa-check-circle{% elif b.status == 'completed' %}fa-star{% else %}fa-ban{% endif %} text-[0.55rem]"></i>
+                            {{ b.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="grid sm:grid-cols-3 gap-3 mb-4">
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-calendar text-purple-400/50 text-xs"></i>
+                            <span class="text-gray-300">{{ b.date|date:"M d, Y" }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-clock text-purple-400/50 text-xs"></i>
+                            <span class="text-gray-300">{{ b.get_time_display }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <i class="fas fa-user text-purple-400/50 text-xs"></i>
+                            <span class="text-gray-300">
+                                {% if b.therapist %}{{ b.therapist.name }}{% else %}Not yet assigned{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% if b.notes %}
+                    <p class="text-gray-500 text-xs mb-4 flex items-start gap-2">
+                        <i class="fas fa-sticky-note text-purple-400/40 mt-0.5 text-[0.6rem]"></i>
+                        {{ b.notes|truncatewords:20 }}
+                    </p>
+                    {% endif %}
+                    {% if b.status == 'pending' or b.status == 'confirmed' %}
+                    <div class="flex items-center justify-between border-t border-purple-500/10 pt-4">
+                        <p class="text-gray-500 text-xs">Booked {{ b.created_at|timesince }} ago</p>
+                        <a href="{% url 'website:cancel_booking' b.pk %}" class="text-red-400/70 hover:text-red-400 text-xs font-medium flex items-center gap-1.5 transition-colors" id="cancel-btn-{{ b.pk }}">
+                            <i class="fas fa-times-circle"></i> Cancel Booking
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="border-t border-purple-500/10 pt-4">
+                        <p class="text-gray-500 text-xs">Booked {{ b.created_at|timesince }} ago</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="glass-panel p-12 text-center">
+                <div class="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-calendar-times text-purple-400 text-xl"></i>
+                </div>
+                <h4 class="text-white font-semibold text-lg mb-2">No Bookings Found</h4>
+                <p class="text-gray-400 text-sm mb-6 max-w-md mx-auto">We couldn't find any bookings associated with this email. Please check the email address or book a new appointment.</p>
+                <a href="{% url 'website:booking' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5">
+                    <i class="fas fa-calendar-plus"></i> Book Now
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- Initial State -->
+        <div class="glass-panel p-12 text-center scroll-reveal">
+            <div class="w-20 h-20 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-5">
+                <i class="fas fa-clipboard-list text-purple-400 text-2xl"></i>
+            </div>
+            <h3 class="text-white font-display text-xl font-semibold mb-3">View Your Booking History</h3>
+            <p class="text-gray-400 text-sm max-w-lg mx-auto mb-6">Enter the email address you used when making your booking to see your appointment history, status updates, and manage your reservations.</p>
+            <div class="flex items-center justify-center gap-6 text-sm text-gray-500">
+                <span class="flex items-center gap-2"><i class="fas fa-search text-purple-400/40"></i> Search by email</span>
+                <span class="flex items-center gap-2"><i class="fas fa-bell text-purple-400/40"></i> View notifications</span>
+                <span class="flex items-center gap-2"><i class="fas fa-times-circle text-purple-400/40"></i> Cancel bookings</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+<!-- Write a Review Section -->
+<section class="py-12 relative border-t border-purple-500/10 mt-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="glass-panel p-8 sm:p-10 scroll-reveal">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-star text-purple-400 text-xl"></i>
+                </div>
+                <h3 class="font-display text-2xl font-semibold text-white mb-2">Share Your Experience</h3>
+                <p class="text-gray-400 text-sm">We'd love to hear about your spa experience at Medpoint.</p>
+            </div>
+            
+            <form action="{% url 'website:submit_testimonial' %}" method="POST" class="space-y-6">
+                {% csrf_token %}
+                <div class="grid sm:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Your Name</label>
+                        <input type="text" name="client_name" required class="form-input w-full bg-dark-100/50 border border-purple-500/20 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500/50 transition-colors" placeholder="Full Name">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Rating</label>
+                        <select name="rating" required class="form-input w-full bg-dark-100/50 border border-purple-500/20 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500/50 transition-colors">
+                            <option value="5" class="bg-dark-50">⭐⭐⭐⭐⭐ Outstanding</option>
+                            <option value="4" class="bg-dark-50">⭐⭐⭐⭐ Very Good</option>
+                            <option value="3" class="bg-dark-50">⭐⭐⭐ Good</option>
+                            <option value="2" class="bg-dark-50">⭐⭐ Fair</option>
+                            <option value="1" class="bg-dark-50">⭐ Poor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Service (Optional)</label>
+                    <select name="service" class="form-input w-full bg-dark-100/50 border border-purple-500/20 text-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500/50 transition-colors">
+                        <option value="" class="bg-dark-50 text-gray-400">General Spa Experience</option>
+                        {% for s in services %}
+                        <option value="{{ s.pk }}" class="bg-dark-50">{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Your Review</label>
+                    <textarea name="content" required rows="4" class="form-input w-full bg-dark-100/50 border border-purple-500/20 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500/50 transition-colors resize-none text-sm" placeholder="Tell us what you loved..."></textarea>
+                </div>
+                
+                <button type="submit" class="w-full py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 mt-4">
+                    <i class="fas fa-paper-plane text-sm"></i> Submit Review
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function markNotificationRead(id, btn) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                      document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='))?.split('=')[1] || '';
+
+    fetch(`/api/notification/${id}/read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const card = document.getElementById(`notification-${id}`);
+            if (card) {
+                card.style.opacity = '0';
+                card.style.transform = 'translateX(20px)';
+                card.style.transition = 'all 0.3s ease';
+                setTimeout(() => card.remove(), 300);
+            }
+        }
+    })
+    .catch(() => {});
+}
+</script>
+{% endblock %}

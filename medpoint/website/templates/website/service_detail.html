@@ -1,0 +1,172 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}{{ service.name }} - MEDPOINT Massage &amp; Spa{% endblock %}
+
+{% block content %}
+<!-- Page Hero -->
+<section class="page-hero">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="flex items-center gap-2 text-sm mb-6 animate-fade-in">
+            <a href="{% url 'website:home' %}" class="text-gray-500 hover:text-purple-400 transition-colors">Home</a>
+            <span class="breadcrumb-sep">/</span>
+            <a href="{% url 'website:services' %}" class="text-gray-500 hover:text-purple-400 transition-colors">Services</a>
+            <span class="breadcrumb-sep">/</span>
+            <span class="text-purple-400">{{ service.name }}</span>
+        </div>
+        <div class="flex items-center gap-3 mb-4 animate-fade-in" style="animation-delay:0.1s">
+            <span class="text-[11px] tracking-wider uppercase text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full">{{ service.get_category_display }}</span>
+            <span class="text-gray-500 text-sm"><i class="far fa-clock mr-1"></i>{{ service.duration_minutes }} min</span>
+        </div>
+        <h1 class="font-display text-4xl sm:text-5xl font-bold text-white mb-4 animate-fade-in-up">{{ service.name }}</h1>
+    </div>
+</section>
+
+<!-- Service Detail -->
+<section class="py-16 relative">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid lg:grid-cols-5 gap-12">
+            <!-- Main Content -->
+            <div class="lg:col-span-3 scroll-reveal">
+                <div class="relative rounded-2xl overflow-hidden mb-10">
+                    {% if service.image %}
+                    <img src="{{ service.image.url }}" alt="{{ service.name }}" class="w-full h-[400px] object-cover">
+                    {% else %}
+                    <div class="w-full h-[400px] bg-gradient-to-br from-purple-900/50 to-violet-900/50 flex items-center justify-center">
+                        <i class="fas fa-spa text-6xl text-purple-400/30"></i>
+                    </div>
+                    {% endif %}
+                    <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-dark-50 to-transparent"></div>
+                </div>
+
+                <div class="prose prose-invert max-w-none">
+                    <h2 class="font-display text-2xl font-semibold text-white mb-4">About This Treatment</h2>
+                    <div class="text-gray-300 leading-relaxed space-y-4">
+                        {{ service.description|linebreaksbr }}
+                    </div>
+                </div>
+
+                <!-- Service Features -->
+                <div class="mt-10 grid sm:grid-cols-2 gap-4">
+                    <div class="flex items-start gap-3 p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">
+                        <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-user-md text-purple-400"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-medium text-sm">Expert Therapists</h4>
+                            <p class="text-gray-500 text-xs mt-1">Licensed and experienced professionals</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">
+                        <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-leaf text-purple-400"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-medium text-sm">Premium Products</h4>
+                            <p class="text-gray-500 text-xs mt-1">Only the finest oils and products</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">
+                        <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-shield-alt text-purple-400"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-medium text-sm">Hygienic & Safe</h4>
+                            <p class="text-gray-500 text-xs mt-1">Sanitized environment guaranteed</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">
+                        <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-heart text-purple-400"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-medium text-sm">Personalized Care</h4>
+                            <p class="text-gray-500 text-xs mt-1">Tailored to your needs</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="lg:col-span-2 scroll-reveal delay-200">
+                <!-- Price Card -->
+                <div class="glass-panel p-8 mb-8 sticky top-28">
+                    <div class="text-center mb-6">
+                        <span class="text-gray-400 text-sm">Starting from</span>
+                        <div class="text-4xl font-display font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent mt-1">₱{{ service.price }}</div>
+                        <span class="text-gray-500 text-sm">{{ service.duration_minutes }} minutes session</span>
+                    </div>
+
+                    <div class="space-y-3 mb-8">
+                        <div class="flex items-center gap-3 text-sm">
+                            <i class="fas fa-check text-green-400 text-xs"></i>
+                            <span class="text-gray-300">Professional therapist included</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-sm">
+                            <i class="fas fa-check text-green-400 text-xs"></i>
+                            <span class="text-gray-300">Complimentary refreshments</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-sm">
+                            <i class="fas fa-check text-green-400 text-xs"></i>
+                            <span class="text-gray-300">Use of spa facilities</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-sm">
+                            <i class="fas fa-check text-green-400 text-xs"></i>
+                            <span class="text-gray-300">Towels and amenities provided</span>
+                        </div>
+                    </div>
+
+                    <a href="{% url 'website:booking' %}" class="block w-full text-center px-6 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5">
+                        <i class="fas fa-calendar-check mr-2"></i>Book This Service
+                    </a>
+
+                    <div class="flex items-center justify-center gap-4 mt-4 text-sm">
+                        <a href="tel:+639123456789" class="text-gray-400 hover:text-purple-400 transition-colors">
+                            <i class="fas fa-phone-alt mr-1"></i>Call Us
+                        </a>
+                        <span class="text-gray-700">|</span>
+                        <a href="{% url 'website:contact' %}" class="text-gray-400 hover:text-purple-400 transition-colors">
+                            <i class="fas fa-envelope mr-1"></i>Inquire
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Related Services -->
+{% if related_services %}
+<section class="py-16 relative border-t border-purple-500/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12 scroll-reveal">
+            <h2 class="font-display text-2xl sm:text-3xl font-bold text-white mb-3">You May Also Like</h2>
+            <p class="text-gray-400">Explore more treatments in this category</p>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% for rs in related_services %}
+            <div class="group relative bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-2 scroll-reveal delay-{{ forloop.counter }}00">
+                <div class="h-48 overflow-hidden relative">
+                    {% if rs.image %}
+                    <img src="{{ rs.image.url }}" alt="{{ rs.name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    {% else %}
+                    <div class="w-full h-full bg-gradient-to-br from-purple-900/50 to-violet-900/50 flex items-center justify-center">
+                        <i class="fas fa-spa text-4xl text-purple-400/30"></i>
+                    </div>
+                    {% endif %}
+                    <div class="absolute top-3 right-3 bg-purple-600/90 text-white text-xs font-semibold px-2.5 py-1 rounded-full">₱{{ rs.price }}</div>
+                </div>
+                <div class="p-5">
+                    <h3 class="font-display text-lg font-semibold text-white mb-1 group-hover:text-purple-300 transition-colors">{{ rs.name }}</h3>
+                    <p class="text-gray-500 text-xs mb-3"><i class="far fa-clock mr-1"></i>{{ rs.duration_minutes }} min</p>
+                    <a href="{% url 'website:service_detail' rs.slug %}" class="inline-flex items-center gap-1.5 text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors">
+                        View Details <i class="fas fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

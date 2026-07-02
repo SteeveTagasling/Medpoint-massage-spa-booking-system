@@ -1,0 +1,44 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Gallery{% endblock %}
+{% block page_title %}Gallery{% endblock %}
+{% block page_subtitle %}Manage gallery images{% endblock %}
+
+{% block content %}
+<div class="items-grid">
+    {% for image in images %}
+    <div class="item-card">
+        {% if image.image %}
+        <img src="{{ image.image.url }}" alt="{{ image.title }}" class="item-card-img">
+        {% else %}
+        <div class="item-card-img-placeholder">
+            <i class="fas fa-image"></i>
+        </div>
+        {% endif %}
+        <div class="item-card-body">
+            <div class="item-card-title">{{ image.title }}</div>
+            {% if image.caption %}
+            <div class="item-card-sub">{{ image.caption }}</div>
+            {% endif %}
+            <div class="item-card-meta">
+                <span>
+                    {% if image.is_active %}
+                    <i class="fas fa-circle" style="color: var(--green-400); font-size: 0.5rem;"></i> Active
+                    {% else %}
+                    <i class="fas fa-circle" style="color: var(--red-400); font-size: 0.5rem;"></i> Inactive
+                    {% endif %}
+                </span>
+                <span><i class="fas fa-sort-numeric-up"></i> Order: {{ image.order }}</span>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card" style="grid-column: 1 / -1;">
+        <div class="empty-state">
+            <i class="fas fa-images"></i>
+            <p>No gallery images found</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,421 @@
+{% extends "portals/base.html" %}
+
+{% block title %}New Walk-in Booking{% endblock %}
+{% block page_title %}New Walk-in Booking{% endblock %}
+{% block page_subtitle %}Register a walk-in customer appointment{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        max-width: 720px;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+    }
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+    .form-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .portal-input {
+        padding: 0.6rem 0.875rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--input-bg);
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-family: inherit;
+        outline: none;
+        transition: var(--transition);
+        width: 100%;
+    }
+    .portal-input:focus {
+        border-color: var(--purple-500);
+        box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.12);
+    }
+    .portal-input::placeholder { color: var(--text-muted); }
+    select.portal-input { cursor: pointer; }
+    select.portal-input option { background: var(--bg-secondary); }
+    textarea.portal-input { resize: vertical; }
+    .form-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border-color);
+    }
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.5rem;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        font-family: inherit;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .btn-primary:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+    .btn-cancel {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.5rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+    .btn-cancel:hover {
+        border-color: var(--border-hover);
+        color: var(--text-primary);
+    }
+    .error-text {
+        font-size: 0.7rem;
+        color: var(--red-400);
+        margin-top: 0.2rem;
+    }
+    /* Therapist Dynamic UI */
+    .therapist-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+    .therapist-card {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 2px solid var(--border-color);
+        background: var(--bg-secondary);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .therapist-card:hover { border-color: var(--purple-400); transform: translateY(-3px); }
+    .therapist-card.selected {
+        border-color: var(--purple-500); background: rgba(139, 92, 246, 0.1);
+    }
+    .therapist-card.selected::after {
+        content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+        position: absolute; top: 8px; right: 8px; background: var(--purple-500); color: #fff;
+        width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center;
+        justify-content: center; font-size: 0.6rem; z-index: 10;
+    }
+    .therapist-card-photo { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+    .therapist-card-photo-placeholder {
+        width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+        background: rgba(139,92,246,0.1); font-size: 2.5rem; color: rgba(168,85,247,0.5);
+    }
+    .therapist-card-info { padding: 0.5rem; }
+    .therapist-card-name { font-size: 0.75rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .therapist-card-title { font-size: 0.65rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .therapist-section { margin-top: 0.5rem; transition: all 0.4s ease; }
+    .therapist-section-hidden { opacity: 0; max-height: 0; overflow: hidden; margin-top: 0; }
+    .gender-info-badge {
+        display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.6rem; border-radius: 999px;
+        font-size: 0.65rem; font-weight: 600; background: rgba(139,92,246,0.1); color: var(--purple-400); border: 1px solid rgba(139,92,246,0.2);
+    }
+    .loading-spinner { display: flex; justify-content: center; padding: 2rem; }
+    .loading-spinner::after { content: ''; width: 24px; height: 24px; border: 3px solid rgba(139,92,246,0.2); border-top-color: var(--purple-500); border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 640px) {
+        .form-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'portals:booking_list' %}" class="back-link" style="margin-bottom: 1.25rem; display: inline-flex;">
+    <i class="fas fa-arrow-left"></i> Back to Bookings
+</a>
+
+<div class="card form-card">
+    <div class="card-header">
+        <span class="card-header-title">
+            <i class="fas fa-walking" style="margin-right: 0.5rem; color: var(--amber-400);"></i>
+            Walk-in Booking Details
+        </span>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-grid">
+                
+                <div class="form-group">
+                    <label class="form-label" for="id_client_name">Client Name</label>
+                    {{ form.client_name }}
+                    {% if form.client_name.errors %}
+                        <span class="error-text">{{ form.client_name.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="id_client_gender">Client Gender</label>
+                    {{ form.client_gender }}
+                    {% if form.client_gender.errors %}
+                        <span class="error-text">{{ form.client_gender.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_client_phone">Phone</label>
+                    {{ form.client_phone }}
+                    {% if form.client_phone.errors %}
+                        <span class="error-text">{{ form.client_phone.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_client_email">Email</label>
+                    {{ form.client_email }}
+                    {% if form.client_email.errors %}
+                        <span class="error-text">{{ form.client_email.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_date">Date</label>
+                    {{ form.date }}
+                    {% if form.date.errors %}
+                        <span class="error-text">{{ form.date.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_time">Time</label>
+                    {{ form.time }}
+                    {% if form.time.errors %}
+                        <span class="error-text">{{ form.time.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_service">Service</label>
+                    {{ form.service }}
+                    {% if form.service.errors %}
+                        <span class="error-text">{{ form.service.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_therapist_preference">Therapist Preference</label>
+                    {{ form.therapist_preference }}
+                    {% if form.therapist_preference.errors %}
+                        <span class="error-text">{{ form.therapist_preference.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group full-width">
+                    <div id="therapist-section" class="therapist-section therapist-section-hidden">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <label class="form-label mb-0">Select Specific Therapist (Optional)</label>
+                            <span id="gender-info-badge" class="gender-info-badge"></span>
+                        </div>
+                        <div id="therapist-cards-container">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                    <div style="display:none;">{{ form.therapist }}</div>
+                    {% if form.therapist.errors %}
+                        <span class="error-text">{{ form.therapist.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_status">Status</label>
+                    {{ form.status }}
+                    {% if form.status.errors %}
+                        <span class="error-text">{{ form.status.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="form-group full-width">
+                    <label class="form-label" for="id_notes">Notes</label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                        <span class="error-text">{{ form.notes.errors.0 }}</span>
+                    {% endif %}
+                </div>
+
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-check"></i> Create Booking
+                </button>
+                <a href="{% url 'portals:booking_list' %}" class="btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const genderSelect = document.getElementById('id_client_gender');
+    const prefSelect = document.getElementById('id_therapist_preference');
+    const therapistHidden = document.getElementById('id_therapist');
+    const therapistSection = document.getElementById('therapist-section');
+    const cardsContainer = document.getElementById('therapist-cards-container');
+    const genderBadge = document.getElementById('gender-info-badge');
+
+    const dateInput = document.getElementById('id_date');
+    const timeInput = document.getElementById('id_time');
+    const svcInput = document.getElementById('id_service');
+
+    let selectedTherapistId = therapistHidden ? therapistHidden.value : null;
+
+    function updatePreferenceOptions() {
+        if (!genderSelect || !prefSelect) return;
+        const clientGender = genderSelect.value;
+        const options = prefSelect.querySelectorAll('option');
+
+        options.forEach(opt => { opt.disabled = false; opt.style.display = ''; });
+
+        if (clientGender === 'female') {
+            options.forEach(opt => {
+                if (opt.value === 'male') { opt.disabled = true; opt.style.display = 'none'; }
+            });
+            if (prefSelect.value === 'male') { prefSelect.value = 'female'; }
+        }
+        loadTherapists();
+    }
+
+    function loadTherapists() {
+        if (!prefSelect) return;
+        const pref = prefSelect.value;
+        const clientGender = genderSelect ? genderSelect.value : 'male';
+        const rawDate = dateInput ? dateInput.value : '';
+        const rawTime = timeInput ? timeInput.value : '';
+        const rawSvc = svcInput ? svcInput.value : '';
+
+        const dateQuery = rawDate ? `&date=${rawDate}` : '';
+        const timeQuery = rawTime ? `&time=${rawTime}` : '';
+        const svcQuery = rawSvc ? `&service_id=${rawSvc}` : '';
+
+        therapistSection.classList.remove('therapist-section-hidden');
+        cardsContainer.innerHTML = '<div class="loading-spinner"></div>';
+
+        if (clientGender === 'female') {
+            genderBadge.innerHTML = '<i class="fas fa-venus"></i> Female therapists only';
+        } else if (pref === 'female') {
+            genderBadge.innerHTML = '<i class="fas fa-venus"></i> Showing female therapists';
+        } else if (pref === 'male') {
+            genderBadge.innerHTML = '<i class="fas fa-mars"></i> Showing male therapists';
+        } else {
+            genderBadge.innerHTML = '<i class="fas fa-users"></i> Showing all therapists';
+        }
+
+        const url = `{% url 'website:api_therapists' %}?preference=${pref}&client_gender=${clientGender}${dateQuery}${timeQuery}${svcQuery}`;
+        fetch(url)
+            .then(r => r.json())
+            .then(data => renderTherapistCards(data.therapists))
+            .catch(() => { cardsContainer.innerHTML = '<p class="text-gray-400 text-sm py-4 text-center">Unable to load therapists.</p>'; });
+    }
+
+    function renderTherapistCards(therapists) {
+        if (!therapists || therapists.length === 0) {
+            cardsContainer.innerHTML = '<p class="text-gray-400 text-sm py-4"><i class="fas fa-user-slash mr-2"></i>No therapists available for this preference.</p>';
+            return;
+        }
+
+        let html = '<div class="therapist-grid">';
+        therapists.forEach(t => {
+            if ((t.is_off || t.is_booked || t.is_closed) && selectedTherapistId == t.id) {
+                selectedTherapistId = null;
+                if (therapistHidden) therapistHidden.value = '';
+            }
+
+            const isSelected = selectedTherapistId == t.id;
+            const photoHtml = t.photo 
+                ? `<img src="${t.photo}" alt="${t.name}" class="therapist-card-photo" loading="lazy">` 
+                : `<div class="therapist-card-photo-placeholder"><i class="fas fa-user"></i></div>`;
+            
+            let badgeHtml = '';
+            let disabledStyle = '';
+            let clickHandler = `onclick="selectTherapist(${t.id})"`;
+            let selectedClass = isSelected ? 'selected' : '';
+
+            if (t.is_closed) {
+                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                     <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:bold; margin-bottom: 4px;">CLOSED</span>
+                   </div>`;
+                disabledStyle = 'opacity: 0.6; cursor: not-allowed; border-color: rgba(239, 68, 68, 0.3);';
+                clickHandler = ''; selectedClass = '';
+            } else if (t.is_off) {
+                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center;">
+                     <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:bold;">Day Off</span>
+                   </div>`;
+                disabledStyle = 'opacity: 0.6; cursor: not-allowed;';
+                clickHandler = ''; selectedClass = '';
+            } else if (t.is_booked) {
+                let badgeText = t.next_avail ? `Booked<br><span style="font-size:0.6rem; font-weight:normal;">Next: ${t.next_avail}</span>` : "Booked";
+                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
+                     <span style="background:rgba(245, 158, 11, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:bold;">${badgeText}</span>
+                   </div>`;
+                disabledStyle = 'opacity: 0.6; cursor: not-allowed; border-color: rgba(245, 158, 11, 0.3);';
+                clickHandler = ''; selectedClass = '';
+            }
+
+            html += `
+                <div class="therapist-card ${selectedClass}" style="${disabledStyle}" data-therapist-id="${t.id}" ${clickHandler} title="${t.name}">
+                    ${badgeHtml}
+                    ${photoHtml}
+                    <div class="therapist-card-info">
+                        <div class="therapist-card-name">${t.name}</div>
+                        <div class="therapist-card-title">${t.title}</div>
+                    </div>
+                </div>`;
+        });
+        html += '</div>';
+        cardsContainer.innerHTML = html;
+    }
+
+    window.selectTherapist = function(id) {
+        if (selectedTherapistId == id) {
+            selectedTherapistId = null;
+            if (therapistHidden) therapistHidden.value = '';
+        } else {
+            selectedTherapistId = id;
+            if (therapistHidden) therapistHidden.value = id;
+        }
+        document.querySelectorAll('.therapist-card').forEach(card => {
+            card.classList.toggle('selected', card.dataset.therapistId == selectedTherapistId);
+        });
+    };
+
+    if(genderSelect) genderSelect.addEventListener('change', () => { selectedTherapistId=null; if(therapistHidden) therapistHidden.value=''; updatePreferenceOptions(); });
+    if(prefSelect) prefSelect.addEventListener('change', () => { selectedTherapistId=null; if(therapistHidden) therapistHidden.value=''; loadTherapists(); });
+    if(dateInput) dateInput.addEventListener('change', () => { selectedTherapistId=null; if(therapistHidden) therapistHidden.value=''; loadTherapists(); });
+    if(timeInput) timeInput.addEventListener('change', () => { selectedTherapistId=null; if(therapistHidden) therapistHidden.value=''; loadTherapists(); });
+    if(svcInput) svcInput.addEventListener('change', () => { selectedTherapistId=null; if(therapistHidden) therapistHidden.value=''; loadTherapists(); });
+
+    updatePreferenceOptions();
+});
+</script>
+{% endblock %}
