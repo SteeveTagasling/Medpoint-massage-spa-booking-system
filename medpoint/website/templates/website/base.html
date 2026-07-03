@@ -79,7 +79,8 @@
                         class="nav-link text-sm font-medium tracking-wide uppercase hover:text-purple-400 transition-colors {% if request.resolver_match.url_name == 'contact' %}text-purple-400{% else %}text-gray-300{% endif %}">Contact</a>
                 </li>
                 <li><a href="{% url 'website:my_bookings' %}"
-                        class="nav-link text-sm font-medium tracking-wide uppercase hover:text-purple-400 transition-colors {% if request.resolver_match.url_name == 'my_bookings' %}text-purple-400{% else %}text-gray-300{% endif %}">My Bookings</a>
+                        class="nav-link text-sm font-medium tracking-wide uppercase hover:text-purple-400 transition-colors {% if request.resolver_match.url_name == 'my_bookings' %}text-purple-400{% else %}text-gray-300{% endif %}">My
+                        Bookings</a>
                 </li>
             </ul>
             <div class="flex items-center gap-3">
@@ -210,7 +211,7 @@
                                 class="fas fa-map-marker-alt text-purple-400 mt-1"></i><span>Gallares Street, Tagbilaran
                                 City, Philippines</span></div>
                         <div class="flex items-start gap-3 text-gray-400"><i
-                                class="fas fa-phone-alt text-purple-400 mt-1"></i><span>+63 912 345 6789</span></div>
+                                class="fas fa-phone-alt text-purple-400 mt-1"></i><span>+63 928 356 8231</span></div>
                         <div class="flex items-start gap-3 text-gray-400"><i
                                 class="fas fa-envelope text-purple-400 mt-1"></i><span>info@medpointspa.com</span></div>
                         <div class="flex items-start gap-3 text-gray-400"><i
@@ -224,7 +225,9 @@
                 <div class="flex gap-4 text-xs text-gray-500">
                     <a href="#" class="hover:text-purple-400 transition-colors">Privacy</a>
                     <a href="#" class="hover:text-purple-400 transition-colors">Terms</a>
-                    <a href="{% url 'portals:login' %}" class="hover:text-purple-400 transition-colors flex items-center gap-1"><i class="fas fa-user-shield" style="font-size: 0.6rem;"></i> Portal</a>
+                    <a href="{% url 'portals:login' %}"
+                        class="hover:text-purple-400 transition-colors flex items-center gap-1"><i
+                            class="fas fa-user-shield" style="font-size: 0.6rem;"></i> Portal</a>
                 </div>
             </div>
         </div>
