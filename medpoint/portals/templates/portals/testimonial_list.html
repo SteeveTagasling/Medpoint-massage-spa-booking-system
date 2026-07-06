@@ -39,7 +39,6 @@
                         <span style="font-size: 0.8rem;">{{ testimonial.content|truncatewords:15 }}</span>
                     </td>
                     <td>
-<<<<<<< HEAD
                         <button class="btn-icon toggle-btn featured-btn" data-url="{% url 'portals:testimonial_toggle_featured' testimonial.pk %}" title="Toggle Featured">
                             {% if testimonial.is_featured %}
                             <i class="fas fa-star" style="color: var(--amber-400);"></i>
@@ -56,20 +55,6 @@
                             <i class="fas fa-times-circle" style="color: var(--red-400);"></i>
                             {% endif %}
                         </button>
-=======
-                        {% if testimonial.is_featured %}
-                        <i class="fas fa-check-circle" style="color: var(--green-400);"></i>
-                        {% else %}
-                        <i class="fas fa-minus-circle" style="color: var(--text-muted); opacity: 0.4;"></i>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if testimonial.is_approved %}
-                        <i class="fas fa-check-circle" style="color: var(--green-400);"></i>
-                        {% else %}
-                        <i class="fas fa-times-circle" style="color: var(--red-400);"></i>
-                        {% endif %}
->>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
                     </td>
                     <td>{{ testimonial.created_at|date:"M d, Y" }}</td>
                 </tr>
@@ -87,7 +72,6 @@
         </table>
     </div>
 </div>
-<<<<<<< HEAD
 
 <style>
 .btn-icon {
@@ -166,6 +150,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-=======
->>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
 {% endblock %}

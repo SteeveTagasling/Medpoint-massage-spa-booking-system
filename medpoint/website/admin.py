@@ -1,10 +1,6 @@
 from django.contrib import admin
-<<<<<<< HEAD
 # pyrefly: ignore [missing-import]
 from .models import Service, Therapist, Testimonial, Booking, ContactMessage, StaffSchedule
-=======
-from .models import Service, Therapist, Testimonial, GalleryImage, Booking, ContactMessage, StaffSchedule
->>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
 
 
 @admin.register(Service)
@@ -41,16 +37,6 @@ class TestimonialAdmin(admin.ModelAdmin):
     search_fields = ['client_name', 'content']
 
 
-<<<<<<< HEAD
-=======
-@admin.register(GalleryImage)
-class GalleryImageAdmin(admin.ModelAdmin):
-    list_display = ['title', 'is_active', 'order', 'created_at']
-    list_filter = ['is_active']
-    list_editable = ['is_active', 'order']
-
-
->>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
     list_display = ['client_name', 'service', 'therapist', 'booking_type', 'date', 'time', 'status', 'created_at']

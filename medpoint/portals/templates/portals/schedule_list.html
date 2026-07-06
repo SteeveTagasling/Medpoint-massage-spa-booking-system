@@ -107,12 +107,9 @@
     <a href="{% url 'portals:schedule_create' %}" class="btn-primary">
         <i class="fas fa-plus"></i> Assign Schedule
     </a>
-<<<<<<< HEAD
     <a href="{% url 'portals:staff_assign_leave' %}" class="btn-primary" style="background: linear-gradient(135deg, var(--red-500), var(--amber-500));">
         <i class="fas fa-plane-departure"></i> Assign Leave
     </a>
-=======
->>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
     <form method="get" action="{% url 'portals:schedule_list' %}" style="display: flex; gap: 0.5rem; align-items: center;">
         <select name="therapist" class="filter-select" onchange="this.form.submit()">
             <option value="">All Therapists</option>
@@ -202,7 +199,6 @@
         </table>
     </div>
 </div>
-<<<<<<< HEAD
 
 <div class="card" style="margin-top: 2rem;">
     <div class="card-header">
@@ -263,8 +259,6 @@
         </table>
     </div>
 </div>
-=======
->>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
 {% endblock %}
 
 {% block extra_js %}
