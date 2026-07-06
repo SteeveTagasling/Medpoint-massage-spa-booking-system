@@ -249,7 +249,9 @@ def _handle_family_booking(request):
     # --- therapist time-overlap check across the group ---
     if not errors and booking_date and time_val:
         try:
+            from .models import StaffSchedule
             req_start_time = datetime.datetime.strptime(time_val, '%H:%M').time()
+            target_weekday = booking_date.weekday()
             # Build a map of therapist -> list of durations for this group
             group_therapist_services = {}  # therapist_id -> [(start, end), ...]
             for mf in member_forms:
@@ -264,14 +266,44 @@ def _handle_family_booking(request):
                         group_therapist_services[therapist.pk] = []
                     group_therapist_services[therapist.pk].append((req_start_dt, req_end_dt, therapist.name))
 
-            # Check if any therapist in the group is double-booked
+            from .models import StaffLeave
+            # Check if requested time falls within each therapist's schedule and leave
             for t_id, slots in group_therapist_services.items():
-                if len(slots) > 1:
-                    errors.append(
-                        f'Therapist {slots[0][2]} is selected for multiple family members '
-                        f'at the same time. Please choose different therapists.'
-                    )
-                    break
+                leave = StaffLeave.objects.filter(
+                    is_active=True,
+                    therapist_id=t_id, 
+                    start_date__lte=booking_date, 
+                    end_date__gte=booking_date
+                ).first()
+                if leave:
+                    errors.append(f'{slots[0][2]} is on leave on this date.')
+                    continue
+
+                sched = StaffSchedule.objects.filter(
+                    therapist_id=t_id,
+                    day_of_week=target_weekday,
+                    is_available=True,
+                ).first()
+                if sched:
+                    for req_s, req_e, t_name in slots:
+                        if req_start_time < sched.start_time or req_e.time() > sched.end_time:
+                            sched_start_label = sched.start_time.strftime('%I:%M %p')
+                            sched_end_label = sched.end_time.strftime('%I:%M %p')
+                            errors.append(
+                                f'{t_name} is only available from '
+                                f'{sched_start_label} to {sched_end_label} on this day. '
+                                f'Please choose a time within their schedule.'
+                            )
+
+            # Check if any therapist in the group is double-booked
+            if not errors:
+                for t_id, slots in group_therapist_services.items():
+                    if len(slots) > 1:
+                        errors.append(
+                            f'Therapist {slots[0][2]} is selected for multiple family members '
+                            f'at the same time. Please choose different therapists.'
+                        )
+                        break
 
             # Check against existing DB bookings
             if not errors:
@@ -491,9 +523,16 @@ def get_therapists_by_preference(request):
             pass
 
     schedules_map = {}
+    schedule_hours_map = {}  # therapist_id -> {'start': 'HH:MM', 'end': 'HH:MM'}
     closed_date_obj = None
     if target_date:
-        from .models import StaffSchedule, ClosedDay
+        from .models import StaffSchedule, ClosedDay, StaffLeave
+        
+        # Check Staff Leaves
+        leaves = StaffLeave.objects.filter(is_active=True, start_date__lte=target_date, end_date__gte=target_date)
+        for leave in leaves:
+            schedules_map[leave.therapist_id] = True
+
         closed_date_obj = ClosedDay.objects.filter(date=target_date).first()
         if closed_date_obj:
             for t in therapists:
@@ -503,8 +542,16 @@ def get_therapists_by_preference(request):
             for s in scheds:
                 if not s.is_available:
                     schedules_map[s.therapist_id] = True
+                else:
+                    schedule_hours_map[s.therapist_id] = {
+                        'start': s.start_time.strftime('%H:%M'),
+                        'end': s.end_time.strftime('%H:%M'),
+                        'start_time': s.start_time,
+                        'end_time': s.end_time,
+                    }
 
     overlap_map = {}
+    outside_schedule_map = {}  # therapist_id -> True if requested time is outside schedule
     next_avail_map = {}
     time_str = request.GET.get('time', None)
     service_id = request.GET.get('service_id', None)
@@ -517,6 +564,17 @@ def get_therapists_by_preference(request):
             duration = datetime.timedelta(minutes=svc.duration_minutes)
             req_start_dt = datetime.datetime.combine(target_date, req_start_time)
             req_end_dt = req_start_dt + duration
+            req_end_time = req_end_dt.time()
+
+            # Check if requested time is outside therapist's schedule hours
+            for t in therapists:
+                sched = schedule_hours_map.get(t.pk)
+                if sched:
+                    sched_start = sched['start_time']
+                    sched_end = sched['end_time']
+                    # Booking must start at or after schedule start AND end at or before schedule end
+                    if req_start_time < sched_start or req_end_time > sched_end:
+                        outside_schedule_map[t.pk] = True
             
             existing_bookings = Booking.objects.filter(
                 date=target_date,
@@ -545,9 +603,18 @@ def get_therapists_by_preference(request):
                         
                 if is_booked:
                     overlap_map[t.pk] = True
-                    for hour in range(req_start_dt.hour + 1, 21):
+                    sched = schedule_hours_map.get(t.pk)
+                    max_hour = 21
+                    if sched:
+                        max_hour = sched['end_time'].hour
+                    for hour in range(req_start_dt.hour + 1, max_hour):
                         test_start = datetime.datetime.combine(target_date, datetime.time(hour, 0))
                         test_end = test_start + duration
+                        # Also ensure next available is within schedule
+                        if sched and test_start.time() < sched['start_time']:
+                            continue
+                        if sched and test_end.time() > sched['end_time']:
+                            continue
                         overlap = False
                         for b_s, b_e in t_bookings:
                             if max(test_start, b_s) < min(test_end, b_e):
@@ -569,9 +636,11 @@ def get_therapists_by_preference(request):
         # Override is_off to True if it's a closed day, but we'll also pass the specific closed info
         is_off = schedules_map.get(t.pk, False) or is_closed
         is_booked = overlap_map.get(t.pk, False)
+        is_outside_schedule = outside_schedule_map.get(t.pk, False)
         next_avail = next_avail_map.get(t.pk, None)
+        sched = schedule_hours_map.get(t.pk)
         
-        data.append({
+        entry = {
             'id': t.pk,
             'name': t.name,
             'title': t.title,
@@ -581,8 +650,12 @@ def get_therapists_by_preference(request):
             'is_closed': is_closed,
             'closed_reason': closed_reason,
             'is_booked': is_booked,
+            'is_outside_schedule': is_outside_schedule,
             'next_avail': next_avail,
-        })
+        }
+        if sched:
+            entry['schedule_hours'] = f"{sched['start']} - {sched['end']}"
+        data.append(entry)
     return JsonResponse({'therapists': data})
 
 

@@ -95,7 +95,7 @@ class BookingForm(forms.ModelForm):
                     f"your gender preference ({therapist_preference})."
                 )
 
-        from .models import Booking
+        from .models import Booking, StaffSchedule
         import datetime
         date = cleaned_data.get('date')
         time = cleaned_data.get('time')
@@ -108,6 +108,41 @@ class BookingForm(forms.ModelForm):
                 duration = datetime.timedelta(minutes=service.duration_minutes)
                 req_start_dt = datetime.datetime.combine(date, req_start_time)
                 req_end_dt = req_start_dt + duration
+                req_end_time = req_end_dt.time()
+                
+                from .models import StaffLeave
+                # Check leaves
+                leave = StaffLeave.objects.filter(
+                    is_active=True,
+                    therapist=therapist, 
+                    start_date__lte=date, 
+                    end_date__gte=date
+                ).first()
+                if leave:
+                    raise forms.ValidationError(f"{therapist.name} is on leave on this date.")
+
+                # Check if the booking time is within the therapist's schedule
+                target_weekday = date.weekday()
+                sched = StaffSchedule.objects.filter(
+                    therapist=therapist,
+                    day_of_week=target_weekday,
+                    is_available=True,
+                ).first()
+
+                if sched:
+                    if req_start_time < sched.start_time or req_end_time > sched.end_time:
+                        sched_start_label = sched.start_time.strftime('%I:%M %p')
+                        sched_end_label = sched.end_time.strftime('%I:%M %p')
+                        raise forms.ValidationError(
+                            f"{therapist.name} is only available from "
+                            f"{sched_start_label} to {sched_end_label} on this day. "
+                            f"Please choose a time within their schedule."
+                        )
+                elif StaffSchedule.objects.filter(therapist=therapist, day_of_week=target_weekday).exists():
+                    # Schedule exists but is_available=False — therapist is off
+                    raise forms.ValidationError(
+                        f"{therapist.name} is not available on {date.strftime('%A')}s."
+                    )
 
                 existing_bookings = Booking.objects.filter(
                     date=date,

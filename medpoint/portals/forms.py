@@ -8,8 +8,8 @@ class ServiceForm(forms.ModelForm):
     """Admin form for creating/editing services."""
     category = forms.MultipleChoiceField(
         choices=Service.CATEGORY_CHOICES,
-        widget=forms.SelectMultiple(attrs={'class': 'portal-input', 'style': 'height: auto; min-height: 120px;'}),
-        help_text="Hold Ctrl (or Cmd) to select multiple categories."
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'category-checkboxes'}),
+        help_text="Select one or more categories."
     )
 
     class Meta:
@@ -362,9 +362,32 @@ class StaffSettingsForm(forms.ModelForm):
         model = Therapist
         fields = ['photo', 'name', 'bio', 'phone', 'email']
         widgets = {
-            'photo': forms.ClearableFileInput(attrs={'class': 'portal-input'}),
+            'photo': forms.FileInput(attrs={'class': 'portal-file-input', 'accept': 'image/*'}),
             'name': forms.TextInput(attrs={'class': 'portal-input', 'placeholder': 'Full Name'}),
             'bio': forms.Textarea(attrs={'class': 'portal-input', 'rows': 3, 'placeholder': 'Write a short bio...'}),
             'phone': forms.TextInput(attrs={'class': 'portal-input', 'placeholder': 'Contact Number'}),
             'email': forms.EmailInput(attrs={'class': 'portal-input', 'placeholder': 'Email Address'}),
         }
+
+
+class StaffLeaveForm(forms.ModelForm):
+    """Form for assigning leave to a therapist."""
+    class Meta:
+        from website.models import StaffLeave
+        model = StaffLeave
+        fields = ['therapist', 'start_date', 'end_date', 'reason']
+        widgets = {
+            'therapist': forms.Select(attrs={'class': 'portal-input'}),
+            'start_date': forms.DateInput(attrs={'class': 'portal-input', 'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'class': 'portal-input', 'type': 'date'}),
+            'reason': forms.TextInput(attrs={'class': 'portal-input', 'placeholder': 'Optional reason (e.g. Vacation, Sick Leave)'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+
+        if start_date and end_date and start_date > end_date:
+            raise forms.ValidationError("End date cannot be earlier than start date.")
+        return cleaned_data

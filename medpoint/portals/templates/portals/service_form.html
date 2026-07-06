@@ -45,6 +45,74 @@
     select.portal-input { cursor: pointer; }
     select.portal-input option { background: var(--bg-secondary); }
     textarea.portal-input { resize: vertical; }
+
+    /* Category Checkboxes styling (Pill style) */
+    .category-checkbox-group ul {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .category-checkbox-group li {
+        margin: 0;
+    }
+    .category-checkbox-group label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 50px;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        user-select: none;
+        margin: 0;
+        font-weight: 500;
+    }
+    .category-checkbox-group label:hover {
+        border-color: rgba(168, 85, 247, 0.4);
+        background: rgba(168, 85, 247, 0.05);
+    }
+    .category-checkbox-group input[type="checkbox"] {
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(168, 85, 247, 0.3);
+        border-radius: 4px;
+        background: transparent;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s;
+        margin: 0;
+    }
+    .category-checkbox-group input[type="checkbox"]:checked {
+        background: var(--purple-500);
+        border-color: var(--purple-500);
+    }
+    .category-checkbox-group input[type="checkbox"]:checked::after {
+        content: '\f00c';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        color: white;
+        font-size: 8px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    /* Optional glow effect for checked pill */
+    .category-checkbox-group label:has(input[type="checkbox"]:checked) {
+        border-color: var(--purple-500);
+        background: rgba(168, 85, 247, 0.08);
+        box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
+        color: #fff;
+    }
+
     .form-actions {
         display: flex;
         align-items: center;
@@ -138,7 +206,9 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="id_category">Category</label>
-                    {{ form.category }}
+                    <div class="category-checkbox-group">
+                        {{ form.category }}
+                    </div>
                     {% if form.category.help_text %}<span class="form-hint">{{ form.category.help_text }}</span>{% endif %}
                     {% if form.category.errors %}<span class="error-text">{{ form.category.errors.0 }}</span>{% endif %}
                 </div>

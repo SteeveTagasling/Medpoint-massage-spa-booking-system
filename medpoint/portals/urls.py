@@ -43,6 +43,8 @@ urlpatterns = [
     path('schedules/<str:pk>/edit/', views.schedule_edit, name='schedule_edit'),
     path('schedules/<str:pk>/delete/', views.schedule_delete, name='schedule_delete'),
     path('schedules/<str:pk>/toggle/', views.schedule_toggle_availability, name='schedule_toggle'),
+    path('schedules/leave/assign/', views.staff_assign_leave, name='staff_assign_leave'),
+    path('schedules/leave/<str:pk>/toggle-active/', views.staff_leave_toggle_active, name='staff_leave_toggle_active'),
 
     # ── Admin Reports ─────────────────────────────────
     path('reports/', views.admin_reports, name='admin_reports'),

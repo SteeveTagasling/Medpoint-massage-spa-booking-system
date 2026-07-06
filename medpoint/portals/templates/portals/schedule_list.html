@@ -107,6 +107,9 @@
     <a href="{% url 'portals:schedule_create' %}" class="btn-primary">
         <i class="fas fa-plus"></i> Assign Schedule
     </a>
+    <a href="{% url 'portals:staff_assign_leave' %}" class="btn-primary" style="background: linear-gradient(135deg, var(--red-500), var(--amber-500));">
+        <i class="fas fa-plane-departure"></i> Assign Leave
+    </a>
     <form method="get" action="{% url 'portals:schedule_list' %}" style="display: flex; gap: 0.5rem; align-items: center;">
         <select name="therapist" class="filter-select" onchange="this.form.submit()">
             <option value="">All Therapists</option>
@@ -189,6 +192,66 @@
                             <i class="fas fa-clock"></i>
                             <p>No schedules assigned yet</p>
                         </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <span class="card-header-title">
+            <i class="fas fa-plane-departure" style="margin-right: 0.5rem; color: var(--red-400); font-size: 0.85rem;"></i>
+            Staff Leaves
+        </span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Therapist</th>
+                    <th>Date Range</th>
+                    <th>Reason</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in leaves %}
+                <tr>
+                    <td style="font-weight: 500; color: var(--text-primary);">
+                        {{ l.therapist.name }}
+                        {% if l.is_active %}
+                            <span class="day-badge" style="background: rgba(239, 68, 68, 0.1); color: var(--red-400); font-size: 0.65rem; margin-left: 0.5rem;">Active</span>
+                        {% else %}
+                            <span class="day-badge" style="background: rgba(156, 163, 175, 0.1); color: var(--text-muted); font-size: 0.65rem; margin-left: 0.5rem;">Ended</span>
+                        {% endif %}
+                    </td>
+                    <td style="{% if not l.is_active %}text-decoration: line-through; opacity: 0.6;{% endif %}">{{ l.start_date|date:"M j, Y" }} — {{ l.end_date|date:"M j, Y" }}</td>
+                    <td class="notes-cell" style="{% if not l.is_active %}opacity: 0.6;{% endif %}">
+                        {% if l.reason %}{{ l.reason }}{% else %}<span class="empty-note">—</span>{% endif %}
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'portals:staff_leave_toggle_active' l.pk %}" style="display: inline-block;" onsubmit="return confirm('Are you sure you want to {% if l.is_active %}end{% else %}reactivate{% endif %} this leave record?');">
+                            {% csrf_token %}
+                            {% if l.is_active %}
+                            <button type="submit" class="btn-sm btn-sm-danger" title="End Leave">
+                                <i class="fas fa-times-circle"></i> End Leave
+                            </button>
+                            {% else %}
+                            <button type="submit" class="btn-sm" style="border-color: rgba(34, 197, 94, 0.2); color: var(--green-400); background: rgba(34, 197, 94, 0.05);" title="Reactivate Leave" onmouseover="this.style.background='rgba(34, 197, 94, 0.12)';" onmouseout="this.style.background='rgba(34, 197, 94, 0.05)';">
+                                <i class="fas fa-undo"></i> Reactivate
+                            </button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        <i class="fas fa-calendar-check" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block; opacity: 0.5;"></i>
+                        No leaves assigned.
                     </td>
                 </tr>
                 {% endfor %}

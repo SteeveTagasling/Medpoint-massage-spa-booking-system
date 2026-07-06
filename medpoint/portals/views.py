@@ -12,9 +12,9 @@ from django.utils import timezone
 
 from website.models import (
     Service, Therapist, Testimonial, GalleryImage,
-    Booking, ContactMessage, StaffSchedule,
+    Booking, ContactMessage, StaffSchedule, StaffLeave,
 )
-from .forms import ServiceForm, TherapistForm, WalkInBookingForm, StaffScheduleForm, AdminSettingsForm, AdminUserForm, StaffSettingsForm, BulkStaffScheduleForm
+from .forms import ServiceForm, TherapistForm, WalkInBookingForm, StaffScheduleForm, AdminSettingsForm, AdminUserForm, StaffSettingsForm, BulkStaffScheduleForm, StaffLeaveForm
 from .models import AdminProfile, StaffNotification
 
 
@@ -39,6 +39,13 @@ def portal_login(request):
             else:
                 login(request, user)
                 request.session['portal_role'] = role
+                
+                remember_me = request.POST.get('remember_me')
+                if not remember_me:
+                    request.session.set_expiry(0) # Expire on browser close
+                else:
+                    request.session.set_expiry(1209600) # Persist for 2 weeks
+                
                 next_url = request.GET.get('next', 'portals:dashboard')
                 return redirect(next_url)
         else:
@@ -616,7 +623,9 @@ def schedule_list(request):
     if not request.user.is_staff:
         return redirect('portals:login')
     therapist_filter = request.GET.get('therapist', '')
-    status_filter = request.GET.get('status', '')
+    status_filter = request.GET.get('status')
+    if status_filter is None:
+        status_filter = 'available'
     
     schedules = StaffSchedule.objects.select_related('therapist').order_by('therapist__name', 'start_time')
     
@@ -660,11 +669,17 @@ def schedule_list(request):
         g['display_days'] = ", ".join(day_names)
         
     therapists = Therapist.objects.filter(is_active=True)
+    
+    leaves = StaffLeave.objects.select_related('therapist').all().order_by('-start_date')
+    if therapist_filter:
+        leaves = leaves.filter(therapist_id=therapist_filter)
+
     context = {
         'grouped_schedules': grouped_schedules,
         'therapists': therapists,
         'therapist_filter': therapist_filter,
         'status_filter': status_filter,
+        'leaves': leaves,
     }
     return render(request, 'portals/schedule_list.html', context)
 
@@ -718,6 +733,47 @@ def schedule_create(request):
     else:
         form = BulkStaffScheduleForm()
     return render(request, 'portals/schedule_form.html', {'form': form, 'action': 'Assign'})
+
+
+@login_required(login_url='portals:login')
+def staff_assign_leave(request):
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
+
+    if request.method == 'POST':
+        form = StaffLeaveForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Leave assigned successfully.')
+            return redirect('portals:schedule_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = StaffLeaveForm()
+
+    return render(request, 'portals/staff_leave_form.html', {'form': form})
+
+
+@login_required(login_url='portals:login')
+def staff_leave_toggle_active(request, pk):
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
+
+    if request.method == 'POST':
+        import website.models
+        leave = get_object_or_404(website.models.StaffLeave, pk=pk)
+        leave.is_active = not leave.is_active
+        leave.save()
+        status_text = 'reactivated' if leave.is_active else 'ended'
+        messages.success(request, f'Leave record {status_text} successfully.')
+        return redirect('portals:schedule_list')
+    return redirect('portals:schedule_list')
 
 
 @login_required(login_url='portals:login')
@@ -1330,6 +1386,13 @@ def staff_settings(request):
                 update_session_auth_hash(request, user)
                 
             form.save()
+            
+            # Manually handle photo removal since we switched to FileInput
+            if request.POST.get('photo-clear'):
+                therapist.photo.delete(save=False)
+                therapist.photo = None
+                therapist.save()
+
             messages.success(request, 'Your profile settings have been updated successfully.')
             return redirect('portals:staff_settings')
         else:

@@ -120,6 +120,22 @@ class StaffSchedule(models.Model):
         return f"{self.therapist.name} — {self.get_day_of_week_display()} {self.start_time:%H:%M}-{self.end_time:%H:%M}"
 
 
+class StaffLeave(models.Model):
+    """Leave assignments for therapists/staff."""
+    therapist = models.ForeignKey(Therapist, on_delete=models.CASCADE, related_name='leaves')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reason = models.CharField(max_length=200, blank=True)
+    is_active = models.BooleanField(default=True, help_text="If false, this leave has been cancelled or ended")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-start_date']
+
+    def __str__(self):
+        return f"{self.therapist.name} on leave {self.start_date} to {self.end_date}"
+
+
 class Testimonial(models.Model):
     """Customer testimonial/review."""
     client_name = models.CharField(max_length=200)

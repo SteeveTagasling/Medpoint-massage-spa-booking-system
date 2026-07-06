@@ -144,16 +144,13 @@
                 <div class="p-6">
                     <div class="flex items-center gap-2 mb-2">
                         <span
-                            class="text-[11px] tracking-wider uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">{{
-                            service.get_category_display }}</span>
-                        <span class="text-gray-500 text-xs"><i class="far fa-clock mr-1"></i>{{ service.duration_minutes
-                            }} min</span>
+                            class="text-[11px] tracking-wider uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">{{ service.get_category_display }}</span>
+                        <span class="text-gray-500 text-xs"><i class="far fa-clock mr-1"></i>{{ service.duration_minutes }} min</span>
                     </div>
                     <h3
                         class="font-display text-xl font-semibold text-white mb-2 group-hover:text-purple-300 transition-colors">
                         {{ service.name }}</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-4">{{
-                        service.short_description|default:service.description|truncatewords:20 }}</p>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-4">{{ service.short_description|default:service.description|truncatewords:20 }}</p>
                     <a href="{% url 'website:service_detail' service.slug %}"
                         class="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors">
                         Learn More <i class="fas fa-arrow-right text-xs"></i>

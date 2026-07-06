@@ -46,6 +46,35 @@
         box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.12);
     }
     .portal-input::placeholder { color: var(--text-muted); }
+    .portal-file-input {
+        padding: 0.5rem;
+        background: var(--input-bg);
+        border-radius: 10px;
+        border: 1px dashed var(--border-color);
+        width: 100%;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .portal-file-input:hover {
+        border-color: var(--purple-500);
+    }
+    .portal-file-input::file-selector-button {
+        background: var(--purple-600);
+        color: white;
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        margin-right: 1rem;
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    .portal-file-input::file-selector-button:hover {
+        background: var(--purple-500);
+    }
     .form-actions {
         display: flex;
         align-items: center;

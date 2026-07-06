@@ -240,7 +240,7 @@
             position: relative;
         }
 
-        .input-wrap i {
+        .input-wrap > i {
             position: absolute;
             left: 1rem;
             top: 50%;
@@ -266,6 +266,10 @@
         .input-wrap input:focus {
             border-color: rgba(168, 85, 247, 0.45);
             box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+        }
+
+        .input-wrap input#login-password {
+            padding-right: 2.75rem;
         }
 
         .input-wrap input:focus ~ i {
@@ -369,6 +373,70 @@
             letter-spacing: 0.1em;
         }
 
+        .input-wrap .show-password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .input-wrap .show-password-toggle:hover {
+            color: #a855f7;
+        }
+
+        .form-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            margin-top: -0.5rem;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .remember-me input[type="checkbox"] {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            border-radius: 4px;
+            background: rgba(11, 6, 19, 0.7);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .remember-me input[type="checkbox"]:checked {
+            background: #9333ea;
+            border-color: #9333ea;
+        }
+
+        .remember-me input[type="checkbox"]:checked::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: white;
+            font-size: 8px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .remember-me span {
+            font-size: 0.8rem;
+            color: #d1d5db;
+        }
+
         /* Responsive */
         @media (max-width: 480px) {
             body {
@@ -455,8 +523,19 @@
                         <input type="password" name="password" id="login-password"
                             placeholder="Enter your password" required>
                         <i class="fas fa-lock"></i>
+                        <span class="show-password-toggle" id="toggle-password">
+                            <i class="fas fa-eye"></i>
+                        </span>
                     </div>
                 </div>
+
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember_me" id="remember-me">
+                        <span>Remember Me</span>
+                    </label>
+                </div>
+
                 <button type="submit" class="login-btn" id="login-submit">
                     Sign In <i class="fas fa-arrow-right" style="margin-left: 0.5rem; font-size: 0.8rem;"></i>
                 </button>
@@ -476,6 +555,18 @@
                 card.classList.add('selected');
             });
         });
+
+        // Show/Hide Password
+        const togglePassword = document.getElementById('toggle-password');
+        const passwordInput = document.getElementById('login-password');
+
+        if (togglePassword && passwordInput) {
+            togglePassword.addEventListener('click', function () {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+            });
+        }
     </script>
 </body>
 

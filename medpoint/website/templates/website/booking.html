@@ -1077,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let html = '<div class="therapist-grid">';
         
         therapists.forEach(t => {
-            if ((t.is_off || t.is_booked) && selectedId == t.id) {
+            if ((t.is_off || t.is_booked || t.is_outside_schedule) && selectedId == t.id) {
                 selectedId = null;
                 if (hiddenInput) hiddenInput.value = '';
             }
@@ -1105,6 +1105,14 @@ document.addEventListener('DOMContentLoaded', () => {
                      <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Day Off</span>
                    </div>`;
                 disabledStyle = 'opacity: 0.7; cursor: not-allowed;';
+                clickHandler = '';
+                selectedClass = '';
+            } else if (t.is_outside_schedule) {
+                let schedInfo = t.schedule_hours ? `<br><span style="font-size:0.6rem; font-weight:normal;">Schedule: ${t.schedule_hours}</span>` : '';
+                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
+                     <span style="background:rgba(168, 85, 247, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Not on Shift${schedInfo}</span>
+                   </div>`;
+                disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(168, 85, 247, 0.3);';
                 clickHandler = '';
                 selectedClass = '';
             } else if (t.is_booked) {
@@ -1281,7 +1289,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let html = '<div class="therapist-grid">';
         therapists.forEach(t => {
-            if ((t.is_off || t.is_booked) && selectedTherapistId == t.id) {
+            if ((t.is_off || t.is_booked || t.is_outside_schedule) && selectedTherapistId == t.id) {
                 selectedTherapistId = null;
                 if (therapistHidden) therapistHidden.value = '';
             }
@@ -1309,6 +1317,14 @@ document.addEventListener('DOMContentLoaded', () => {
                      <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Day Off</span>
                    </div>`;
                 disabledStyle = 'opacity: 0.7; cursor: not-allowed;';
+                clickHandler = '';
+                selectedClass = '';
+            } else if (t.is_outside_schedule) {
+                let schedInfo = t.schedule_hours ? `<br><span style="font-size:0.6rem; font-weight:normal;">Schedule: ${t.schedule_hours}</span>` : '';
+                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
+                     <span style="background:rgba(168, 85, 247, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Not on Shift${schedInfo}</span>
+                   </div>`;
+                disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(168, 85, 247, 0.3);';
                 clickHandler = '';
                 selectedClass = '';
             } else if (t.is_booked) {

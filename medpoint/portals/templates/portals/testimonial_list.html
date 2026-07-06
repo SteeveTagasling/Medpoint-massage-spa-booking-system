@@ -39,18 +39,22 @@
                         <span style="font-size: 0.8rem;">{{ testimonial.content|truncatewords:15 }}</span>
                     </td>
                     <td>
-                        {% if testimonial.is_featured %}
-                        <i class="fas fa-check-circle" style="color: var(--green-400);"></i>
-                        {% else %}
-                        <i class="fas fa-minus-circle" style="color: var(--text-muted); opacity: 0.4;"></i>
-                        {% endif %}
+                        <button class="btn-icon toggle-btn featured-btn" data-url="{% url 'portals:testimonial_toggle_featured' testimonial.pk %}" title="Toggle Featured">
+                            {% if testimonial.is_featured %}
+                            <i class="fas fa-star" style="color: var(--amber-400);"></i>
+                            {% else %}
+                            <i class="far fa-star" style="color: var(--text-muted); opacity: 0.5;"></i>
+                            {% endif %}
+                        </button>
                     </td>
                     <td>
-                        {% if testimonial.is_approved %}
-                        <i class="fas fa-check-circle" style="color: var(--green-400);"></i>
-                        {% else %}
-                        <i class="fas fa-times-circle" style="color: var(--red-400);"></i>
-                        {% endif %}
+                        <button class="btn-icon toggle-btn approved-btn" data-url="{% url 'portals:testimonial_toggle_approved' testimonial.pk %}" title="Toggle Approval">
+                            {% if testimonial.is_approved %}
+                            <i class="fas fa-check-circle" style="color: var(--green-400);"></i>
+                            {% else %}
+                            <i class="fas fa-times-circle" style="color: var(--red-400);"></i>
+                            {% endif %}
+                        </button>
                     </td>
                     <td>{{ testimonial.created_at|date:"M d, Y" }}</td>
                 </tr>
@@ -68,4 +72,82 @@
         </table>
     </div>
 </div>
+
+<style>
+.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.15rem;
+    padding: 0.3rem;
+    transition: transform 0.2s;
+    outline: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-icon:hover {
+    transform: scale(1.15);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    document.querySelectorAll('.featured-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    this.innerHTML = data.is_featured 
+                        ? '<i class="fas fa-star" style="color: var(--amber-400);"></i>'
+                        : '<i class="far fa-star" style="color: var(--text-muted); opacity: 0.5;"></i>';
+                } else if (data.error) {
+                    alert(data.error);
+                }
+            });
+        });
+    });
+
+    document.querySelectorAll('.approved-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const url = this.getAttribute('data-url');
+            fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    this.innerHTML = data.is_approved 
+                        ? '<i class="fas fa-check-circle" style="color: var(--green-400);"></i>'
+                        : '<i class="fas fa-times-circle" style="color: var(--red-400);"></i>';
+                } else if (data.error) {
+                    alert(data.error);
+                }
+            });
+        });
+    });
+});
+</script>
 {% endblock %}
