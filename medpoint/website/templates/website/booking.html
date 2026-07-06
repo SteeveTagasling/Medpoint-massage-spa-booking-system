@@ -129,6 +129,7 @@
         animation: spin 0.6s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+<<<<<<< HEAD
 
     /* ── Booking Mode Toggle ── */
     .booking-mode-toggle {
@@ -257,6 +258,8 @@
         background: rgba(139,92,246,0.15);
         color: #c4b5fd;
     }
+=======
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
 </style>
 {% endblock %}
 
@@ -291,6 +294,7 @@
             <div class="lg:col-span-3 scroll-reveal">
                 <div class="glass-panel p-8 sm:p-10">
                     <h2 class="font-display text-2xl font-semibold text-white mb-2">Appointment Details</h2>
+<<<<<<< HEAD
                     <p class="text-gray-400 text-sm mb-6">Fill in your details below to book your spa session.</p>
 
                     <!-- Booking Mode Toggle -->
@@ -302,6 +306,9 @@
                             <i class="fas fa-users"></i> Book for Family / Group
                         </button>
                     </div>
+=======
+                    <p class="text-gray-400 text-sm mb-8">Fill in your details below to book your spa session.</p>
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
 
                     {% if form.non_field_errors %}
                     <div class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
@@ -312,6 +319,7 @@
                     </div>
                     {% endif %}
 
+<<<<<<< HEAD
                     {% if family_errors %}
                     <div class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
                         <div class="flex items-center gap-2 mb-1"><i class="fas fa-exclamation-triangle"></i> <strong>Please fix the following:</strong></div>
@@ -599,6 +607,133 @@
                         </form>
                     </div>
 
+=======
+                    <form method="post" action="{% url 'website:booking' %}" id="booking-form">
+                        {% csrf_token %}
+
+                        <!-- Personal Information -->
+                        <div class="mb-8">
+                            <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-user text-xs"></i> Personal Information
+                            </h3>
+                            <div class="grid sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="booking-name" class="form-label">Full Name <span class="text-red-400">*</span></label>
+                                    {{ form.client_name }}
+                                    {% if form.client_name.errors %}
+                                    <span class="form-error">{{ form.client_name.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="booking-phone" class="form-label">Phone Number <span class="text-red-400">*</span></label>
+                                    {{ form.client_phone }}
+                                    {% if form.client_phone.errors %}
+                                    <span class="form-error">{{ form.client_phone.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="grid sm:grid-cols-2 gap-5 mt-5">
+                                <div>
+                                    <label for="booking-email" class="form-label">Email Address <span class="text-red-400">*</span></label>
+                                    {{ form.client_email }}
+                                    {% if form.client_email.errors %}
+                                    <span class="form-error">{{ form.client_email.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="booking-client-gender" class="form-label">Your Gender <span class="text-red-400">*</span></label>
+                                    {{ form.client_gender }}
+                                    {% if form.client_gender.errors %}
+                                    <span class="form-error">{{ form.client_gender.errors.0 }}</span>
+                                    {% endif %}
+                                    <p class="text-gray-500 text-xs mt-1.5"><i class="fas fa-info-circle text-purple-400/50"></i> This affects available therapist options</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Schedule -->
+                        <div class="mb-8">
+                            <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-calendar text-xs"></i> Schedule
+                            </h3>
+                            <div class="grid sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="booking-date" class="form-label">Preferred Date <span class="text-red-400">*</span></label>
+                                    {{ form.date }}
+                                    {% if form.date.errors %}
+                                    <span class="form-error">{{ form.date.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="booking-time" class="form-label">Preferred Time <span class="text-red-400">*</span></label>
+                                    {{ form.time }}
+                                    {% if form.time.errors %}
+                                    <span class="form-error">{{ form.time.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Service & Therapist Selection -->
+                        <div class="mb-8">
+                            <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-spa text-xs"></i> Service & Therapist
+                            </h3>
+                            <div class="grid sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="booking-service" class="form-label">Service <span class="text-red-400">*</span></label>
+                                    {{ form.service }}
+                                    {% if form.service.errors %}
+                                    <span class="form-error">{{ form.service.errors.0 }}</span>
+                                    {% endif %}
+                                    <p id="service-price-display" class="text-sm font-semibold text-purple-400 mt-2 hidden"></p>
+                                    <script type="application/json" id="service-price-map">
+                                        {
+                                            {% for svc in services %}
+                                            "{{ svc.pk }}": "{{ svc.discounted_price|floatformat:2 }}"{% if not forloop.last %},{% endif %}
+                                            {% endfor %}
+                                        }
+                                    </script>
+                                </div>
+                                <div>
+                                    <label for="booking-therapist-preference" class="form-label">Therapist Preference <span class="text-red-400">*</span></label>
+                                    {{ form.therapist_preference }}
+                                    {% if form.therapist_preference.errors %}
+                                    <span class="form-error">{{ form.therapist_preference.errors.0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Dynamic Therapist Cards -->
+                            <div id="therapist-section" class="therapist-section therapist-section-hidden">
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="form-label mb-0">Select Your Therapist</label>
+                                    <span id="gender-info-badge" class="gender-info-badge"></span>
+                                </div>
+                                <div id="therapist-cards-container">
+                                    <div class="loading-spinner"></div>
+                                </div>
+                            </div>
+                            <!-- Hidden select kept for form submission -->
+                            <div style="display:none;">{{ form.therapist }}</div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-8">
+                            <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <i class="fas fa-pen text-xs"></i> Additional Notes
+                            </h3>
+                            <div>
+                                <label for="booking-notes" class="form-label">Special Requests</label>
+                                {{ form.notes }}
+                            </div>
+                        </div>
+
+                        <button type="submit" id="booking-submit" class="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                            <i class="fas fa-calendar-check"></i> Confirm Booking
+                        </button>
+                    </form>
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
                 </div>
             </div>
 
@@ -678,10 +813,13 @@
                             <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
                             <span>Female clients are assigned female therapists only.</span>
                         </li>
+<<<<<<< HEAD
                         <li class="flex items-start gap-2">
                             <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
                             <span>Family/group bookings support up to 5 members.</span>
                         </li>
+=======
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
                     </ul>
                 </div>
             </div>
@@ -693,6 +831,7 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+<<<<<<< HEAD
 
     // ═══════════════════════════════════════
     // BOOKING MODE TOGGLE
@@ -1192,6 +1331,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // SINGLE BOOKING — EXISTING LOGIC
     // ═══════════════════════════════════════
 
+=======
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
     // Set minimum date to today
     const dateInput = document.getElementById('booking-date');
     if (dateInput) {
@@ -1289,7 +1430,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let html = '<div class="therapist-grid">';
         therapists.forEach(t => {
+<<<<<<< HEAD
             if ((t.is_off || t.is_booked || t.is_outside_schedule) && selectedTherapistId == t.id) {
+=======
+            if ((t.is_off || t.is_booked) && selectedTherapistId == t.id) {
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
                 selectedTherapistId = null;
                 if (therapistHidden) therapistHidden.value = '';
             }
@@ -1319,6 +1464,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 disabledStyle = 'opacity: 0.7; cursor: not-allowed;';
                 clickHandler = '';
                 selectedClass = '';
+<<<<<<< HEAD
             } else if (t.is_outside_schedule) {
                 let schedInfo = t.schedule_hours ? `<br><span style="font-size:0.6rem; font-weight:normal;">Schedule: ${t.schedule_hours}</span>` : '';
                 badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
@@ -1327,6 +1473,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(168, 85, 247, 0.3);';
                 clickHandler = '';
                 selectedClass = '';
+=======
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
             } else if (t.is_booked) {
                 let badgeText = "Booked";
                 if (t.next_avail) {

@@ -7,7 +7,11 @@ from .models import (
     Service, Therapist, Testimonial, GalleryImage,
     Booking, BookingNotification, ContactMessage,
 )
+<<<<<<< HEAD
 from .forms import BookingForm, ContactForm, FamilyMemberForm
+=======
+from .forms import BookingForm, ContactForm
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
 from portals.models import StaffNotification
 
 
@@ -78,6 +82,7 @@ def about(request):
     return render(request, 'website/about.html', context)
 
 
+<<<<<<< HEAD
 def _auto_assign_therapist(booking_obj):
     """Auto-assign a therapist to a booking based on preference/gender rules."""
     import random as rand_module
@@ -135,10 +140,97 @@ def booking(request):
             return _handle_family_booking(request)
         else:
             return _handle_single_booking(request)
+=======
+def booking(request):
+    """Booking page with form — includes gender-preference validation."""
+    if request.method == 'POST':
+        form = BookingForm(request.POST)
+        if form.is_valid():
+            booking_obj = form.save()
+
+            # Auto-assign therapist if preference is set but no specific therapist chosen
+            if not booking_obj.therapist and booking_obj.therapist_preference != 'random':
+                matching = Therapist.objects.filter(
+                    is_active=True, gender=booking_obj.therapist_preference
+                )
+                if matching.exists():
+                    # Pick least-booked therapist for this date
+                    import random as rand_module
+                    available = list(matching)
+                    rand_module.shuffle(available)
+                    booking_obj.therapist = available[0]
+                    booking_obj.save()
+            elif not booking_obj.therapist and booking_obj.therapist_preference == 'random':
+                # For female clients, only assign female therapists even on random
+                if booking_obj.client_gender == 'female':
+                    matching = Therapist.objects.filter(is_active=True, gender='female')
+                else:
+                    matching = Therapist.objects.filter(is_active=True)
+                if matching.exists():
+                    import random as rand_module
+                    available = list(matching)
+                    rand_module.shuffle(available)
+                    booking_obj.therapist = available[0]
+                    booking_obj.save()
+
+            from .models import ClosedDay
+            is_closed = ClosedDay.objects.filter(date=booking_obj.date).exists()
+            if is_closed:
+                booking_obj.delete()
+                messages.error(request, 'The selected date is a Holiday. The spa is closed. Please select another date.')
+                return redirect('website:booking')
+
+            # Create notification
+            BookingNotification.objects.create(
+                booking=booking_obj,
+                notification_type='confirmed',
+                message=(
+                    f"Your booking for {booking_obj.service.name} on "
+                    f"{booking_obj.date.strftime('%B %d, %Y')} at "
+                    f"{booking_obj.get_time_display()} has been received. "
+                    f"We will confirm your appointment shortly."
+                ),
+            )
+
+            from portals.models import StaffNotification
+            from django.urls import reverse
+            
+            # Notify portal admins
+            msg = f"New online booking #{booking_obj.pk:04d} from {booking_obj.client_name}"
+            target_t = booking_obj.therapist
+            
+            StaffNotification.objects.create(
+                notification_type='new_booking',
+                title='New Online Booking',
+                message=msg,
+                target_role='all',
+                target_therapist=target_t,
+                link=reverse('portals:booking_list')
+            )
+            if 'my_bookings' not in request.session:
+                request.session['my_bookings'] = []
+            request.session['my_bookings'].append(booking_obj.pk)
+            request.session.modified = True
+            request.session['last_booking_id'] = booking_obj.pk
+
+            messages.success(
+                request,
+                f'Your appointment has been booked successfully! '
+                f'Booking reference: #{booking_obj.pk:04d}. '
+                f'We will confirm your appointment shortly.'
+            )
+            return redirect('website:booking_success')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
     else:
         form = BookingForm()
 
     services_list = Service.objects.filter(is_active=True)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
     context = {
         'form': form,
         'services': services_list,
@@ -146,6 +238,7 @@ def booking(request):
     return render(request, 'website/booking.html', context)
 
 
+<<<<<<< HEAD
 def _handle_single_booking(request):
     """Process a standard single-person booking (existing behaviour)."""
     form = BookingForm(request.POST)
@@ -412,6 +505,18 @@ def booking_success(request):
         'bookings': bookings,
         'is_family': is_family,
     })
+=======
+def booking_success(request):
+    """Booking success confirmation page."""
+    last_booking_id = request.session.get('last_booking_id')
+    booking_obj = None
+    if last_booking_id:
+        try:
+            booking_obj = Booking.objects.select_related('service', 'therapist').get(pk=last_booking_id)
+        except Booking.DoesNotExist:
+            pass
+    return render(request, 'website/booking_success.html', {'booking': booking_obj})
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
 
 
 def my_bookings(request):
@@ -523,6 +628,7 @@ def get_therapists_by_preference(request):
             pass
 
     schedules_map = {}
+<<<<<<< HEAD
     schedule_hours_map = {}  # therapist_id -> {'start': 'HH:MM', 'end': 'HH:MM'}
     closed_date_obj = None
     if target_date:
@@ -533,6 +639,11 @@ def get_therapists_by_preference(request):
         for leave in leaves:
             schedules_map[leave.therapist_id] = True
 
+=======
+    closed_date_obj = None
+    if target_date:
+        from .models import StaffSchedule, ClosedDay
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
         closed_date_obj = ClosedDay.objects.filter(date=target_date).first()
         if closed_date_obj:
             for t in therapists:
@@ -542,6 +653,7 @@ def get_therapists_by_preference(request):
             for s in scheds:
                 if not s.is_available:
                     schedules_map[s.therapist_id] = True
+<<<<<<< HEAD
                 else:
                     schedule_hours_map[s.therapist_id] = {
                         'start': s.start_time.strftime('%H:%M'),
@@ -552,6 +664,10 @@ def get_therapists_by_preference(request):
 
     overlap_map = {}
     outside_schedule_map = {}  # therapist_id -> True if requested time is outside schedule
+=======
+
+    overlap_map = {}
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
     next_avail_map = {}
     time_str = request.GET.get('time', None)
     service_id = request.GET.get('service_id', None)
@@ -564,6 +680,7 @@ def get_therapists_by_preference(request):
             duration = datetime.timedelta(minutes=svc.duration_minutes)
             req_start_dt = datetime.datetime.combine(target_date, req_start_time)
             req_end_dt = req_start_dt + duration
+<<<<<<< HEAD
             req_end_time = req_end_dt.time()
 
             # Check if requested time is outside therapist's schedule hours
@@ -575,6 +692,8 @@ def get_therapists_by_preference(request):
                     # Booking must start at or after schedule start AND end at or before schedule end
                     if req_start_time < sched_start or req_end_time > sched_end:
                         outside_schedule_map[t.pk] = True
+=======
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
             
             existing_bookings = Booking.objects.filter(
                 date=target_date,
@@ -603,6 +722,7 @@ def get_therapists_by_preference(request):
                         
                 if is_booked:
                     overlap_map[t.pk] = True
+<<<<<<< HEAD
                     sched = schedule_hours_map.get(t.pk)
                     max_hour = 21
                     if sched:
@@ -615,6 +735,11 @@ def get_therapists_by_preference(request):
                             continue
                         if sched and test_end.time() > sched['end_time']:
                             continue
+=======
+                    for hour in range(req_start_dt.hour + 1, 21):
+                        test_start = datetime.datetime.combine(target_date, datetime.time(hour, 0))
+                        test_end = test_start + duration
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
                         overlap = False
                         for b_s, b_e in t_bookings:
                             if max(test_start, b_s) < min(test_end, b_e):
@@ -636,11 +761,17 @@ def get_therapists_by_preference(request):
         # Override is_off to True if it's a closed day, but we'll also pass the specific closed info
         is_off = schedules_map.get(t.pk, False) or is_closed
         is_booked = overlap_map.get(t.pk, False)
+<<<<<<< HEAD
         is_outside_schedule = outside_schedule_map.get(t.pk, False)
         next_avail = next_avail_map.get(t.pk, None)
         sched = schedule_hours_map.get(t.pk)
         
         entry = {
+=======
+        next_avail = next_avail_map.get(t.pk, None)
+        
+        data.append({
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
             'id': t.pk,
             'name': t.name,
             'title': t.title,
@@ -650,12 +781,17 @@ def get_therapists_by_preference(request):
             'is_closed': is_closed,
             'closed_reason': closed_reason,
             'is_booked': is_booked,
+<<<<<<< HEAD
             'is_outside_schedule': is_outside_schedule,
             'next_avail': next_avail,
         }
         if sched:
             entry['schedule_hours'] = f"{sched['start']} - {sched['end']}"
         data.append(entry)
+=======
+            'next_avail': next_avail,
+        })
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
     return JsonResponse({'therapists': data})
 
 

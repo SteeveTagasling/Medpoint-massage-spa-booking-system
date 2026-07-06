@@ -1252,7 +1252,14 @@
             <!-- Content Section -->
             <div class="nav-section">
                 <div class="nav-section-label">Content</div>
+<<<<<<< HEAD
 
+=======
+                <a href="{% url 'portals:gallery_list' %}" class="nav-item {% if request.resolver_match.url_name == 'gallery_list' %}active{% endif %}" id="nav-gallery">
+                    <i class="fas fa-images"></i>
+                    <span class="nav-label">Gallery</span>
+                </a>
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
                 <a href="{% url 'website:home' %}" class="nav-item" id="nav-view-site" target="_blank">
                     <i class="fas fa-external-link-alt"></i>
                     <span class="nav-label">View Website</span>

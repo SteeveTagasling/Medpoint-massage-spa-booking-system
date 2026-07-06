@@ -120,6 +120,7 @@ class StaffSchedule(models.Model):
         return f"{self.therapist.name} — {self.get_day_of_week_display()} {self.start_time:%H:%M}-{self.end_time:%H:%M}"
 
 
+<<<<<<< HEAD
 class StaffLeave(models.Model):
     """Leave assignments for therapists/staff."""
     therapist = models.ForeignKey(Therapist, on_delete=models.CASCADE, related_name='leaves')
@@ -136,6 +137,8 @@ class StaffLeave(models.Model):
         return f"{self.therapist.name} on leave {self.start_date} to {self.end_date}"
 
 
+=======
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
 class Testimonial(models.Model):
     """Customer testimonial/review."""
     client_name = models.CharField(max_length=200)

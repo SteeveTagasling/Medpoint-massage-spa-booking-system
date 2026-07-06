@@ -95,7 +95,11 @@ class BookingForm(forms.ModelForm):
                     f"your gender preference ({therapist_preference})."
                 )
 
+<<<<<<< HEAD
         from .models import Booking, StaffSchedule
+=======
+        from .models import Booking
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
         import datetime
         date = cleaned_data.get('date')
         time = cleaned_data.get('time')
@@ -108,6 +112,7 @@ class BookingForm(forms.ModelForm):
                 duration = datetime.timedelta(minutes=service.duration_minutes)
                 req_start_dt = datetime.datetime.combine(date, req_start_time)
                 req_end_dt = req_start_dt + duration
+<<<<<<< HEAD
                 req_end_time = req_end_dt.time()
                 
                 from .models import StaffLeave
@@ -143,6 +148,8 @@ class BookingForm(forms.ModelForm):
                     raise forms.ValidationError(
                         f"{therapist.name} is not available on {date.strftime('%A')}s."
                     )
+=======
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
 
                 existing_bookings = Booking.objects.filter(
                     date=date,
@@ -166,6 +173,7 @@ class BookingForm(forms.ModelForm):
         return cleaned_data
 
 
+<<<<<<< HEAD
 class FamilyMemberForm(forms.Form):
     """Validates a single family member's fields for group bookings.
 
@@ -203,6 +211,8 @@ class FamilyMemberForm(forms.Form):
         return cleaned_data
 
 
+=======
+>>>>>>> 9016d71b50db6699dc675d0826af38baa2123e8d
 class ContactForm(forms.ModelForm):
     """Form for contact page submissions."""
 
