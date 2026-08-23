@@ -31,8 +31,8 @@
                             {{ msg.created_at|date:"M d, Y g:i A" }}
                         </span>
                     </div>
-                    <div class="message-subject" style="font-size: 0.85rem; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        <strong style="color: #fff;">{{ msg.subject }}</strong>
+                    <div class="message-subject" style="font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <strong style="color: var(--text-primary);">{{ msg.subject }}</strong>
                         <span id="preview-{{ msg.pk }}" style="color: var(--text-muted); font-weight: normal; margin-left: 0.4rem;">
                             <span style="opacity: 0.5;">—</span> {{ msg.message|truncatechars:70 }}
                         </span>
@@ -56,7 +56,7 @@
             </div>
 
             <!-- Full Message -->
-            <div style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.6; padding: 1.25rem; background: rgba(0,0,0,0.15); border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.03);">
+            <div style="color: var(--text-primary); font-size: 0.95rem; line-height: 1.6; padding: 1.25rem; background: var(--bg-secondary); border-radius: 0.75rem; border: 1px solid var(--border-color);">
                 {{ msg.message|linebreaksbr }}
             </div>
             
@@ -67,7 +67,7 @@
                         <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
                             <i class="fas fa-reply"></i> Replied on {{ msg.replied_at|date:"M d, Y g:i A" }}
                         </div>
-                        <div style="color: #f3e8ff; font-size: 0.9rem; line-height: 1.6;">{{ msg.reply_text|linebreaksbr }}</div>
+                        <div style="color: var(--text-primary); font-size: 0.9rem; line-height: 1.6;">{{ msg.reply_text|linebreaksbr }}</div>
                     </div>
                 {% else %}
                     <form action="{% url 'portals:message_reply' msg.pk %}" method="POST">
@@ -76,7 +76,7 @@
                             <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; color: var(--primary-color); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">
                                 <i class="fas fa-reply"></i> Reply to {{ msg.name }}
                             </label>
-                            <textarea name="reply_text" required rows="4" style="width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; padding: 1rem; border-radius: 0.75rem; font-size: 0.9rem; resize: vertical; transition: border-color 0.3s;" placeholder="Type your reply here..." onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='var(--border-color)'"></textarea>
+                            <textarea name="reply_text" required rows="4" style="width: 100%; background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-primary); padding: 1rem; border-radius: 0.75rem; font-size: 0.9rem; resize: vertical; transition: border-color 0.3s;" placeholder="Type your reply here..." onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='var(--border-color)'"></textarea>
                         </div>
                         <div style="display: flex; justify-content: flex-end; align-items: center; gap: 1rem;">
                             <button type="button" onclick="toggleMessageContent({{ msg.pk }}, true)" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 2rem; cursor: pointer; transition: all 0.3s hover:bg-white/5;">

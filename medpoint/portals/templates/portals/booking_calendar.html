@@ -76,76 +76,136 @@
         color: #fff;
     }
 
-    /* Calendar Grid */
+    /* ── Calendar Grid ── */
     .calendar-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         border: 1px solid var(--border-color);
         border-radius: 16px;
-        overflow: hidden;
         background: var(--bg-card);
+        margin-bottom: 2.5rem;
     }
     .calendar-day-header {
         padding: 0.75rem 0.5rem;
         font-size: 0.7rem;
-        font-weight: 600;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.1em;
         color: var(--text-muted);
         text-align: center;
         background: var(--bg-secondary);
         border-bottom: 1px solid var(--border-color);
     }
+    /* Round top corners of header row */
+    .calendar-day-header:first-child { border-top-left-radius: 15px; }
+    .calendar-day-header:nth-child(7) { border-top-right-radius: 15px; }
     .calendar-cell {
-        min-height: 110px;
+        min-height: 130px;
         padding: 0.5rem;
+        display: flex;
+        flex-direction: column;
         border-right: 1px solid var(--table-border);
         border-bottom: 1px solid var(--table-border);
         position: relative;
-        transition: var(--transition);
+        transition: background 0.15s ease;
+        overflow: hidden;
     }
     .calendar-cell:nth-child(7n) { border-right: none; }
-    .calendar-cell:hover { background: var(--table-row-hover); }
+    /* Last row: remove bottom border, apply corner radius */
+    .calendar-cell:nth-last-child(-n+7) { border-bottom: none; }
     .calendar-cell.empty {
         background: var(--bg-primary);
-        opacity: 0.4;
+        opacity: 0.5;
+        cursor: default;
+        pointer-events: none;
     }
+    .calendar-cell:not(.empty):hover { background: var(--table-row-hover); cursor: pointer; }
     .calendar-cell.today {
-        background: rgba(168, 85, 247, 0.04);
+        background: rgba(168, 85, 247, 0.06) !important;
     }
     .calendar-cell.today .day-number {
         background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
         color: #fff;
         border-radius: 50%;
-        width: 26px;
-        height: 26px;
+        width: 24px;
+        height: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
+        font-size: 0.75rem;
     }
-    .calendar-cell.closed-day {
-        background: rgba(239, 68, 68, 0.05);
-    }
-    .calendar-cell.closed-day::before {
-        content: "Holiday / Closed";
+    .calendar-cell.closed-day { background: rgba(239, 68, 68, 0.04); }
+    .calendar-cell.closed-day .day-number { color: var(--red-400); }
+    .calendar-cell.closed-day::after {
+        content: "Closed";
         position: absolute;
-        bottom: 5px;
+        bottom: 4px;
         right: 5px;
-        font-size: 0.6rem;
+        font-size: 0.55rem;
         color: var(--red-400);
-        font-weight: 600;
-        opacity: 0.7;
+        font-weight: 700;
+        opacity: 0.6;
         pointer-events: none;
+        letter-spacing: 0.05em;
     }
-    .calendar-cell.closed-day .day-number {
-        color: var(--red-400);
+
+    /* ── Day Number ── */
+    .day-number {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.4rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 24px;
+        flex-shrink: 0;
     }
+
+    /* ── Bookings in Cell ── */
+    .calendar-day-bookings {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        flex: 1;
+        min-height: 0;
+    }
+    .calendar-booking {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.18rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.62rem;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 0;
+        line-height: 1.4;
+    }
+    .calendar-booking i { font-size: 0.45rem; flex-shrink: 0; }
+    .calendar-booking.cal-pending  { background: rgba(251,191,36,0.15); color: var(--amber-400); }
+    .calendar-booking.cal-confirmed { background: rgba(96,165,250,0.15); color: var(--blue-400); }
+    .calendar-booking.cal-completed { background: rgba(34,197,94,0.15); color: var(--green-400); }
+    .calendar-booking.cal-cancelled { background: rgba(239,68,68,0.1); color: var(--red-400); text-decoration: line-through; opacity: 0.6; }
+    .calendar-booking.cal-leave     { background: rgba(168,85,247,0.15); color: var(--purple-400); }
+    .more-bookings {
+        font-size: 0.6rem;
+        color: var(--purple-400);
+        font-weight: 700;
+        padding: 0.1rem 0.3rem;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    /* ── Holiday button (admin) ── */
     .holiday-btn {
         position: absolute;
-        top: 6px;
-        right: 6px;
-        font-size: 0.65rem;
-        padding: 0.2rem 0.4rem;
+        top: 5px; right: 5px;
+        font-size: 0.6rem;
+        padding: 0.15rem 0.35rem;
         border-radius: 4px;
         background: var(--bg-card);
         color: var(--text-muted);
@@ -155,73 +215,11 @@
         transition: var(--transition);
         z-index: 5;
     }
-    .calendar-cell:hover .holiday-btn {
-        opacity: 1;
-    }
-    .holiday-btn:hover {
-        background: var(--sidebar-hover-bg);
-        color: var(--purple-500);
-        border-color: var(--purple-400);
-    }
-    .holiday-btn.remove-holiday {
-        opacity: 1;
-        background: rgba(239, 68, 68, 0.1);
-        color: var(--red-500);
-        border-color: transparent;
-    }
-    .holiday-btn.remove-holiday:hover {
-        background: var(--red-500);
-        color: white;
-    }
-    .day-number {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 0.35rem;
-        display: inline-block;
-    }
-    .calendar-booking {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        padding: 0.2rem 0.4rem;
-        border-radius: 5px;
-        font-size: 0.6rem;
-        font-weight: 500;
-        margin-bottom: 0.2rem;
-        cursor: default;
-        transition: var(--transition);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .calendar-booking:hover { opacity: 0.85; }
-    .calendar-booking.cal-pending {
-        background: rgba(251, 191, 36, 0.15);
-        color: var(--amber-400);
-    }
-    .calendar-booking.cal-confirmed {
-        background: rgba(96, 165, 250, 0.15);
-        color: var(--blue-400);
-    }
-    .calendar-booking.cal-completed {
-        background: rgba(34, 197, 94, 0.15);
-        color: var(--green-400);
-    }
-    .calendar-booking.cal-cancelled {
-        background: rgba(239, 68, 68, 0.1);
-        color: var(--red-400);
-        text-decoration: line-through;
-        opacity: 0.6;
-    }
-    .calendar-booking i { font-size: 0.5rem; }
-    .more-bookings {
-        font-size: 0.6rem;
-        color: var(--purple-400);
-        font-weight: 600;
-        padding: 0.15rem 0.4rem;
-        cursor: pointer;
-    }
+    .calendar-cell:hover .holiday-btn { opacity: 1; }
+    .holiday-btn:hover { background: var(--sidebar-hover-bg); color: var(--purple-500); border-color: var(--purple-400); }
+    .holiday-btn.remove-holiday { opacity: 1; background: rgba(239,68,68,0.1); color: var(--red-500); border-color: transparent; }
+    .holiday-btn.remove-holiday:hover { background: var(--red-500); color: #fff; }
+
 
     /* List View */
     .list-date-group {
@@ -540,7 +538,7 @@
 
 {% block extra_js %}
 <script>
-    function openDaySummaryModal(day, dayBookings) {
+    function openDaySummaryModal(day, dayBookings, dayLeaves) {
         document.getElementById('modalDateLabel').innerText = `Bookings for ${day} {{ month_name }} {{ year }}`;
         const listEl = document.getElementById('modalBookingsList');
         listEl.innerHTML = '';
@@ -564,6 +562,25 @@
                         </div>
                         <div class="modal-booking-time"><i class="far fa-clock" style="margin-right: 0.3rem;"></i>${b.time}</div>
                         <div class="modal-booking-service"><i class="fas fa-spa" style="margin-right: 0.3rem; color: var(--text-muted);"></i>${b.service}</div>
+                    </div>
+                `;
+                listEl.insertAdjacentHTML('beforeend', itemHTML);
+            });
+        }
+        
+        if (dayLeaves && dayLeaves.length > 0) {
+            if (dayBookings.length > 0) {
+                listEl.insertAdjacentHTML('beforeend', '<hr style="border-color: var(--border-color); margin: 1rem 0;">');
+            }
+            listEl.insertAdjacentHTML('beforeend', '<h4 style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.5rem; text-transform: uppercase;">Staff Leaves</h4>');
+            dayLeaves.forEach(l => {
+                const itemHTML = `
+                    <div class="modal-booking-item" style="border-left: 3px solid var(--purple-400);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.25rem;">
+                            <div class="modal-booking-client">${l.therapist}</div>
+                            <div class="modal-booking-status" style="color: var(--purple-400); background: rgba(168, 85, 247, 0.15);">ON LEAVE</div>
+                        </div>
+                        <div class="modal-booking-service"><i class="fas fa-plane-departure" style="margin-right: 0.3rem; color: var(--text-muted);"></i>${l.reason}</div>
                     </div>
                 `;
                 listEl.insertAdjacentHTML('beforeend', itemHTML);
@@ -603,37 +620,64 @@
             {% endfor %}
         {% endfor %}
 
+        const allLeaves = [];
+        {% for day, day_leaves in leaves_by_date.items %}
+            {% for l in day_leaves %}
+            allLeaves.push({
+                day: {{ day }},
+                therapist: '{{ l.therapist.name|escapejs }}',
+                reason: '{{ l.reason|default:"Leave"|escapejs }}',
+            });
+            {% endfor %}
+        {% endfor %}
+
         document.querySelectorAll('.calendar-day-bookings').forEach(container => {
             const day = parseInt(container.getAttribute('data-day'));
             const dayBookings = allBookings.filter(b => b.day === day);
+            const dayLeaves = allLeaves.filter(l => l.day === day);
             const dotEl = container.parentElement.querySelector('.booking-count-dot');
 
-            if (dayBookings.length > 0 && dotEl) {
+            if ((dayBookings.length > 0 || dayLeaves.length > 0) && dotEl) {
                 dotEl.style.display = '';
                 
-                // Make the entire cell clickable for the summary if there are bookings
+                // Make the entire cell clickable for the summary if there are bookings/leaves
                 container.parentElement.style.cursor = 'pointer';
                 container.parentElement.addEventListener('click', function(e) {
                     // Don't trigger if they clicked a holiday button
                     if (!e.target.closest('.holiday-btn')) {
-                        openDaySummaryModal(day, dayBookings);
+                        openDaySummaryModal(day, dayBookings, dayLeaves);
                     }
                 });
             }
 
+            let displayedCount = 0;
             const maxShow = 3;
-            dayBookings.slice(0, maxShow).forEach(b => {
+            
+            dayLeaves.slice(0, maxShow).forEach(l => {
                 const el = document.createElement('div');
-                el.className = `calendar-booking cal-${b.status}`;
-                el.innerHTML = `<i class="fas fa-circle"></i> ${b.time} ${b.client}`;
-                el.title = `${b.client} — ${b.service} (${b.status})`;
+                el.className = `calendar-booking cal-leave`;
+                el.innerHTML = `<i class="fas fa-plane-departure"></i> ${l.therapist}`;
+                el.title = `Leave: ${l.therapist} — ${l.reason}`;
                 container.appendChild(el);
+                displayedCount++;
             });
 
-            if (dayBookings.length > maxShow) {
+            if (displayedCount < maxShow) {
+                dayBookings.slice(0, maxShow - displayedCount).forEach(b => {
+                    const el = document.createElement('div');
+                    el.className = `calendar-booking cal-${b.status}`;
+                    el.innerHTML = `<i class="fas fa-circle"></i> ${b.time} ${b.client}`;
+                    el.title = `${b.client} — ${b.service} (${b.status})`;
+                    container.appendChild(el);
+                    displayedCount++;
+                });
+            }
+
+            const totalItems = dayBookings.length + dayLeaves.length;
+            if (totalItems > maxShow) {
                 const more = document.createElement('div');
                 more.className = 'more-bookings';
-                more.textContent = `+${dayBookings.length - maxShow} more`;
+                more.textContent = `+${totalItems - maxShow} more`;
                 // The parent cell click will handle it, but we can also add it here just in case
                 container.appendChild(more);
             }

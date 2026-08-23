@@ -1593,6 +1593,28 @@ def booking_calendar(request):
     prev_month, prev_year = (month - 1, year) if month > 1 else (12, year - 1)
     next_month, next_year = (month + 1, year) if month < 12 else (1, year + 1)
 
+    from website.models import StaffLeave
+    leaves_qs = StaffLeave.objects.select_related('therapist').filter(
+        status='approved',
+        start_date__lte=month_end,
+        end_date__gte=month_start
+    )
+    if _is_staff_only(request):
+        therapist = _get_staff_therapist(request)
+        if therapist:
+            leaves_qs = leaves_qs.filter(therapist=therapist)
+        else:
+            leaves_qs = leaves_qs.none()
+            
+    leaves_by_date = {}
+    for leave in leaves_qs:
+        d_start = max(leave.start_date, month_start)
+        d_end = min(leave.end_date, month_end)
+        curr = d_start
+        while curr <= d_end:
+            leaves_by_date.setdefault(curr.day, []).append(leave)
+            curr += timedelta(days=1)
+
     from website.models import ClosedDay
     closed_dates = ClosedDay.objects.filter(
         date__gte=month_start, date__lte=month_end
@@ -1605,6 +1627,7 @@ def booking_calendar(request):
         'year': year, 'month': month,
         'today': today,
         'bookings_by_date': bookings_by_date,
+        'leaves_by_date': leaves_by_date,
         'prev_month': prev_month, 'prev_year': prev_year,
         'next_month': next_month, 'next_year': next_year,
         'view_mode': view_mode,

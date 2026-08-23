@@ -1,4 +1,4 @@
-from website.models import Booking, ContactMessage
+from website.models import Booking, ContactMessage, StaffLeave
 from .models import StaffNotification
 
 
@@ -30,6 +30,7 @@ def portal_counts(request):
             'pending_bookings_count': Booking.objects.filter(status='pending').count(),
             'unread_messages_count': ContactMessage.objects.filter(is_read=False).count(),
             'unread_notifications_count': notif_count,
+            'pending_leaves_count': StaffLeave.objects.filter(status='pending').count() if role == 'admin' else 0,
         }
     return {}
 

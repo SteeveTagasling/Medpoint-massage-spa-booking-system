@@ -449,7 +449,7 @@
 
         /* --- Page Content --- */
         .page-content {
-            padding: 1.25rem 1.5rem;
+            padding: 1.25rem 1.5rem 5rem 1.5rem;
         }
 
         /* --- Cards --- */
@@ -1298,6 +1298,9 @@
                 <a href="{% url 'portals:admin_leave_list' %}" class="nav-item {% if request.resolver_match.url_name == 'admin_leave_list' or request.resolver_match.url_name == 'staff_assign_leave' %}active{% endif %}" id="nav-leave-requests">
                     <i class="fas fa-plane-departure"></i>
                     <span class="nav-label">Leave Requests</span>
+                    {% if pending_leaves_count %}
+                    <span class="badge badge-amber">{{ pending_leaves_count }}</span>
+                    {% endif %}
                 </a>
                 <a href="{% url 'portals:booking_calendar' %}" class="nav-item {% if request.resolver_match.url_name == 'booking_calendar' %}active{% endif %}" id="nav-calendar">
                     <i class="fas fa-calendar-week"></i>
