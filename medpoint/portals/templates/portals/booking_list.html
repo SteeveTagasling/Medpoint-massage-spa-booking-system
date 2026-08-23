@@ -225,7 +225,7 @@
                                     <i class="fas fa-check-double"></i> Complete
                                 </button>
                                 <button class="action-btn btn-cancel"
-                                    onclick="updateBookingStatus({{ booking.pk }}, 'cancelled')">
+                                    onclick="openCancelModal({{ booking.pk }})">
                                     <i class="fas fa-times"></i> Cancel
                                 </button>
                             {% else %}
@@ -263,7 +263,7 @@
             cell.innerHTML =
                 `<button class="action-btn btn-complete" onclick="updateBookingStatus(${bookingId}, 'completed')">`+
                 `<i class="fas fa-check-double"></i> Complete</button>`+
-                `<button class="action-btn btn-cancel" onclick="updateBookingStatus(${bookingId}, 'cancelled')">`+
+                `<button class="action-btn btn-cancel" onclick="openCancelModal(${bookingId})">`+
                 `<i class="fas fa-times"></i> Cancel</button>`;
         } else {
             cell.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem;">&#8212;</span>`;
@@ -305,5 +305,46 @@
         });
         return value;
     }
+
+    let bookingToCancel = null;
+
+    function openCancelModal(bookingId) {
+        bookingToCancel = bookingId;
+        document.getElementById('custom-cancel-modal').classList.add('active');
+    }
+
+    function closeCancelModal() {
+        bookingToCancel = null;
+        document.getElementById('custom-cancel-modal').classList.remove('active');
+    }
+
+    function confirmCancelBooking() {
+        if (bookingToCancel) {
+            updateBookingStatus(bookingToCancel, 'cancelled');
+            closeCancelModal();
+        }
+    }
+
+    // Close modal if clicking outside the content box
+    document.getElementById('custom-cancel-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeCancelModal();
+        }
+    });
 </script>
+
+<!-- Custom Cancel Modal HTML -->
+<div class="logout-modal-overlay" id="custom-cancel-modal">
+    <div class="logout-modal-content">
+        <div class="logout-modal-icon">
+            <i class="fas fa-times"></i>
+        </div>
+        <h3 class="logout-modal-title">Cancel Booking?</h3>
+        <p class="logout-modal-desc">Are you sure you want to cancel this booking?</p>
+        <div class="logout-modal-actions">
+            <button class="logout-btn-cancel" onclick="closeCancelModal()">No, Keep it</button>
+            <button class="logout-btn-confirm" onclick="confirmCancelBooking()">Yes, Cancel</button>
+        </div>
+    </div>
+</div>
 {% endblock %}

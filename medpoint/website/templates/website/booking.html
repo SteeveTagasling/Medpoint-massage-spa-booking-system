@@ -532,13 +532,16 @@
                                 </h3>
                                 <!-- Visual multi-service selector -->
                                 <div class="mb-5">
-                                    <label class="form-label">Select Service(s) <span class="text-red-400">*</span></label>
-                                    <p class="text-gray-500 text-xs mb-3"><i class="fas fa-info-circle text-purple-400/50"></i>
+                                    <label class="form-label">Select Service(s) <span
+                                            class="text-red-400">*</span></label>
+                                    <p class="text-gray-500 text-xs mb-3"><i
+                                            class="fas fa-info-circle text-purple-400/50"></i>
                                         Click to select. You can choose multiple services to add-on.</p>
                                     <div id="service-chips-container" class="grid sm:grid-cols-2 gap-2 mb-2">
                                         {% for svc in services %}
                                         <label class="service-chip" id="chip-label-{{ svc.pk }}">
-                                            <input type="checkbox" class="service-chip-input" value="{{ svc.pk }}" id="chip-{{ svc.pk }}">
+                                            <input type="checkbox" class="service-chip-input" value="{{ svc.pk }}"
+                                                id="chip-{{ svc.pk }}">
                                             <div class="service-chip-inner">
                                                 <div class="service-chip-name">{{ svc.name }}</div>
                                                 <div class="service-chip-meta">₱{{ svc.discounted_price|floatformat:2 }} &middot; {{ svc.duration_minutes }} min</div>
@@ -552,13 +555,17 @@
                                     <span class="form-error">{{ form.services.errors.0 }}</span>
                                     {% endif %}
                                     <!-- Selected services summary -->
-                                    <div id="service-total-display" class="hidden mt-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                                    <div id="service-total-display"
+                                        class="hidden mt-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
                                         <div class="flex items-center justify-between">
-                                            <span class="text-gray-400 text-xs flex items-center gap-1.5"><i class="fas fa-spa text-purple-400"></i> Selected Services</span>
-                                            <span id="service-total-price" class="font-bold text-purple-300 text-sm"></span>
+                                            <span class="text-gray-400 text-xs flex items-center gap-1.5"><i
+                                                    class="fas fa-spa text-purple-400"></i> Selected Services</span>
+                                            <span id="service-total-price"
+                                                class="font-bold text-purple-300 text-sm"></span>
                                         </div>
                                         <div id="service-total-duration" class="text-gray-500 text-xs mt-1"></div>
-                                        <div id="service-selected-names" class="text-purple-300/70 text-xs mt-1 leading-relaxed"></div>
+                                        <div id="service-selected-names"
+                                            class="text-purple-300/70 text-xs mt-1 leading-relaxed"></div>
                                     </div>
                                     <script type="application/json" id="service-price-map">
                                         {
@@ -723,12 +730,21 @@
                                         </div>
                                         <div class="grid sm:grid-cols-2 gap-4 mt-4">
                                             <div class="sm:col-span-2">
-                                                <label class="form-label">Select Service(s) <span class="text-red-400">*</span></label>
-                                                <p class="text-gray-500 text-xs mb-3"><i class="fas fa-info-circle text-purple-400/50"></i> Click to select. You can choose multiple services to add-on.</p>
-                                                <div class="grid sm:grid-cols-2 gap-2 mb-2 family-chip-grid" data-member-index="0">
+                                                <label class="form-label">Select Service(s) <span
+                                                        class="text-red-400">*</span></label>
+                                                <p class="text-gray-500 text-xs mb-3"><i
+                                                        class="fas fa-info-circle text-purple-400/50"></i> Click to
+                                                    select. You can choose multiple services to add-on.</p>
+                                                <div class="grid sm:grid-cols-2 gap-2 mb-2 family-chip-grid"
+                                                    data-member-index="0">
                                                     {% for svc in services %}
                                                     <label class="service-chip">
-                                                        <input type="checkbox" class="service-chip-input family-service-chip" name="member_0_services" value="{{ svc.pk }}" data-price="{{ svc.discounted_price|floatformat:2 }}" data-duration="{{ svc.duration_minutes }}" data-name="{{ svc.name }}">
+                                                        <input type="checkbox"
+                                                            class="service-chip-input family-service-chip"
+                                                            name="member_0_services" value="{{ svc.pk }}"
+                                                            data-price="{{ svc.discounted_price|floatformat:2 }}"
+                                                            data-duration="{{ svc.duration_minutes }}"
+                                                            data-name="{{ svc.name }}">
                                                         <div class="service-chip-inner">
                                                             <div class="service-chip-name">{{ svc.name }}</div>
                                                             <div class="service-chip-meta">₱{{ svc.discounted_price|floatformat:2 }} &middot; {{ svc.duration_minutes }} min</div>
@@ -737,10 +753,13 @@
                                                     {% endfor %}
                                                 </div>
                                                 <!-- Per-member total summary -->
-                                                <div id="member-0-total" class="hidden mt-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                                                <div id="member-0-total"
+                                                    class="hidden mt-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
                                                     <div class="flex items-center justify-between">
-                                                        <span class="text-gray-400 text-xs flex items-center gap-1.5"><i class="fas fa-spa text-purple-400"></i> Selected</span>
-                                                        <span class="member-total-price font-bold text-purple-300 text-sm"></span>
+                                                        <span class="text-gray-400 text-xs flex items-center gap-1.5"><i
+                                                                class="fas fa-spa text-purple-400"></i> Selected</span>
+                                                        <span
+                                                            class="member-total-price font-bold text-purple-300 text-sm"></span>
                                                     </div>
                                                     <div class="member-total-duration text-gray-500 text-xs mt-1"></div>
                                                 </div>
@@ -811,7 +830,7 @@
                     </h3>
                     <div class="space-y-3">
                         <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-400">Monday - Friday</span>
+                            <span class="text-gray-400">Monday - Sunday</span>
                             <span class="text-white font-medium">10:00 AM - 12:00 MN</span>
                         </div>
                     </div>
@@ -939,7 +958,7 @@
         try {
             const mapEl = document.getElementById('service-price-map');
             if (mapEl) familyServiceData = JSON.parse(mapEl.textContent);
-        } catch(e) {}
+        } catch (e) { }
 
         // Generate chip HTML for a given member index using familyServiceData
         function familyChipOptionsHTML(index) {
@@ -1690,7 +1709,7 @@
         let serviceDataMap = {};
 
         if (priceMapEl) {
-            try { serviceDataMap = JSON.parse(priceMapEl.textContent.trim()); } catch(e) {}
+            try { serviceDataMap = JSON.parse(priceMapEl.textContent.trim()); } catch (e) { }
         }
 
         function getSelectedChipIds() {
