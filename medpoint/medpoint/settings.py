@@ -74,9 +74,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'medpoint.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -140,3 +137,22 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Authentication
 LOGIN_URL = 'portals:login'
+
+# ─── Email Configuration (Gmail SMTP) ───────────────────────────────────────
+# To send real OTP emails, fill in your Gmail address and App Password below.
+# How to get an App Password:
+#   1. Go to myaccount.google.com → Security → 2-Step Verification (must be ON)
+#   2. Go to Security → App passwords → Create → Mail / Windows Computer
+#   3. Copy the 16-character password and paste it below (no spaces needed)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'medpointmassage.spa@gmail.com'
+EMAIL_HOST_PASSWORD = 'evcpmbddvqnaqnci'  # App Password (no spaces)
+DEFAULT_FROM_EMAIL = 'Medpoint Massage & Spa <medpointmassage.spa@gmail.com>'
+
+# TIP: While testing locally, you can switch to console backend to see OTPs in
+# the terminal instead of actually sending emails (comment out the lines above
+# and uncomment the line below):
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

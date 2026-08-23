@@ -104,7 +104,7 @@
                     <span class="booking-time-pill">{{ booking.get_time_display }}</span>
                     <div>
                         <div class="today-booking-client">{{ booking.client_name }}</div>
-                        <div class="today-booking-service">{{ booking.service.name }} • {{ booking.service.duration_minutes }} min</div>
+                        <div class="today-booking-service">{{ booking.service_names }} • {{ booking.total_duration_minutes }} min</div>
                     </div>
                 </div>
                 <span class="status status-{{ booking.status }}">{{ booking.get_status_display }}</span>

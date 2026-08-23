@@ -1,0 +1,344 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Apply for Leave{% endblock %}
+{% block page_title %}Apply for Leave{% endblock %}
+{% block page_subtitle %}Submit a leave request for admin approval{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── Layout ──────────────────────────────────────────────── */
+    .leave-layout {
+        display: grid;
+        grid-template-columns: 1fr 1.4fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+    @media (max-width: 900px) {
+        .leave-layout { grid-template-columns: 1fr; }
+    }
+
+    /* ── Form card ───────────────────────────────────────────── */
+    .form-card { width: 100%; }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.375rem;
+        margin-bottom: 1.25rem;
+    }
+    .form-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .portal-input {
+        padding: 0.6rem 0.875rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--input-bg);
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-family: inherit;
+        outline: none;
+        transition: var(--transition);
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .portal-input:focus {
+        border-color: var(--purple-500);
+        box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.12);
+    }
+    .date-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    @media (max-width: 480px) {
+        .date-grid { grid-template-columns: 1fr; }
+    }
+    .error-text {
+        color: var(--red-400);
+        font-size: 0.72rem;
+        margin-top: 0.2rem;
+    }
+    .form-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border-color);
+        flex-wrap: wrap;
+    }
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.5rem;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        font-family: inherit;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+        flex-shrink: 0;
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-cancel {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+    .btn-cancel:hover { border-color: var(--border-hover); color: var(--text-primary); }
+
+    /* ── Notice box ──────────────────────────────────────────── */
+    .info-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.85rem 1rem;
+        border-radius: 10px;
+        background: rgba(96, 165, 250, 0.07);
+        border: 1px solid rgba(96, 165, 250, 0.2);
+        color: var(--blue-400);
+        font-size: 0.8rem;
+        margin-bottom: 1.5rem;
+        line-height: 1.55;
+    }
+    .info-notice i { margin-top: 0.15rem; flex-shrink: 0; }
+
+    /* ── Status badges ───────────────────────────────────────── */
+    .leave-status-pending {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        padding: 0.22rem 0.65rem; border-radius: 9999px;
+        font-size: 0.68rem; font-weight: 600; white-space: nowrap;
+        background: rgba(251,191,36,0.12); color: var(--amber-400);
+    }
+    .leave-status-approved {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        padding: 0.22rem 0.65rem; border-radius: 9999px;
+        font-size: 0.68rem; font-weight: 600; white-space: nowrap;
+        background: rgba(34,197,94,0.12); color: var(--green-400);
+    }
+    .leave-status-rejected {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        padding: 0.22rem 0.65rem; border-radius: 9999px;
+        font-size: 0.68rem; font-weight: 600; white-space: nowrap;
+        background: rgba(239,68,68,0.1); color: var(--red-400);
+    }
+
+    /* ── History table ───────────────────────────────────────── */
+    .history-card { width: 100%; }
+    .history-table { width: 100%; border-collapse: collapse; }
+    .history-table th {
+        padding: 0.85rem 0.75rem;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+        font-weight: 600;
+        border-bottom: 1px solid var(--border-color);
+        white-space: nowrap;
+        text-align: left;
+    }
+    .history-table td {
+        padding: 0.9rem 0.75rem;
+        border-bottom: 1px solid var(--table-border);
+        vertical-align: middle;
+        font-size: 0.82rem;
+        text-align: left;
+    }
+    .history-table tbody tr:last-child td { border-bottom: none; }
+    .history-table tbody tr:hover { background: var(--table-row-hover); }
+
+    /* Delete button */
+    .btn-delete {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.28rem 0.7rem;
+        border-radius: 7px;
+        font-size: 0.72rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid rgba(239,68,68,0.25);
+        background: rgba(239,68,68,0.06);
+        color: var(--red-400);
+        font-family: inherit;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .btn-delete:hover { background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.45); }
+
+    /* Empty history */
+    .history-empty {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+    }
+    .history-empty i { font-size: 1.5rem; display: block; margin-bottom: 0.5rem; opacity: 0.4; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'portals:staff_my_schedule' %}" class="back-link" style="margin-bottom: 1.5rem; display: inline-flex;">
+    <i class="fas fa-arrow-left"></i> Back to My Schedule
+</a>
+
+<div class="leave-layout">
+
+    <!-- ── Left: Apply Form ───────────────────────────────── -->
+    <div class="card form-card">
+        <div class="card-header">
+            <span class="card-header-title">
+                <i class="fas fa-plane-departure" style="margin-right: 0.5rem; color: var(--purple-400);"></i>
+                Apply for Leave
+            </span>
+        </div>
+        <div class="card-body">
+
+            <div class="info-notice">
+                <i class="fas fa-info-circle"></i>
+                <span>Your leave request will be sent to the admin for approval. You will appear on leave only once it is <strong>approved</strong>.</span>
+            </div>
+
+            {% if messages %}
+            {% for message in messages %}
+            {% if message.tags == 'error' %}
+            <div style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); padding: 0.85rem 1rem; border-radius: 10px; margin-bottom: 1.25rem; display: flex; align-items: flex-start; gap: 0.65rem; font-size: 0.82rem; color: var(--red-400); line-height: 1.5;">
+                <i class="fas fa-exclamation-circle" style="margin-top: 0.15rem; flex-shrink: 0;"></i>
+                <span>{{ message }}</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                <div style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); padding: 0.85rem 1rem; border-radius: 10px; margin-bottom: 1.25rem;">
+                    {% for error in form.non_field_errors %}
+                    <div class="error-text" style="margin-top: 0;"><i class="fas fa-exclamation-circle" style="margin-right:0.4rem;"></i>{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="date-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="id_start_date">Start Date</label>
+                        {{ form.start_date }}
+                        {% if form.start_date.errors %}<span class="error-text">{{ form.start_date.errors.0 }}</span>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="id_end_date">End Date</label>
+                        {{ form.end_date }}
+                        {% if form.end_date.errors %}<span class="error-text">{{ form.end_date.errors.0 }}</span>{% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="id_reason">
+                        Reason <span style="color: var(--text-muted); font-weight: 400; text-transform: none; font-size: 0.75rem;">(Optional)</span>
+                    </label>
+                    {{ form.reason }}
+                    {% if form.reason.errors %}<span class="error-text">{{ form.reason.errors.0 }}</span>{% endif %}
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-paper-plane"></i> Submit Request
+                    </button>
+                    <a href="{% url 'portals:staff_my_schedule' %}" class="btn-cancel">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Right: History ─────────────────────────────────── -->
+    <div class="card history-card">
+        <div class="card-header">
+            <span class="card-header-title">
+                <i class="fas fa-history" style="margin-right: 0.5rem; color: var(--purple-400);"></i>
+                My Leave History
+            </span>
+        </div>
+        <div class="table-wrapper" style="overflow-x: auto;">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Date Range</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in my_leaves %}
+                    <tr>
+                        <td style="color: var(--text-primary); font-weight: 500; white-space: nowrap;">
+                            {{ l.start_date|date:"M j, Y" }}
+                            <div style="color: var(--text-muted); font-size: 0.75rem; font-weight: 400;">to {{ l.end_date|date:"M j, Y" }}</div>
+                        </td>
+                        <td style="color: var(--text-secondary);">
+                            {% if l.reason %}
+                            <span style="display: block; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ l.reason }}">{{ l.reason }}</span>
+                            {% else %}
+                            <span style="color: var(--text-muted); font-style: italic;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if l.status == "pending" %}
+                            <span class="leave-status-pending"><i class="fas fa-hourglass-half"></i> Pending</span>
+                            {% elif l.status == "approved" %}
+                            <span class="leave-status-approved"><i class="fas fa-check-circle"></i> Approved</span>
+                            {% elif l.status == "rejected" %}
+                            <span class="leave-status-rejected"><i class="fas fa-times-circle"></i> Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if l.status == "approved" %}
+                            <span style="color: var(--text-muted); font-size: 0.85rem;" title="Approved leaves can only be revoked by an admin.">
+                                <i class="fas fa-lock"></i>
+                            </span>
+                            {% else %}
+                            <form method="post" action="{% url 'portals:staff_delete_leave' l.pk %}" style="margin: 0;" onsubmit="return confirm('Delete this leave request?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-delete">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">
+                            <div class="history-empty">
+                                <i class="fas fa-calendar-check"></i>
+                                No leave requests yet
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

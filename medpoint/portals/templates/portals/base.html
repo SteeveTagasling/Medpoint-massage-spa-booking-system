@@ -19,7 +19,7 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --sidebar-width: 280px;
+            --sidebar-width: 240px;
             --sidebar-collapsed: 72px;
             --bg-primary: #0b0613;
             --bg-secondary: #120c1e;
@@ -131,22 +131,22 @@
         }
 
         .sidebar-header {
-            padding: 1.5rem 1.25rem;
+            padding: 1rem 1rem;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
-            gap: 0.875rem;
+            gap: 0.75rem;
         }
 
         .sidebar-logo-icon {
-            width: 42px;
-            height: 42px;
+            width: 36px;
+            height: 36px;
             background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
-            border-radius: 12px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             color: #fff;
             flex-shrink: 0;
             box-shadow: 0 4px 15px rgba(147, 51, 234, 0.3);
@@ -161,7 +161,7 @@
         .sidebar-logo-text .brand {
             font-family: 'Playfair Display', serif;
             font-weight: 700;
-            font-size: 1.05rem;
+            font-size: 0.95rem;
             color: var(--text-primary);
             letter-spacing: 0.06em;
             white-space: nowrap;
@@ -199,15 +199,15 @@
         .nav-item {
             display: flex;
             align-items: center;
-            gap: 0.875rem;
-            padding: 0.7rem 0.875rem;
-            border-radius: 10px;
+            gap: 0.75rem;
+            padding: 0.55rem 0.75rem;
+            border-radius: 8px;
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.875rem;
+            font-size: 0.82rem;
             font-weight: 500;
             transition: var(--transition);
-            margin-bottom: 2px;
+            margin-bottom: 1px;
             position: relative;
         }
 
@@ -386,24 +386,25 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border-color);
-            padding: 1rem 2rem;
+            padding: 0.75rem 1.5rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             z-index: 50;
+            min-height: 56px;
         }
 
         .topbar-title {
             font-family: 'Playfair Display', serif;
-            font-size: 1.35rem;
+            font-size: 1.15rem;
             font-weight: 600;
             color: var(--text-primary);
         }
 
         .topbar-subtitle {
-            font-size: 0.8rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
-            margin-top: 0.125rem;
+            margin-top: 0.1rem;
         }
 
         .topbar-actions {
@@ -413,13 +414,13 @@
         }
 
         .topbar-btn {
-            width: 38px;
-            height: 38px;
+            width: 34px;
+            height: 34px;
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: 8px;
             background: transparent;
             color: var(--text-secondary);
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -448,7 +449,7 @@
 
         /* --- Page Content --- */
         .page-content {
-            padding: 2rem;
+            padding: 1.25rem 1.5rem;
         }
 
         /* --- Cards --- */
@@ -486,19 +487,19 @@
         /* --- Metric Cards --- */
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1.25rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.25rem;
         }
 
         .metric-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 1.5rem;
+            border-radius: 12px;
+            padding: 1.1rem 1.25rem;
             display: flex;
             align-items: flex-start;
-            gap: 1rem;
+            gap: 0.875rem;
             transition: var(--transition);
             position: relative;
             overflow: hidden;
@@ -526,13 +527,13 @@
         }
 
         .metric-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.15rem;
+            font-size: 1rem;
             flex-shrink: 0;
         }
 
@@ -553,7 +554,7 @@
         }
 
         .metric-value {
-            font-size: 1.75rem;
+            font-size: 1.45rem;
             font-weight: 700;
             color: var(--text-primary);
             line-height: 1;
@@ -571,8 +572,8 @@
 
         .data-table th {
             text-align: left;
-            padding: 0.75rem 1rem;
-            font-size: 0.7rem;
+            padding: 0.6rem 0.875rem;
+            font-size: 0.65rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.08em;
@@ -582,8 +583,8 @@
         }
 
         .data-table td {
-            padding: 0.875rem 1rem;
-            font-size: 0.85rem;
+            padding: 0.65rem 0.875rem;
+            font-size: 0.82rem;
             color: var(--text-secondary);
             border-bottom: 1px solid var(--table-border);
             vertical-align: middle;
@@ -633,10 +634,11 @@
 
         /* --- Status Select --- */
         .status-select {
-            padding: 0.3rem 0.6rem;
+            padding: 0.3rem 1.75rem 0.3rem 0.6rem;
             border-radius: 8px;
             border: 1px solid var(--border-color);
-            background: var(--input-bg);
+            background: var(--input-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 0.55rem center;
+            background-size: 10px;
             color: var(--text-secondary);
             font-size: 0.75rem;
             font-family: inherit;
@@ -704,10 +706,11 @@
         }
 
         .filter-select {
-            padding: 0.55rem 1rem;
+            padding: 0.55rem 2.25rem 0.55rem 1rem;
             border-radius: 10px;
             border: 1px solid var(--border-color);
-            background: var(--input-bg);
+            background: var(--input-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 0.75rem center;
+            background-size: 10px;
             color: var(--text-secondary);
             font-size: 0.8125rem;
             font-family: inherit;
@@ -1000,27 +1003,110 @@
             }
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
             .page-content {
-                padding: 1rem;
+                padding: 0.875rem 1rem;
             }
 
             .topbar {
-                padding: 0.75rem 1rem 0.75rem 4rem;
+                padding: 0.6rem 1rem 0.6rem 4rem;
             }
 
+            .topbar-title { font-size: 1rem; }
+            .topbar-subtitle { display: none; }
+
             .metrics-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
             }
+
+            .metric-card {
+                padding: 0.875rem 1rem;
+            }
+
+            .metric-value { font-size: 1.25rem; }
+
+            /* Tables scroll horizontally on tablet */
+            .table-wrapper {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .data-table {
+                min-width: 600px;
+            }
+
+            .card {
+                border-radius: 12px;
+            }
+
+            .filter-bar {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 0.75rem 1rem;
+            }
+
+            .filter-input, .filter-select {
+                flex: 1 1 calc(50% - 0.25rem);
+                min-width: 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-content {
+                padding: 0.75rem;
+            }
+
+            .topbar {
+                padding: 0.6rem 0.75rem 0.6rem 3.5rem;
+            }
+
+            .topbar-title { font-size: 0.9rem; }
+
+            .metrics-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+            }
+
+            .metric-card {
+                padding: 0.75rem;
+                gap: 0.625rem;
+            }
+
+            .metric-icon { width: 34px; height: 34px; font-size: 0.85rem; }
+            .metric-value { font-size: 1.1rem; }
+            .metric-label { font-size: 0.65rem; }
 
             .filter-bar {
                 flex-direction: column;
                 align-items: stretch;
+                padding: 0.625rem 0.75rem;
+            }
+
+            .filter-input, .filter-select {
+                width: 100%;
+                flex: unset;
             }
 
             .filter-input {
                 min-width: unset;
             }
+
+            .data-table {
+                min-width: 500px;
+            }
+
+            .sidebar-toggle {
+                top: 0.75rem;
+                left: 0.75rem;
+                width: 36px;
+                height: 36px;
+            }
+
+            .topbar-actions { gap: 0.4rem; }
+
+            .card-header { padding: 0.875rem 1rem; }
+            .card-body { padding: 1rem; }
         }
 
         /* --- Links --- */
@@ -1209,6 +1295,10 @@
                     <i class="fas fa-clock"></i>
                     <span class="nav-label">Staff Schedules</span>
                 </a>
+                <a href="{% url 'portals:admin_leave_list' %}" class="nav-item {% if request.resolver_match.url_name == 'admin_leave_list' or request.resolver_match.url_name == 'staff_assign_leave' %}active{% endif %}" id="nav-leave-requests">
+                    <i class="fas fa-plane-departure"></i>
+                    <span class="nav-label">Leave Requests</span>
+                </a>
                 <a href="{% url 'portals:booking_calendar' %}" class="nav-item {% if request.resolver_match.url_name == 'booking_calendar' %}active{% endif %}" id="nav-calendar">
                     <i class="fas fa-calendar-week"></i>
                     <span class="nav-label">Calendar View</span>
@@ -1272,6 +1362,10 @@
                 <a href="{% url 'portals:staff_my_schedule' %}" class="nav-item {% if request.resolver_match.url_name == 'staff_my_schedule' %}active{% endif %}" id="nav-my-schedule">
                     <i class="fas fa-clock"></i>
                     <span class="nav-label">My Schedule</span>
+                </a>
+                <a href="{% url 'portals:staff_apply_leave' %}" class="nav-item {% if request.resolver_match.url_name == 'staff_apply_leave' %}active{% endif %}" id="nav-apply-leave">
+                    <i class="fas fa-plane-departure"></i>
+                    <span class="nav-label">Apply for Leave</span>
                 </a>
             </div>
 
@@ -1339,7 +1433,7 @@
             {% else %}
             </div>
             {% endif %}
-            <a href="{% url 'portals:logout' %}" class="sidebar-logout-btn" id="logout-btn">
+            <a href="#" class="sidebar-logout-btn" id="logout-btn" onclick="openLogoutModal(); return false;">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Sign Out</span>
             </a>
@@ -1577,7 +1671,132 @@
             from { opacity: 0; transform: translateX(40px); }
             to { opacity: 1; transform: translateX(0); }
         }
+
+        /* ── Custom Logout Modal ── */
+        .logout-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .logout-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .logout-modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+        .logout-modal-overlay.active .logout-modal-content {
+            transform: translateY(0) scale(1);
+        }
+        .logout-modal-icon {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--red-400);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin: 0 auto 1.25rem;
+        }
+        .logout-modal-title {
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-family: 'Playfair Display', serif;
+        }
+        .logout-modal-desc {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 1.75rem;
+            line-height: 1.5;
+        }
+        .logout-modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .logout-btn-confirm, .logout-btn-cancel {
+            padding: 0.6rem 1.25rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-family: inherit;
+            flex: 1;
+            text-decoration: none;
+        }
+        .logout-btn-cancel {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+        .logout-btn-cancel:hover {
+            background: var(--sidebar-hover-bg);
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+        }
+        .logout-btn-confirm {
+            background: var(--red-500);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+        .logout-btn-confirm:hover {
+            background: var(--red-600);
+            transform: translateY(-1px);
+        }
     </style>
+
+    <!-- Custom Logout Modal HTML -->
+    <div class="logout-modal-overlay" id="custom-logout-modal">
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3 class="logout-modal-title">Ready to leave?</h3>
+            <p class="logout-modal-desc">Are you sure you want to sign out of your account?</p>
+            <div class="logout-modal-actions">
+                <button class="logout-btn-cancel" onclick="closeLogoutModal()">Cancel</button>
+                <a href="{% url 'portals:logout' %}" class="logout-btn-confirm">Sign Out</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openLogoutModal() {
+            document.getElementById('custom-logout-modal').classList.add('active');
+        }
+        function closeLogoutModal() {
+            document.getElementById('custom-logout-modal').classList.remove('active');
+        }
+        // Close modal if clicking outside the content box
+        document.getElementById('custom-logout-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeLogoutModal();
+            }
+        });
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 

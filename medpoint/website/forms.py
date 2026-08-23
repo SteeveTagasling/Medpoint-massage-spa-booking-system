@@ -19,7 +19,7 @@ class BookingForm(forms.ModelForm):
         model = Booking
         fields = [
             'client_name', 'client_email', 'client_phone',
-            'client_gender', 'service', 'therapist_preference',
+            'client_gender', 'services', 'therapist_preference',
             'therapist', 'date', 'time', 'notes'
         ]
         widgets = {
@@ -42,7 +42,7 @@ class BookingForm(forms.ModelForm):
                 'class': 'form-input',
                 'id': 'booking-client-gender',
             }),
-            'service': forms.Select(attrs={
+            'services': forms.SelectMultiple(attrs={
                 'class': 'form-input',
                 'id': 'booking-service',
             }),
@@ -68,7 +68,7 @@ class BookingForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['service'].queryset = Service.objects.filter(is_active=True)
+        self.fields['services'].queryset = Service.objects.filter(is_active=True)
         self.fields['therapist'].queryset = Therapist.objects.filter(is_active=True)
         self.fields['therapist'].required = False
         self.fields['notes'].required = False
@@ -99,13 +99,15 @@ class BookingForm(forms.ModelForm):
         import datetime
         date = cleaned_data.get('date')
         time = cleaned_data.get('time')
-        service = cleaned_data.get('service')
+        services = cleaned_data.get('services')
 
-        if date and time and service and therapist:
+        if date and time and services and therapist:
             try:
                 # Time is saved as string '09:00'
                 req_start_time = datetime.datetime.strptime(time, '%H:%M').time()
-                duration = datetime.timedelta(minutes=service.duration_minutes)
+                
+                total_duration = sum(s.duration_minutes for s in services)
+                duration = datetime.timedelta(minutes=total_duration)
                 req_start_dt = datetime.datetime.combine(date, req_start_time)
                 req_end_dt = req_start_dt + duration
                 req_end_time = req_end_dt.time()
@@ -148,12 +150,14 @@ class BookingForm(forms.ModelForm):
                     date=date,
                     therapist=therapist,
                     status__in=['pending', 'confirmed']
-                ).select_related('service')
+                ).prefetch_related('services')
 
                 for b in existing_bookings:
                     b_start_time = datetime.datetime.strptime(b.time, '%H:%M').time()
                     b_start_dt = datetime.datetime.combine(date, b_start_time)
-                    b_dur = datetime.timedelta(minutes=b.service.duration_minutes)
+                    
+                    b_total_dur = sum(s.duration_minutes for s in b.services.all())
+                    b_dur = datetime.timedelta(minutes=b_total_dur)
                     b_end_dt = b_start_dt + b_dur
 
                     if max(req_start_dt, b_start_dt) < min(req_end_dt, b_end_dt):
@@ -174,7 +178,7 @@ class FamilyMemberForm(forms.Form):
     """
     name = forms.CharField(max_length=200)
     gender = forms.ChoiceField(choices=Booking.GENDER_CHOICES)
-    service = forms.ModelChoiceField(queryset=Service.objects.filter(is_active=True))
+    services = forms.ModelMultipleChoiceField(queryset=Service.objects.filter(is_active=True))
     therapist_preference = forms.ChoiceField(choices=Booking.THERAPIST_PREF_CHOICES)
     therapist = forms.ModelChoiceField(
         queryset=Therapist.objects.filter(is_active=True), required=False

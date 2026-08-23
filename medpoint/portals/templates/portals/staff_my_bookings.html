@@ -9,21 +9,27 @@
     .booking-type-badge {
         display: inline-flex;
         align-items: center;
-        gap: 0.3rem;
-        padding: 0.15rem 0.5rem;
-        border-radius: 9999px;
-        font-size: 0.65rem;
-        font-weight: 600;
+        justify-content: center;
+        padding: 0.3rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
     }
-    .booking-type-badge i { font-size: 0.55rem; }
+
     .booking-type-online {
-        background: rgba(96, 165, 250, 0.12);
+        background: rgba(96, 165, 250, 0.08);
         color: var(--blue-400);
+        border: 1px solid rgba(96, 165, 250, 0.2);
     }
+
     .booking-type-walk_in {
-        background: rgba(251, 191, 36, 0.12);
+        background: rgba(251, 191, 36, 0.08);
         color: var(--amber-400);
+        border: 1px solid rgba(251, 191, 36, 0.2);
     }
+
     .no-profile-alert {
         padding: 1.25rem;
         border-radius: 12px;
@@ -36,7 +42,44 @@
         margin-bottom: 1.5rem;
         font-size: 0.85rem;
     }
-    .no-profile-alert i { font-size: 1.1rem; }
+
+    .no-profile-alert i {
+        font-size: 1.1rem;
+    }
+
+    /* Action Buttons */
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.85rem;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: opacity 0.15s, transform 0.1s;
+        white-space: nowrap;
+    }
+    .action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .action-btn:active { transform: translateY(0); }
+
+    .btn-confirm {
+        background: rgba(96, 165, 250, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(96, 165, 250, 0.35);
+    }
+    .btn-complete {
+        background: rgba(52, 211, 153, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(52, 211, 153, 0.35);
+    }
+    .btn-cancel {
+        background: rgba(248, 113, 113, 0.12);
+        color: #f87171;
+        border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+    .action-cell { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; }
 </style>
 {% endblock %}
 
@@ -51,10 +94,10 @@
 <div class="card">
     <!-- Filter Bar -->
     <form class="filter-bar" method="get" action="{% url 'portals:staff_my_bookings' %}">
-        <select name="status" class="filter-select" onchange="this.form.submit()">
+        <select name="status" id="status-filter-select" class="filter-select" onchange="this.form.submit()">
             <option value="">All Statuses</option>
             {% for value, label in status_choices %}
-            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            <option value="{{ value }}">{{ label }}</option>
             {% endfor %}
         </select>
     </form>
@@ -70,7 +113,7 @@
                     <th>Date</th>
                     <th>Time</th>
                     <th>Status</th>
-                    <th>Update</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -78,10 +121,9 @@
                 <tr>
                     <td style="color: var(--text-muted);">{{ booking.pk }}</td>
                     <td style="color: var(--text-primary); font-weight: 500;">{{ booking.client_name }}</td>
-                    <td>{{ booking.service.name }}</td>
+                    <td>{{ booking.service_names }}</td>
                     <td>
                         <span class="booking-type-badge booking-type-{{ booking.booking_type }}">
-                            <i class="fas {% if booking.booking_type == 'online' %}fa-globe{% else %}fa-walking{% endif %}"></i>
                             {{ booking.get_booking_type_display }}
                         </span>
                     </td>
@@ -91,11 +133,25 @@
                         <span class="status status-{{ booking.status }}" id="status-badge-{{ booking.pk }}">{{ booking.get_status_display }}</span>
                     </td>
                     <td>
-                        <select class="status-select" onchange="updateBookingStatus({{ booking.pk }}, this.value)" id="status-select-{{ booking.pk }}">
-                            {% for value, label in status_choices %}
-                            <option value="{{ value }}" {% if booking.status == value %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="action-cell" id="action-cell-{{ booking.pk }}" data-status="{{ booking.status }}">
+                            {% if booking.status == 'pending' %}
+                                <button class="action-btn btn-confirm"
+                                    onclick="updateBookingStatus({{ booking.pk }}, 'confirmed')">
+                                    <i class="fas fa-check"></i> Confirm
+                                </button>
+                            {% elif booking.status == 'confirmed' %}
+                                <button class="action-btn btn-complete"
+                                    onclick="updateBookingStatus({{ booking.pk }}, 'completed')">
+                                    <i class="fas fa-check-double"></i> Complete
+                                </button>
+                                <button class="action-btn btn-cancel"
+                                    onclick="updateBookingStatus({{ booking.pk }}, 'cancelled')">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            {% else %}
+                                <span style="color: var(--text-muted); font-size: 0.8rem;">—</span>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
@@ -112,36 +168,73 @@
         </table>
     </div>
 </div>
+
+{# Pass Django context values to JS safely #}
+<script>
+    var CURRENT_STATUS_FILTER = "{{ status_filter }}";
+</script>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    // Set the filter dropdown to the currently active filter
+    (function () {
+        var filterSelect = document.getElementById('status-filter-select');
+        if (filterSelect && CURRENT_STATUS_FILTER) {
+            filterSelect.value = CURRENT_STATUS_FILTER;
+        }
+    })();
+
+    function renderActionButtons(cell, newStatus) {
+        var labels = { pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled' };
+        var bookingId = cell.id.replace('action-cell-', '');
+        cell.setAttribute('data-status', newStatus);
+
+        if (newStatus === 'pending') {
+            cell.innerHTML =
+                '<button class="action-btn btn-confirm" onclick="updateBookingStatus(' + bookingId + ', \'confirmed\')">' +
+                '<i class="fas fa-check"></i> Confirm</button>';
+        } else if (newStatus === 'confirmed') {
+            cell.innerHTML =
+                '<button class="action-btn btn-complete" onclick="updateBookingStatus(' + bookingId + ', \'completed\')">' +
+                '<i class="fas fa-check-double"></i> Complete</button>' +
+                '<button class="action-btn btn-cancel" onclick="updateBookingStatus(' + bookingId + ', \'cancelled\')">' +
+                '<i class="fas fa-times"></i> Cancel</button>';
+        } else {
+            cell.innerHTML = '<span style="color: var(--text-muted); font-size: 0.8rem;">\u2014</span>';
+        }
+    }
+
     function updateBookingStatus(bookingId, newStatus) {
-        fetch(`/portal/bookings/${bookingId}/update-status/`, {
+        fetch('/portal/bookings/' + bookingId + '/update-status/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-CSRFToken': getCookie('csrftoken'),
             },
-            body: `status=${newStatus}`
+            body: 'status=' + newStatus
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const badge = document.getElementById(`status-badge-${bookingId}`);
-                if (badge) {
-                    badge.className = `status status-${newStatus}`;
-                    const labels = { pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled' };
-                    badge.textContent = labels[newStatus] || newStatus;
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    // Update status badge
+                    var badge = document.getElementById('status-badge-' + bookingId);
+                    if (badge) {
+                        badge.className = 'status status-' + newStatus;
+                        var labels = { pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled' };
+                        badge.textContent = labels[newStatus] || newStatus;
+                    }
+                    // Update action buttons
+                    var cell = document.getElementById('action-cell-' + bookingId);
+                    if (cell) { renderActionButtons(cell, newStatus); }
                 }
-            }
-        })
-        .catch(err => console.error('Error:', err));
+            })
+            .catch(function (err) { console.error('Error:', err); });
     }
 
     function getCookie(name) {
-        let value = null;
-        document.cookie.split(';').forEach(c => {
+        var value = null;
+        document.cookie.split(';').forEach(function (c) {
             c = c.trim();
             if (c.startsWith(name + '=')) value = decodeURIComponent(c.substring(name.length + 1));
         });

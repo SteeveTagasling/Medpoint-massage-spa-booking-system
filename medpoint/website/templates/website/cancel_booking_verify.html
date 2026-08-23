@@ -1,0 +1,71 @@
+{% extends "website/base.html" %}
+
+{% block title %}Verify Cancellation - Medpoint Massage &amp; Spa{% endblock %}
+
+{% block content %}
+<div class="pt-32 pb-20 min-h-[70vh] flex items-center justify-center">
+    <div class="max-w-md w-full mx-auto px-4 sm:px-6">
+
+        <div class="bg-dark-200 border border-red-500/20 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+            <!-- Decorative bg -->
+            <div class="absolute -top-32 -right-32 w-64 h-64 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="text-center mb-8 relative z-10">
+                <div class="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-red-400">
+                    <i class="fas fa-shield-alt text-2xl"></i>
+                </div>
+                <h1 class="text-3xl font-display font-bold text-white mb-2 tracking-wide">Confirm Cancellation</h1>
+                <p class="text-gray-400 text-sm">
+                    We've sent a 6-digit OTP to <strong class="text-white">{{ booking.client_email }}</strong>.
+                    Enter it below to confirm the cancellation of booking
+                    <strong class="text-red-400">#{{ booking.pk|stringformat:"04d" }}</strong>.
+                </p>
+            </div>
+
+            {% if messages %}
+            <div class="mb-6 space-y-3 relative z-10">
+                {% for message in messages %}
+                <div class="p-4 rounded-xl text-sm
+                    {% if message.tags == 'error' %}bg-red-500/10 border border-red-500/30 text-red-400
+                    {% else %}bg-purple-500/10 border border-purple-500/30 text-purple-300{% endif %}
+                    flex items-start gap-3">
+                    <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} mt-0.5"></i>
+                    <span>{{ message }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'website:cancel_booking_verify' %}" class="relative z-10">
+                {% csrf_token %}
+                <div class="mb-6">
+                    <label for="otp" class="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-2">
+                        One-Time Password (OTP)
+                    </label>
+                    <input type="text" id="otp" name="otp" required maxlength="6" pattern="\d{6}" placeholder="123456"
+                        class="w-full bg-dark-300/50 border border-red-500/20 rounded-xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all text-center tracking-[0.5em] font-mono text-2xl">
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-semibold py-3.5 px-6 rounded-xl transition-all duration-300 shadow-lg shadow-red-500/25 hover:shadow-red-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                    <i class="fas fa-times-circle"></i> Verify &amp; Cancel Booking
+                </button>
+            </form>
+
+            <!-- Go back link -->
+            <div class="mt-5 text-center text-sm text-gray-500">
+                <a href="{% url 'website:my_bookings' %}" class="text-gray-400 hover:text-purple-300 transition-colors flex items-center justify-center gap-1.5">
+                    <i class="fas fa-arrow-left text-xs"></i> Go back to My Bookings
+                </a>
+            </div>
+
+            <!-- Warning notice -->
+            <div class="mt-6 p-4 rounded-xl bg-yellow-500/5 border border-yellow-500/15 text-yellow-300/80 text-xs flex items-start gap-2.5">
+                <i class="fas fa-exclamation-triangle mt-0.5"></i>
+                <span>Once you verify, this booking will be permanently cancelled and cannot be restored.</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

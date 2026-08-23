@@ -14,7 +14,7 @@ from website.models import (
     Service, Therapist, Testimonial, GalleryImage,
     Booking, ContactMessage, StaffSchedule, StaffLeave,
 )
-from .forms import ServiceForm, TherapistForm, WalkInBookingForm, StaffScheduleForm, AdminSettingsForm, AdminUserForm, StaffSettingsForm, BulkStaffScheduleForm, StaffLeaveForm
+from .forms import ServiceForm, TherapistForm, WalkInBookingForm, StaffScheduleForm, AdminSettingsForm, AdminUserForm, StaffSettingsForm, BulkStaffScheduleForm, StaffLeaveForm, StaffLeaveRequestForm
 from .models import AdminProfile, StaffNotification
 
 
@@ -144,16 +144,16 @@ def dashboard(request):
         return _staff_dashboard(request)
 
     today = timezone.now().date()
-    total_bookings = Booking.objects.count()
-    pending_bookings = Booking.objects.filter(status='pending').count()
-    confirmed_bookings = Booking.objects.filter(status='confirmed').count()
+    total_bookings = Booking.objects.filter(is_verified=True).count()
+    pending_bookings = Booking.objects.filter(status='pending', is_verified=True).count()
+    confirmed_bookings = Booking.objects.filter(status='confirmed', is_verified=True).count()
     today_bookings = Booking.objects.filter(date=today).count()
     total_services = Service.objects.filter(is_active=True).count()
     total_therapists = Therapist.objects.filter(is_active=True).count()
     unread_messages = ContactMessage.objects.filter(is_read=False).count()
-    online_bookings = Booking.objects.filter(booking_type='online').count()
+    online_bookings = Booking.objects.filter(booking_type='online', is_verified=True).count()
     walkin_bookings = Booking.objects.filter(booking_type='walk_in').count()
-    recent_bookings = Booking.objects.select_related('service', 'therapist').order_by('-created_at')[:8]
+    recent_bookings = Booking.objects.filter(Q(booking_type='walk_in') | Q(is_verified=True)).select_related('therapist').prefetch_related('services').order_by('-created_at')[:8]
 
     context = {
         'total_bookings': total_bookings,
@@ -171,6 +171,129 @@ def dashboard(request):
     return render(request, 'portals/dashboard.html', context)
 
 
+def revenue_chart_data(request):
+    """API endpoint returning revenue chart data for the admin dashboard."""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    period = request.GET.get('period', 'week')  # day, week, month, year
+    today = timezone.now().date()
+
+    if period == 'day':
+        # 10:00 AM to 12:00 MN
+        hour_sequence = list(range(10, 24)) + [0]
+        labels = [f"{h:02d}:00" for h in hour_sequence]
+        label_strs = labels  # string labels for day period
+        date_range = [today]
+    elif period == 'week':
+        labels = [(today - timedelta(days=i)) for i in range(6, -1, -1)]
+        date_range = labels
+        label_strs = [d.strftime('%a %b %d') for d in labels]
+    elif period == 'month':
+        # Last 30 days grouped by day
+        labels = [(today - timedelta(days=i)) for i in range(29, -1, -1)]
+        date_range = labels
+        label_strs = [d.strftime('%b %d') for d in labels]
+    else:  # year
+        # Last 12 months
+        from datetime import date as dt_date
+        labels = []
+        for i in range(11, -1, -1):
+            month = today.month - i
+            year = today.year
+            while month < 1:
+                month += 12
+                year -= 1
+            labels.append((year, month))
+        label_strs = [dt_date(y, m, 1).strftime('%b %Y') for y, m in labels]
+
+    therapists = Therapist.objects.filter(is_active=True).order_by('name')
+
+    # Build datasets per therapist
+    datasets = []
+    total_by_label = {}
+
+    # Palette of nice colors for each therapist line
+    palette = [
+        ('rgba(168,85,247,1)', 'rgba(168,85,247,0.15)'),
+        ('rgba(96,165,250,1)', 'rgba(96,165,250,0.15)'),
+        ('rgba(52,211,153,1)', 'rgba(52,211,153,0.15)'),
+        ('rgba(251,191,36,1)', 'rgba(251,191,36,0.15)'),
+        ('rgba(248,113,113,1)', 'rgba(248,113,113,0.15)'),
+        ('rgba(167,243,208,1)', 'rgba(167,243,208,0.15)'),
+        ('rgba(196,181,253,1)', 'rgba(196,181,253,0.15)'),
+        ('rgba(253,186,116,1)', 'rgba(253,186,116,0.15)'),
+    ]
+
+    for idx, therapist in enumerate(therapists):
+        color, bg = palette[idx % len(palette)]
+
+        # Get completed bookings for this therapist
+        qs = Booking.objects.filter(
+            therapist=therapist, status='completed'
+        ).prefetch_related('services')
+
+        if period == 'day':
+            qs = qs.filter(date=today)
+            # Group by hour string label (e.g. '10:00')
+            revenue_map = {}
+            for b in qs:
+                hour = 0
+                if b.time:
+                    try:
+                        hour = int(str(b.time).split(':')[0])
+                    except (ValueError, TypeError, AttributeError):
+                        hour = 0
+                lbl_key = f"{hour:02d}:00"
+                rev = sum(s.discounted_price for s in b.services.all())
+                revenue_map[lbl_key] = revenue_map.get(lbl_key, Decimal('0')) + rev
+            data = [float(revenue_map.get(lbl, 0)) for lbl in label_strs]
+        elif period in ('week', 'month'):
+            qs = qs.filter(date__in=date_range)
+            revenue_map = {}
+            for b in qs:
+                rev = sum(s.discounted_price for s in b.services.all())
+                revenue_map[b.date] = revenue_map.get(b.date, Decimal('0')) + rev
+            data = [float(revenue_map.get(d, 0)) for d in date_range]
+        else:  # year
+            revenue_map = {}
+            for b in qs:
+                key = (b.date.year, b.date.month)
+                rev = sum(s.discounted_price for s in b.services.all())
+                revenue_map[key] = revenue_map.get(key, Decimal('0')) + rev
+            data = [float(revenue_map.get(lbl, 0)) for lbl in labels]
+
+        # Add to totals using the string label
+        for i, val in enumerate(data):
+            lbl = label_strs[i]
+            total_by_label[lbl] = total_by_label.get(lbl, 0) + val
+
+        datasets.append({
+            'label': therapist.name,
+            'data': data,
+            'borderColor': color,
+            'backgroundColor': bg,
+            'tension': 0.4,
+            'pointRadius': 4,
+            'pointHoverRadius': 7,
+            'borderWidth': 2.5,
+            'fill': False,
+        })
+
+    # Total revenue across all therapists per label
+    final_labels = label_strs
+    total_data = [total_by_label.get(lbl, 0) for lbl in label_strs]
+
+    total_revenue = sum(total_data)
+
+    return JsonResponse({
+        'labels': final_labels,
+        'datasets': datasets,
+        'total_revenue': float(total_revenue),
+        'period': period,
+    })
+
+
 def _staff_dashboard(request):
     """Dashboard for staff/therapist role."""
     from decimal import Decimal
@@ -180,10 +303,10 @@ def _staff_dashboard(request):
     if therapist:
         my_bookings_today = Booking.objects.filter(
             therapist=therapist, date=today
-        ).exclude(status='cancelled').select_related('service').order_by('time')
+        ).exclude(status='cancelled').prefetch_related('services').order_by('time')
         my_completed_bookings = Booking.objects.filter(
             therapist=therapist, status='completed'
-        ).select_related('service')
+        ).prefetch_related('services')
         
         my_total_completed = my_completed_bookings.count()
         my_pending = Booking.objects.filter(
@@ -197,7 +320,7 @@ def _staff_dashboard(request):
         
         for b in my_completed_bookings:
             customers.add(b.client_email.lower().strip() or b.client_name.lower().strip())
-            total_income += b.service.discounted_price * (therapist.commission_percentage / Decimal('100'))
+            total_income += sum(svc.discounted_price for svc in b.services.all()) * (therapist.commission_percentage / Decimal('100'))
             
         my_unique_customers = len(customers)
         my_services_income = total_income
@@ -237,7 +360,7 @@ def booking_list(request):
     date_filter = request.GET.get('date', '')
     service_filter = request.GET.get('service', '')
 
-    bookings = Booking.objects.select_related('service', 'therapist').all()
+    bookings = Booking.objects.filter(Q(booking_type='walk_in') | Q(is_verified=True)).select_related('therapist').prefetch_related('services').order_by('-created_at')
 
     if status_filter:
         bookings = bookings.filter(status=status_filter)
@@ -252,7 +375,7 @@ def booking_list(request):
     if date_filter:
         bookings = bookings.filter(date=date_filter)
     if service_filter:
-        bookings = bookings.filter(service_id=service_filter)
+        bookings = bookings.filter(services__id=service_filter)
         
     services = Service.objects.all()
 
@@ -276,11 +399,12 @@ def booking_update_status(request, pk):
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     if request.method == 'POST':
         booking = get_object_or_404(Booking, pk=pk)
+        old_status = booking.status
         new_status = request.POST.get('status')
         if new_status in dict(Booking.STATUS_CHOICES):
             booking.status = new_status
             booking.save()
-            
+
             if booking.therapist:
                 from django.urls import reverse
                 StaffNotification.objects.create(
@@ -291,7 +415,411 @@ def booking_update_status(request, pk):
                     target_therapist=booking.therapist,
                     link=reverse('portals:staff_my_bookings')
                 )
-                
+
+            # Send confirmation email to client when status changes to 'confirmed'
+            if new_status == 'confirmed' and old_status != 'confirmed' and booking.client_email:
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+
+                    therapist_name = booking.therapist.name if booking.therapist else 'To be assigned'
+                    time_display = dict(booking.TIME_CHOICES).get(booking.time, booking.time)
+                    date_display = booking.date.strftime('%B %d, %Y')
+
+                    subject = f'Your Booking is Confirmed – Medpoint Massage & Spa'
+
+                    plain_message = (
+                        f"Hi {booking.client_name},\n\n"
+                        f"Your booking at Medpoint Massage & Spa has been CONFIRMED!\n\n"
+                        f"Booking Details:\n"
+                        f"  Reference #: {booking.pk:04d}\n"
+                        f"  Services: {booking.service_names}\n"
+                        f"  Therapist: {therapist_name}\n"
+                        f"  Date: {date_display}\n"
+                        f"  Time: {time_display}\n\n"
+                        f"Please arrive 15 minutes before your scheduled time.\n"
+                        f"If you need to reschedule, please contact us as soon as possible.\n\n"
+                        f"Thank you for choosing Medpoint Massage & Spa!\n"
+                        f"– The Medpoint Team"
+                    )
+
+                    html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background-color:#0f0f15;font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
+
+    <!-- Logo Header -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+           style="max-width:560px;margin:0 auto 0;background:linear-gradient(135deg,#4a1a7a 0%,#2d1060 50%,#1a0845 100%);
+                  border-radius:16px 16px 0 0;overflow:hidden;">
+      <tr>
+        <td align="center" style="padding:32px 32px 28px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td align="center">
+                <span style="font-size:24px;font-weight:700;letter-spacing:4px;
+                             color:#ffffff;font-family:Georgia,serif;">MEDPOINT</span>
+                <br/>
+                <span style="font-size:11px;letter-spacing:2px;color:#c084fc;
+                             text-transform:uppercase;margin-top:4px;display:block;">
+                  Massage &amp; Spa
+                </span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Card -->
+    <div style="background:#1a1a2e;border-radius:0 0 18px 18px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);border-top:none;max-width:560px;margin:0 auto;">
+
+      <!-- Green confirmed banner -->
+      <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:28px 32px;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">Booking Confirmed!</h1>
+        <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Your appointment has been approved.</p>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:28px 32px;">
+        <p style="margin:0 0 20px;color:#c8c8d8;font-size:15px;">Hi <strong style="color:#fff;">{booking.client_name}</strong>,</p>
+        <p style="margin:0 0 24px;color:#c8c8d8;font-size:14px;line-height:1.6;">
+          Great news! Your booking at <strong style="color:#a78bfa;">Medpoint Massage &amp; Spa</strong> has been confirmed.
+          We look forward to seeing you!
+        </p>
+
+        <!-- Details box -->
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+          <h3 style="margin:0 0 16px;color:#a78bfa;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;">Booking Details</h3>
+
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:7px 0;color:#888;font-size:13px;width:40%;">Reference #</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;font-weight:600;">#{booking.pk:04d}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Service(s)</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;">{booking.service_names}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Therapist</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;">{therapist_name}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Date</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;font-weight:600;">{date_display}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Time</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;font-weight:600;">{time_display}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Reminder -->
+        <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:14px 18px;margin-bottom:24px;">
+          <p style="margin:0;color:#f87171;font-size:13px;line-height:1.55;">
+            Please arrive <strong>15 minutes early</strong> to complete any paperwork and prepare for your session.
+          </p>
+        </div>
+
+        <p style="margin:0;color:#666;font-size:13px;line-height:1.6;">
+          Need to reschedule or have questions? Please contact us as soon as possible so we can assist you.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div style="border-top:1px solid rgba(255,255,255,0.06);padding:18px 32px;text-align:center;">
+        <p style="margin:0;color:#555;font-size:12px;">
+          © Medpoint Massage &amp; Spa &nbsp;|&nbsp; Thank you for choosing us!
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+"""
+                    send_mail(
+                        subject=subject,
+                        message=plain_message,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[booking.client_email],
+                        html_message=html_message,
+                        fail_silently=True,
+                    )
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f'Failed to send booking confirmation email: {e}')
+
+            # Send completion email to client when status changes to 'completed'
+            if new_status == 'completed' and old_status != 'completed' and booking.client_email:
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+
+                    therapist_name = booking.therapist.name if booking.therapist else 'Our therapist'
+                    time_display = dict(booking.TIME_CHOICES).get(booking.time, booking.time)
+                    date_display = booking.date.strftime('%B %d, %Y')
+
+                    subject = f'Your Session is Complete – Thank You! | Medpoint Massage & Spa'
+
+                    plain_message = (
+                        f"Hi {booking.client_name},\n\n"
+                        f"Your appointment at Medpoint Massage & Spa has been marked as COMPLETED.\n\n"
+                        f"Booking Details:\n"
+                        f"  Reference #: {booking.pk:04d}\n"
+                        f"  Services: {booking.service_names}\n"
+                        f"  Therapist: {therapist_name}\n"
+                        f"  Date: {date_display}\n"
+                        f"  Time: {time_display}\n\n"
+                        f"We hope you enjoyed your experience!\n"
+                        f"We'd love to see you again. Book your next session with us anytime.\n\n"
+                        f"Thank you for choosing Medpoint Massage & Spa!\n"
+                        f"– The Medpoint Team"
+                    )
+
+                    html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background-color:#0f0f15;font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
+
+    <!-- Logo Header -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+           style="max-width:560px;margin:0 auto;background:linear-gradient(135deg,#4a1a7a 0%,#2d1060 50%,#1a0845 100%);
+                  border-radius:16px 16px 0 0;overflow:hidden;">
+      <tr>
+        <td align="center" style="padding:32px 32px 28px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td align="center">
+                <span style="font-size:24px;font-weight:700;letter-spacing:4px;
+                             color:#ffffff;font-family:Georgia,serif;">MEDPOINT</span>
+                <br/>
+                <span style="font-size:11px;letter-spacing:2px;color:#c084fc;
+                             text-transform:uppercase;margin-top:4px;display:block;">
+                  Massage &amp; Spa
+                </span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Card -->
+    <div style="background:#1a1a2e;border-radius:0 0 18px 18px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);border-top:none;max-width:560px;margin:0 auto;">
+
+      <!-- Teal completed banner -->
+      <div style="background:linear-gradient(135deg,#0e7490,#0891b2);padding:28px 32px;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">Session Completed!</h1>
+        <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Thank you for visiting us.</p>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:28px 32px;">
+        <p style="margin:0 0 20px;color:#c8c8d8;font-size:15px;">Hi <strong style="color:#fff;">{booking.client_name}</strong>,</p>
+        <p style="margin:0 0 24px;color:#c8c8d8;font-size:14px;line-height:1.6;">
+          Your session at <strong style="color:#a78bfa;">Medpoint Massage &amp; Spa</strong> has been completed.
+          We hope it was a relaxing and enjoyable experience. We'd love to see you again!
+        </p>
+
+        <!-- Details box -->
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+          <h3 style="margin:0 0 16px;color:#a78bfa;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;">Booking Summary</h3>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:7px 0;color:#888;font-size:13px;width:40%;">Reference #</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;font-weight:600;">#{booking.pk:04d}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Service(s)</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;">{booking.service_names}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Therapist</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;">{therapist_name}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Date</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;font-weight:600;">{date_display}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Time</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;font-weight:600;">{time_display}</td>
+            </tr>
+          </table>
+        </div>
+
+        <p style="margin:0;color:#666;font-size:13px;line-height:1.6;">
+          Book your next session anytime by visiting our website. We look forward to serving you again!
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div style="border-top:1px solid rgba(255,255,255,0.06);padding:18px 32px;text-align:center;">
+        <p style="margin:0;color:#555;font-size:12px;">
+          © Medpoint Massage &amp; Spa &nbsp;|&nbsp; Thank you for choosing us!
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+"""
+                    send_mail(
+                        subject=subject,
+                        message=plain_message,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[booking.client_email],
+                        html_message=html_message,
+                        fail_silently=True,
+                    )
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f'Failed to send booking completed email: {e}')
+
+            # Send cancellation email to client when status changes to 'cancelled'
+            if new_status == 'cancelled' and old_status != 'cancelled' and booking.client_email:
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+
+                    therapist_name = booking.therapist.name if booking.therapist else 'To be assigned'
+                    time_display = dict(booking.TIME_CHOICES).get(booking.time, booking.time)
+                    date_display = booking.date.strftime('%B %d, %Y')
+
+                    subject = f'Your Booking Has Been Cancelled – Medpoint Massage & Spa'
+
+                    plain_message = (
+                        f"Hi {booking.client_name},\n\n"
+                        f"We're sorry to inform you that your booking at Medpoint Massage & Spa has been CANCELLED.\n\n"
+                        f"Booking Details:\n"
+                        f"  Reference #: {booking.pk:04d}\n"
+                        f"  Services: {booking.service_names}\n"
+                        f"  Therapist: {therapist_name}\n"
+                        f"  Date: {date_display}\n"
+                        f"  Time: {time_display}\n\n"
+                        f"If you have any questions, please contact us and we'll be happy to assist.\n"
+                        f"You may book a new appointment at any time.\n\n"
+                        f"We hope to see you soon!\n"
+                        f"– The Medpoint Team"
+                    )
+
+                    html_message = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background-color:#0f0f15;font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
+
+    <!-- Logo Header -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+           style="max-width:560px;margin:0 auto;background:linear-gradient(135deg,#4a1a7a 0%,#2d1060 50%,#1a0845 100%);
+                  border-radius:16px 16px 0 0;overflow:hidden;">
+      <tr>
+        <td align="center" style="padding:32px 32px 28px;">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td align="center">
+                <span style="font-size:24px;font-weight:700;letter-spacing:4px;
+                             color:#ffffff;font-family:Georgia,serif;">MEDPOINT</span>
+                <br/>
+                <span style="font-size:11px;letter-spacing:2px;color:#c084fc;
+                             text-transform:uppercase;margin-top:4px;display:block;">
+                  Massage &amp; Spa
+                </span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Card -->
+    <div style="background:#1a1a2e;border-radius:0 0 18px 18px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);border-top:none;max-width:560px;margin:0 auto;">
+
+      <!-- Red cancelled banner -->
+      <div style="background:linear-gradient(135deg,#b91c1c,#991b1b);padding:28px 32px;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:22px;font-weight:700;">Booking Cancelled</h1>
+        <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Your appointment has been cancelled.</p>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:28px 32px;">
+        <p style="margin:0 0 20px;color:#c8c8d8;font-size:15px;">Hi <strong style="color:#fff;">{booking.client_name}</strong>,</p>
+        <p style="margin:0 0 24px;color:#c8c8d8;font-size:14px;line-height:1.6;">
+          We're sorry to inform you that your booking at <strong style="color:#a78bfa;">Medpoint Massage &amp; Spa</strong> has been cancelled.
+          Please contact us if you'd like to reschedule or if you have any questions.
+        </p>
+
+        <!-- Details box -->
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+          <h3 style="margin:0 0 16px;color:#a78bfa;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;">Cancelled Booking</h3>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:7px 0;color:#888;font-size:13px;width:40%;">Reference #</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;font-weight:600;">#{booking.pk:04d}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Service(s)</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;">{booking.service_names}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Therapist</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;">{therapist_name}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Date</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;font-weight:600;">{date_display}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Time</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;font-weight:600;">{time_display}</td>
+            </tr>
+          </table>
+        </div>
+
+        <p style="margin:0;color:#666;font-size:13px;line-height:1.6;">
+          We hope to see you again. You may book a new appointment at any time on our website.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div style="border-top:1px solid rgba(255,255,255,0.06);padding:18px 32px;text-align:center;">
+        <p style="margin:0;color:#555;font-size:12px;">
+          © Medpoint Massage &amp; Spa &nbsp;|&nbsp; We hope to serve you again!
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+"""
+                    send_mail(
+                        subject=subject,
+                        message=plain_message,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[booking.client_email],
+                        html_message=html_message,
+                        fail_silently=True,
+                    )
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f'Failed to send booking cancellation email: {e}')
+
             return JsonResponse({'success': True, 'status': new_status})
         return JsonResponse({'error': 'Invalid status'}, status=400)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -342,7 +870,7 @@ def booking_create_walkin(request):
                 booking=booking_obj,
                 notification_type='confirmed',
                 message=(
-                    f"Your walk-in booking for {booking_obj.service.name} on "
+                    f"Your walk-in booking for {booking_obj.service_names} on "
                     f"{booking_obj.date.strftime('%B %d, %Y')} at "
                     f"{booking_obj.get_time_display()} has been registered."
                 ),
@@ -363,27 +891,22 @@ def booking_create_walkin(request):
             messages.success(request, f'Walk-in booking #{booking_obj.pk:04d} created successfully.')
             return redirect('portals:booking_list')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
     else:
         form = WalkInBookingForm(initial={
             'date': timezone.now().date(),
             'status': 'confirmed',
         })
-    return render(request, 'portals/booking_walkin.html', {'form': form})
+    return render(request, 'portals/booking_walkin.html', {
+        'form': form,
+        'services_list': Service.objects.filter(is_active=True),
+    })
 
 
 @login_required(login_url='portals:login')
 def booking_delete(request, pk):
-    if not request.user.is_staff:
-        return redirect('portals:login')
-    check = _require_admin(request)
-    if check:
-        return check
-    booking = get_object_or_404(Booking, pk=pk)
-    if request.method == 'POST':
-        booking.delete()
-        messages.success(request, 'Booking deleted successfully.')
-    return redirect('portals:booking_list')
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -421,7 +944,8 @@ def service_create(request):
             messages.success(request, 'Service created successfully.')
             return redirect('portals:service_list')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
     else:
         form = ServiceForm()
     return render(request, 'portals/service_form.html', {'form': form, 'action': 'Create'})
@@ -442,7 +966,8 @@ def service_edit(request, pk):
             messages.success(request, f'"{service.name}" updated successfully.')
             return redirect('portals:service_list')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
     else:
         form = ServiceForm(instance=service)
     return render(request, 'portals/service_form.html', {'form': form, 'action': 'Edit', 'service': service})
@@ -492,7 +1017,8 @@ def therapist_create(request):
             messages.success(request, 'Therapist registered successfully.')
             return redirect('portals:therapist_list')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
     else:
         form = TherapistForm()
     return render(request, 'portals/therapist_form.html', {'form': form, 'action': 'Register'})
@@ -513,7 +1039,8 @@ def therapist_edit(request, pk):
             messages.success(request, f'"{therapist.name}" updated successfully.')
             return redirect('portals:therapist_list')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
     else:
         form = TherapistForm(instance=therapist)
     return render(request, 'portals/therapist_form.html', {'form': form, 'action': 'Edit', 'therapist': therapist})
@@ -529,8 +1056,14 @@ def therapist_delete(request, pk):
     therapist = get_object_or_404(Therapist, pk=pk)
     if request.method == 'POST':
         name = therapist.name
-        therapist.delete()
-        messages.success(request, f'"{name}" removed successfully.')
+        # Deactivate instead of delete
+        if therapist.is_active:
+            therapist.is_active = False
+            messages.success(request, f'"{name}" deactivated successfully.')
+        else:
+            therapist.is_active = True
+            messages.success(request, f'"{name}" reactivated successfully.')
+        therapist.save(update_fields=['is_active'])
     return redirect('portals:therapist_list')
 
 
@@ -566,7 +1099,8 @@ def admin_management_create(request):
             messages.success(request, f'Admin account created successfully.')
             return redirect('portals:admin_management_list')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
     else:
         form = AdminUserForm()
     return render(request, 'portals/admin_form.html', {'form': form, 'action': 'Register'})
@@ -588,7 +1122,8 @@ def admin_management_edit(request, pk):
             messages.success(request, f'Admin account "{admin_user.username}" updated successfully.')
             return redirect('portals:admin_management_list')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
     else:
         form = AdminUserForm(instance=admin_user)
     return render(request, 'portals/admin_form.html', {'form': form, 'action': 'Edit', 'admin_user': admin_user})
@@ -604,13 +1139,18 @@ def admin_management_delete(request, pk):
     from django.contrib.auth.models import User
     admin_user = get_object_or_404(User, pk=pk, is_superuser=True)
     if request.method == 'POST':
-        # Prevent self-deletion
+        # Prevent self-deactivation
         if admin_user == request.user:
-            messages.error(request, 'You cannot delete your own admin account.')
+            messages.error(request, 'You cannot deactivate your own admin account.')
         else:
             username = admin_user.username
-            admin_user.delete()
-            messages.success(request, f'Admin "{username}" removed successfully.')
+            if admin_user.is_active:
+                admin_user.is_active = False
+                messages.success(request, f'Admin "{username}" deactivated successfully.')
+            else:
+                admin_user.is_active = True
+                messages.success(request, f'Admin "{username}" reactivated successfully.')
+            admin_user.save(update_fields=['is_active'])
     return redirect('portals:admin_management_list')
 
 
@@ -670,16 +1210,11 @@ def schedule_list(request):
         
     therapists = Therapist.objects.filter(is_active=True)
     
-    leaves = StaffLeave.objects.select_related('therapist').all().order_by('-start_date')
-    if therapist_filter:
-        leaves = leaves.filter(therapist_id=therapist_filter)
-
     context = {
         'grouped_schedules': grouped_schedules,
         'therapists': therapists,
         'therapist_filter': therapist_filter,
         'status_filter': status_filter,
-        'leaves': leaves,
     }
     return render(request, 'portals/schedule_list.html', context)
 
@@ -729,7 +1264,8 @@ def schedule_create(request):
             messages.success(request, f'Schedule assigned for multiple days successfully.')
             return redirect('portals:schedule_list')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
     else:
         form = BulkStaffScheduleForm()
     return render(request, 'portals/schedule_form.html', {'form': form, 'action': 'Assign'})
@@ -737,6 +1273,7 @@ def schedule_create(request):
 
 @login_required(login_url='portals:login')
 def staff_assign_leave(request):
+    """Admin-only: directly assign leave (auto-approved)."""
     if not request.user.is_staff:
         return redirect('portals:login')
     check = _require_admin(request)
@@ -746,15 +1283,149 @@ def staff_assign_leave(request):
     if request.method == 'POST':
         form = StaffLeaveForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Leave assigned successfully.')
-            return redirect('portals:schedule_list')
+            leave = form.save(commit=False)
+            leave.status = StaffLeave.STATUS_APPROVED
+            leave.save()
+            messages.success(request, 'Leave assigned and approved successfully.')
+            return redirect('portals:admin_leave_list')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
     else:
         form = StaffLeaveForm()
 
     return render(request, 'portals/staff_leave_form.html', {'form': form})
+
+
+@login_required(login_url='portals:login')
+def staff_apply_leave(request):
+    """Staff-only: submit a leave request (status=pending)."""
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    try:
+        therapist = request.user.therapist_profile
+    except Exception:
+        messages.error(request, 'Your account is not linked to a therapist profile. Contact your admin.')
+        return redirect('portals:staff_my_schedule')
+
+    if request.method == 'POST':
+        form = StaffLeaveRequestForm(request.POST)
+        if form.is_valid():
+            leave = form.save(commit=False)
+            leave.therapist = therapist
+            leave.status = StaffLeave.STATUS_PENDING
+
+            # Check for booking conflicts during the requested leave dates
+            start_date = form.cleaned_data['start_date']
+            end_date = form.cleaned_data['end_date']
+            conflicting_bookings = Booking.objects.filter(
+                therapist=therapist,
+                date__gte=start_date,
+                date__lte=end_date,
+            ).exclude(status__in=['cancelled']).order_by('date')
+
+            if conflicting_bookings.exists():
+                conflict_dates = ', '.join(
+                    set(b.date.strftime('%b %d, %Y') for b in conflicting_bookings)
+                )
+                messages.error(
+                    request,
+                    f'You have active bookings during this period ({conflict_dates}). '
+                    f'Please resolve those bookings before applying for leave on those days.'
+                )
+            else:
+                leave.save()
+                messages.success(request, 'Your leave request has been submitted and is awaiting admin approval.')
+                return redirect('portals:staff_my_schedule')
+        else:
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
+    else:
+        form = StaffLeaveRequestForm()
+
+    my_leaves = StaffLeave.objects.filter(therapist=therapist).order_by('-start_date')
+    return render(request, 'portals/staff_leave_apply.html', {'form': form, 'my_leaves': my_leaves})
+
+
+@login_required(login_url='portals:login')
+def staff_delete_leave(request, pk):
+    """Staff-only: delete their own pending leave request."""
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    try:
+        therapist = request.user.therapist_profile
+    except Exception:
+        messages.error(request, 'Your account is not linked to a therapist profile.')
+        return redirect('portals:staff_apply_leave')
+
+    if request.method == 'POST':
+        leave = get_object_or_404(StaffLeave, pk=pk, therapist=therapist)
+        if leave.status == StaffLeave.STATUS_APPROVED:
+            messages.error(request, 'You cannot delete an approved leave. Contact your admin to revoke it.')
+        else:
+            leave.delete()
+            messages.success(request, 'Leave request has been deleted.')
+    return redirect('portals:staff_apply_leave')
+
+@login_required(login_url='portals:login')
+def admin_leave_list(request):
+    """Admin-only: view and manage all staff leave requests."""
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
+
+    status_filter = request.GET.get('status', '')
+    therapist_filter = request.GET.get('therapist', '')
+
+    leaves = StaffLeave.objects.select_related('therapist').all().order_by('-created_at')
+    if status_filter:
+        leaves = leaves.filter(status=status_filter)
+    if therapist_filter:
+        leaves = leaves.filter(therapist_id=therapist_filter)
+
+    therapists = Therapist.objects.filter(is_active=True)
+    pending_count = StaffLeave.objects.filter(status=StaffLeave.STATUS_PENDING).count()
+
+    context = {
+        'leaves': leaves,
+        'therapists': therapists,
+        'status_filter': status_filter,
+        'therapist_filter': therapist_filter,
+        'status_choices': StaffLeave.STATUS_CHOICES,
+        'pending_count': pending_count,
+    }
+    return render(request, 'portals/admin_leave_list.html', context)
+
+
+@login_required(login_url='portals:login')
+def admin_leave_review(request, pk):
+    """Admin-only: approve or reject a leave request."""
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
+
+    if request.method == 'POST':
+        leave = get_object_or_404(StaffLeave, pk=pk)
+        action = request.POST.get('action')
+        if action == 'approve':
+            leave.status = StaffLeave.STATUS_APPROVED
+            leave.is_active = True
+            leave.save()
+            messages.success(request, f'Leave for {leave.therapist.name} has been approved.')
+        elif action == 'reject':
+            leave.status = StaffLeave.STATUS_REJECTED
+            leave.is_active = False
+            leave.save()
+            messages.success(request, f'Leave for {leave.therapist.name} has been rejected.')
+        elif action == 'toggle':
+            leave.is_active = not leave.is_active
+            leave.save()
+            messages.success(request, f'Leave record updated.')
+    return redirect('portals:admin_leave_list')
 
 
 @login_required(login_url='portals:login')
@@ -772,8 +1443,8 @@ def staff_leave_toggle_active(request, pk):
         leave.save()
         status_text = 'reactivated' if leave.is_active else 'ended'
         messages.success(request, f'Leave record {status_text} successfully.')
-        return redirect('portals:schedule_list')
-    return redirect('portals:schedule_list')
+        return redirect('portals:admin_leave_list')
+    return redirect('portals:admin_leave_list')
 
 
 @login_required(login_url='portals:login')
@@ -833,7 +1504,8 @@ def schedule_edit(request, pk):
             messages.success(request, 'Schedule updated successfully.')
             return redirect('portals:schedule_list')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
     else:
         initial_days = [str(s.day_of_week) for s in schedules]
         form = BulkStaffScheduleForm(initial={
@@ -899,7 +1571,7 @@ def booking_calendar(request):
     month_end = date(year, month + 1, 1) - timedelta(days=1) if month < 12 else date(year, 12, 31)
 
     # For staff role, only show their bookings
-    bookings_qs = Booking.objects.select_related('service', 'therapist').filter(
+    bookings_qs = Booking.objects.select_related('therapist').prefetch_related('services').filter(
         date__gte=month_start, date__lte=month_end
     )
     if _is_staff_only(request):
@@ -983,21 +1655,24 @@ def admin_reports(request):
         messages.success(request, "Report filtered by custom date range.")
     start_date, end_date, period_label = _get_date_range(request)
 
-    # All completed bookings in period
+    # All completed bookings in period (walk-in OR verified online only)
     completed = Booking.objects.filter(
+        Q(booking_type='walk_in') | Q(is_verified=True),
         status='completed',
         date__gte=start_date,
         date__lte=end_date,
-    ).select_related('service', 'therapist')
+    ).select_related('therapist').prefetch_related('services')
 
-    # Revenue
+    # Revenue — sum across all services per booking (M2M)
     total_revenue = Decimal('0')
     for b in completed:
-        total_revenue += b.service.discounted_price
+        for svc in b.services.all():
+            total_revenue += svc.discounted_price
 
     total_completed = completed.count()
     total_bookings_period = Booking.objects.filter(
-        date__gte=start_date, date__lte=end_date
+        Q(booking_type='walk_in') | Q(is_verified=True),
+        date__gte=start_date, date__lte=end_date,
     ).count()
 
     # Per-staff performance
@@ -1008,7 +1683,8 @@ def admin_reports(request):
         t_count = t_bookings.count()
         t_revenue = Decimal('0')
         for b in t_bookings:
-            t_revenue += b.service.discounted_price
+            for svc in b.services.all():
+                t_revenue += svc.discounted_price
         t_commission = t_revenue * (t.commission_percentage / Decimal('100'))
         staff_data.append({
             'therapist': t,
@@ -1028,12 +1704,10 @@ def admin_reports(request):
     # Service breakdown
     service_breakdown = []
     for svc in Service.objects.filter(is_active=True):
-        svc_bookings = completed.filter(service=svc)
+        svc_bookings = completed.filter(services=svc)
         svc_count = svc_bookings.count()
         if svc_count > 0:
-            svc_revenue = Decimal('0')
-            for b in svc_bookings:
-                svc_revenue += svc.discounted_price
+            svc_revenue = svc.discounted_price * svc_count
             service_breakdown.append({
                 'service': svc,
                 'count': svc_count,
@@ -1069,11 +1743,12 @@ def staff_my_bookings(request):
 
     therapist = _get_staff_therapist(request)
     status_filter = request.GET.get('status', '')
-    bookings = Booking.objects.select_related('service', 'therapist').none()
+    bookings = Booking.objects.select_related('therapist').prefetch_related('services').none()
 
     if therapist:
-        bookings = Booking.objects.select_related('service', 'therapist').filter(
-            therapist=therapist
+        bookings = Booking.objects.select_related('therapist').prefetch_related('services').filter(
+            Q(booking_type='walk_in') | Q(is_verified=True),
+            therapist=therapist,
         )
         if status_filter:
             bookings = bookings.filter(status=status_filter)
@@ -1116,7 +1791,7 @@ def staff_my_schedule(request):
             therapist=therapist,
             date__gte=month_start,
             date__lte=month_end,
-        ).exclude(status='cancelled').select_related('service').order_by('date', 'time')
+        ).exclude(status='cancelled').prefetch_related('services').order_by('date', 'time')
 
         my_schedules = StaffSchedule.objects.filter(therapist=therapist).order_by('day_of_week', 'start_time')
 
@@ -1126,7 +1801,7 @@ def staff_my_schedule(request):
         booked_slots.setdefault(b.date.day, []).append({
             'time': b.get_time_display(),
             'time_raw': b.time,
-            'service': b.service.name,
+            'service': b.service_names,
             'client': b.client_name,
             'status': b.status,
         })
@@ -1142,6 +1817,22 @@ def staff_my_schedule(request):
     for s in my_schedules:
         schedule_map.setdefault(s.day_of_week, []).append(s)
 
+    # Build approved leave days for this month
+    leave_days = set()
+    if therapist:
+        approved_leaves = StaffLeave.objects.filter(
+            therapist=therapist,
+            status=StaffLeave.STATUS_APPROVED,
+            start_date__lte=month_end,
+            end_date__gte=month_start,
+        )
+        for leave in approved_leaves:
+            d = leave.start_date
+            while d <= leave.end_date:
+                if d.year == year and d.month == month:
+                    leave_days.add(d.day)
+                d += timedelta(days=1)
+
     context = {
         'therapist': therapist,
         'month_days': month_days,
@@ -1154,6 +1845,7 @@ def staff_my_schedule(request):
         'weekday_names': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
         'my_schedules': my_schedules,
         'schedule_map': schedule_map,
+        'leave_days': list(leave_days),
     }
     return render(request, 'portals/staff_my_schedule.html', context)
 
@@ -1178,15 +1870,16 @@ def staff_my_reports(request):
 
     if therapist:
         completed = Booking.objects.filter(
+            Q(booking_type='walk_in') | Q(is_verified=True),
             therapist=therapist,
             status='completed',
             date__gte=start_date,
             date__lte=end_date,
-        ).select_related('service').order_by('-date', '-time')
+        ).prefetch_related('services').order_by('-date', '-time')
 
         services_rendered = completed.count()
         for b in completed:
-            price = b.service.discounted_price
+            price = b.total_discounted_price
             total_revenue += price
             booking_details.append({
                 'booking': b,
@@ -1243,6 +1936,58 @@ def message_toggle_read(request, pk):
         return JsonResponse({'success': True, 'is_read': msg.is_read})
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+
+@login_required(login_url='portals:login')
+def message_reply(request, pk):
+    if not request.user.is_staff or not _is_admin(request):
+        messages.error(request, 'Unauthorized access.')
+        return redirect('portals:dashboard')
+
+    msg = get_object_or_404(ContactMessage, pk=pk)
+
+    if request.method == 'POST':
+        reply_text = request.POST.get('reply_text', '').strip()
+        if reply_text:
+            msg.reply_text = reply_text
+            msg.replied_at = timezone.now()
+            msg.is_read = True
+            msg.save()
+
+            # Send Email
+            from django.core.mail import EmailMultiAlternatives
+            from django.template.loader import render_to_string
+            from django.utils.html import strip_tags
+            from django.conf import settings
+            import logging
+
+            context = {
+                'client_name': msg.name,
+                'original_subject': msg.subject,
+                'original_message': msg.message,
+                'reply_text': reply_text,
+            }
+
+            try:
+                html_content = render_to_string('website/emails/message_reply.html', context)
+                text_content = strip_tags(html_content)
+
+                email = EmailMultiAlternatives(
+                    subject=f"Re: {msg.subject} - Medpoint Massage & Spa",
+                    body=text_content,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[msg.email]
+                )
+                email.attach_alternative(html_content, "text/html")
+                email.send(fail_silently=False)
+
+                messages.success(request, f'Reply sent successfully to {msg.email}.')
+            except Exception as e:
+                logging.getLogger(__name__).warning(f'Failed to send reply email: {e}')
+                messages.warning(request, f'Reply saved, but email failed to send: {e}')
+        else:
+            messages.error(request, 'Reply text cannot be empty.')
+            
+    return redirect('portals:message_list')
 
 @login_required(login_url='portals:login')
 def testimonial_list(request):
@@ -1342,7 +2087,8 @@ def admin_settings(request):
             messages.success(request, 'Admin settings updated successfully.')
             return redirect('portals:admin_settings')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
     else:
         initial_data = {
             'username': user.username,
@@ -1396,7 +2142,8 @@ def staff_settings(request):
             messages.success(request, 'Your profile settings have been updated successfully.')
             return redirect('portals:staff_settings')
         else:
-            messages.error(request, 'Please correct the errors below.')
+            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
+            messages.error(request, first_error)
     else:
         form = StaffSettingsForm(instance=therapist)
 

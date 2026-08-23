@@ -1,0 +1,252 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Leave Requests{% endblock %}
+{% block page_title %}Leave Requests{% endblock %}
+{% block page_subtitle %}Review and manage staff leave applications{% endblock %}
+
+{% block extra_css %}
+<style>
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+    }
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.25rem;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-decoration: none;
+        font-family: inherit;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.65rem;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        font-family: inherit;
+    }
+    .btn-approve {
+        border-color: rgba(34, 197, 94, 0.3);
+        color: var(--green-400);
+        background: rgba(34, 197, 94, 0.06);
+    }
+    .btn-approve:hover { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.5); }
+    .btn-reject {
+        border-color: rgba(239, 68, 68, 0.3);
+        color: var(--red-400);
+        background: rgba(239, 68, 68, 0.06);
+    }
+    .btn-reject:hover { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.5); }
+    .leave-status-pending {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.65rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--amber-400);
+    }
+    .leave-status-approved {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.65rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(34, 197, 94, 0.12);
+        color: var(--green-400);
+    }
+    .leave-status-rejected {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.65rem;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--red-400);
+    }
+    .summary-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .summary-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.9rem;
+        border-radius: 10px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+    }
+    .summary-chip span {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="header-actions">
+    <a href="{% url 'portals:staff_assign_leave' %}" class="btn-primary">
+        <i class="fas fa-plus"></i> Assign Leave (Admin)
+    </a>
+    <form method="get" action="{% url 'portals:admin_leave_list' %}" style="display: flex; gap: 0.5rem; align-items: center;">
+        <select id="leave-therapist-filter" name="therapist" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Staff</option>
+            {% for t in therapists %}
+            <option value="{{ t.pk }}">{{ t.name }}</option>
+            {% endfor %}
+        </select>
+        <select id="leave-status-filter" name="status" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+        </select>
+    </form>
+</div>
+
+<div class="summary-row">
+    <div class="summary-chip" style="background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(245,158,11,0.1)); border-color: rgba(251,191,36,0.2);">
+        <i class="fas fa-hourglass-half" style="color: var(--amber-500); font-size: 1.1rem;"></i>
+        <span style="color: var(--amber-600); font-weight: 600; font-size: 0.9rem;">Pending Requests</span>
+        <span style="color: var(--amber-600); background: rgba(251,191,36,0.2); padding: 0.1rem 0.6rem; border-radius: 9999px; margin-left: 0.5rem; font-size: 0.9rem;">{{ pending_count }}</span>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-header-title">
+            <i class="fas fa-plane-departure" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+            Staff Leave Requests
+        </span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Staff Member</th>
+                    <th>Date Range</th>
+                    <th>Reason</th>
+                    <th>Submitted</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in leaves %}
+                <tr>
+                    <td style="font-weight: 500; color: var(--text-primary);">{{ l.therapist.name }}</td>
+                    <td>
+                        <span style="color: var(--text-primary); font-weight: 500;">{{ l.start_date|date:"M j, Y" }}</span>
+                        <span style="color: var(--text-muted); font-size: 0.8rem;"> — </span>
+                        <span style="color: var(--text-primary); font-weight: 500;">{{ l.end_date|date:"M j, Y" }}</span>
+                    </td>
+                    <td style="color: var(--text-secondary);">
+                        {% if l.reason %}{{ l.reason }}{% else %}<span style="color: var(--text-muted);">—</span>{% endif %}
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 0.8rem;">{{ l.created_at|date:"M j, Y" }}</td>
+                    <td>
+                        {% if l.status == "pending" %}
+                        <span class="leave-status-pending"><i class="fas fa-hourglass-half"></i> Pending</span>
+                        {% elif l.status == "approved" %}
+                        <span class="leave-status-approved"><i class="fas fa-check-circle"></i> Approved</span>
+                        {% elif l.status == "rejected" %}
+                        <span class="leave-status-rejected"><i class="fas fa-times-circle"></i> Rejected</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+                            {% if l.status == "pending" %}
+                            <form method="post" action="{% url 'portals:admin_leave_review' l.pk %}" style="margin:0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn-sm btn-approve" title="Approve">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'portals:admin_leave_review' l.pk %}" style="margin:0;" onsubmit="return confirm('Reject this leave request?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn-sm btn-reject" title="Reject">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
+                            </form>
+                            {% elif l.status == "approved" %}
+                            <form method="post" action="{% url 'portals:admin_leave_review' l.pk %}" style="margin:0;" onsubmit="return confirm('Reject this previously approved leave?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="btn-sm btn-reject" title="Reject">
+                                    <i class="fas fa-times"></i> Revoke
+                                </button>
+                            </form>
+                            {% elif l.status == "rejected" %}
+                            <form method="post" action="{% url 'portals:admin_leave_review' l.pk %}" style="margin:0;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="approve">
+                                <button type="submit" class="btn-sm btn-approve" title="Approve">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-check"></i>
+                            <p>No leave requests found</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    var CURRENT_STATUS_FILTER = "{{ status_filter }}";
+    var CURRENT_THERAPIST_FILTER = "{{ therapist_filter }}";
+    (function () {
+        var sf = document.getElementById('leave-status-filter');
+        if (sf && CURRENT_STATUS_FILTER) sf.value = CURRENT_STATUS_FILTER;
+        var tf = document.getElementById('leave-therapist-filter');
+        if (tf && CURRENT_THERAPIST_FILTER) tf.value = CURRENT_THERAPIST_FILTER;
+    })();
+</script>
+{% endblock %}

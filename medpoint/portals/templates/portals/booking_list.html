@@ -9,22 +9,23 @@
     .booking-type-badge {
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
-        padding: 0.2rem 0.65rem;
-        border-radius: 9999px;
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+        justify-content: center;
+        padding: 0.3rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
     }
-    .booking-type-badge i { font-size: 0.6rem; }
     .booking-type-online {
-        background: rgba(96, 165, 250, 0.12);
+        background: rgba(96, 165, 250, 0.08);
         color: var(--blue-400);
+        border: 1px solid rgba(96, 165, 250, 0.2);
     }
     .booking-type-walk_in {
-        background: rgba(251, 191, 36, 0.12);
+        background: rgba(251, 191, 36, 0.08);
         color: var(--amber-400);
+        border: 1px solid rgba(251, 191, 36, 0.2);
     }
     .header-actions {
         display: flex;
@@ -94,6 +95,40 @@
         background: rgba(239, 68, 68, 0.15);
         border-color: rgba(239, 68, 68, 0.35);
     }
+
+    /* Status Action Buttons */
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: opacity 0.15s, transform 0.1s;
+        white-space: nowrap;
+        font-family: inherit;
+    }
+    .action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .action-btn:active { transform: translateY(0); }
+    .btn-confirm {
+        background: rgba(96, 165, 250, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(96, 165, 250, 0.35);
+    }
+    .btn-complete {
+        background: rgba(52, 211, 153, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(52, 211, 153, 0.35);
+    }
+    .btn-cancel {
+        background: rgba(248, 113, 113, 0.12);
+        color: #f87171;
+        border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+    .action-cell { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; }
 </style>
 {% endblock %}
 
@@ -165,11 +200,10 @@
                     <td style="color: var(--text-muted);">{{ booking.pk }}</td>
                     <td style="color: var(--text-primary); font-weight: 500;">{{ booking.client_name }}</td>
                     <td>{{ booking.client_email }}</td>
-                    <td>{{ booking.service.name }}</td>
+                    <td>{{ booking.service_names }}</td>
                     <td>{{ booking.therapist.name|default:"—" }}</td>
                     <td>
                         <span class="booking-type-badge booking-type-{{ booking.booking_type }}">
-                            <i class="fas {% if booking.booking_type == 'online' %}fa-globe{% else %}fa-walking{% endif %}"></i>
                             {{ booking.get_booking_type_display }}
                         </span>
                     </td>
@@ -179,19 +213,23 @@
                         <span class="status status-{{ booking.status }}" id="status-badge-{{ booking.pk }}">{{ booking.get_status_display }}</span>
                     </td>
                     <td>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <select class="status-select" onchange="updateBookingStatus({{ booking.pk }}, this.value)" id="status-select-{{ booking.pk }}">
-                                {% for value, label in status_choices %}
-                                <option value="{{ value }}" {% if booking.status == value %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
-                            {% if request.session.portal_role == 'admin' %}
-                            <form method="post" action="{% url 'portals:booking_delete' booking.pk %}" style="margin: 0; display: flex; align-items: center;" onsubmit="return confirm('Delete booking #{{ booking.pk }}?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-danger-sm" title="Delete booking" style="padding: 0.4rem 0.6rem;">
-                                    <i class="fas fa-trash-alt"></i>
+                        <div class="action-cell" id="action-cell-{{ booking.pk }}" data-status="{{ booking.status }}">
+                            {% if booking.status == 'pending' %}
+                                <button class="action-btn btn-confirm"
+                                    onclick="updateBookingStatus({{ booking.pk }}, 'confirmed')">
+                                    <i class="fas fa-check"></i> Confirm
                                 </button>
-                            </form>
+                            {% elif booking.status == 'confirmed' %}
+                                <button class="action-btn btn-complete"
+                                    onclick="updateBookingStatus({{ booking.pk }}, 'completed')">
+                                    <i class="fas fa-check-double"></i> Complete
+                                </button>
+                                <button class="action-btn btn-cancel"
+                                    onclick="updateBookingStatus({{ booking.pk }}, 'cancelled')">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            {% else %}
+                                <span style="color: var(--text-muted); font-size: 0.8rem;">&#8212;</span>
                             {% endif %}
                         </div>
                     </td>
@@ -214,6 +252,24 @@
 
 {% block extra_js %}
 <script>
+    function renderActionButtons(cell, newStatus) {
+        const bookingId = cell.id.replace('action-cell-', '');
+        cell.setAttribute('data-status', newStatus);
+        if (newStatus === 'pending') {
+            cell.innerHTML =
+                `<button class="action-btn btn-confirm" onclick="updateBookingStatus(${bookingId}, 'confirmed')">`+
+                `<i class="fas fa-check"></i> Confirm</button>`;
+        } else if (newStatus === 'confirmed') {
+            cell.innerHTML =
+                `<button class="action-btn btn-complete" onclick="updateBookingStatus(${bookingId}, 'completed')">`+
+                `<i class="fas fa-check-double"></i> Complete</button>`+
+                `<button class="action-btn btn-cancel" onclick="updateBookingStatus(${bookingId}, 'cancelled')">`+
+                `<i class="fas fa-times"></i> Cancel</button>`;
+        } else {
+            cell.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem;">&#8212;</span>`;
+        }
+    }
+
     function updateBookingStatus(bookingId, newStatus) {
         fetch(`/portal/bookings/${bookingId}/update-status/`, {
             method: 'POST',
@@ -226,12 +282,16 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
+                // Update status badge
                 const badge = document.getElementById(`status-badge-${bookingId}`);
                 if (badge) {
                     badge.className = `status status-${newStatus}`;
                     const labels = { pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled' };
                     badge.textContent = labels[newStatus] || newStatus;
                 }
+                // Update action buttons
+                const cell = document.getElementById(`action-cell-${bookingId}`);
+                if (cell) { renderActionButtons(cell, newStatus); }
             }
         })
         .catch(err => console.error('Error:', err));

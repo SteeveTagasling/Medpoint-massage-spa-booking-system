@@ -46,6 +46,15 @@ urlpatterns = [
     path('schedules/leave/assign/', views.staff_assign_leave, name='staff_assign_leave'),
     path('schedules/leave/<str:pk>/toggle-active/', views.staff_leave_toggle_active, name='staff_leave_toggle_active'),
 
+    # ── Admin Leave Management ────────────────────────
+    path('schedules/leave/', views.admin_leave_list, name='admin_leave_list'),
+    path('schedules/leave/<int:pk>/review/', views.admin_leave_review, name='admin_leave_review'),
+
+    # ── Staff Leave Application ───────────────────────
+    path('my-schedule/leave/apply/', views.staff_apply_leave, name='staff_apply_leave'),
+    path('my-schedule/leave/<int:pk>/delete/', views.staff_delete_leave, name='staff_delete_leave'),
+
+
     # ── Admin Reports ─────────────────────────────────
     path('reports/', views.admin_reports, name='admin_reports'),
     path('admin-settings/', views.admin_settings, name='admin_settings'),
@@ -59,6 +68,7 @@ urlpatterns = [
     # ── Messages ──────────────────────────────────────
     path('messages/', views.message_list, name='message_list'),
     path('messages/<int:pk>/toggle-read/', views.message_toggle_read, name='message_toggle_read'),
+    path('messages/<int:pk>/reply/', views.message_reply, name='message_reply'),
 
     # ── Testimonials (admin only) ─────────────────────
     path('testimonials/', views.testimonial_list, name='testimonial_list'),
@@ -72,4 +82,5 @@ urlpatterns = [
     path('notifications/', views.notification_list, name='notification_list'),
     path('notifications/<int:pk>/mark-read/', views.notification_mark_read, name='notification_mark_read'),
     path('api/live-counts/', views.live_counts, name='live_counts'),
+    path('api/revenue-chart/', views.revenue_chart_data, name='revenue_chart_data'),
 ]

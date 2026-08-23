@@ -73,7 +73,7 @@
                         class="nav-link text-sm font-medium tracking-wide uppercase hover:text-purple-400 transition-colors {% if request.resolver_match.url_name == 'about' %}text-purple-400{% else %}text-gray-300{% endif %}">About</a>
                 </li>
                 <li><a href="{% url 'website:booking' %}"
-                        class="nav-link text-sm font-medium tracking-wide uppercase hover:text-purple-400 transition-colors {% if 'booking' in request.resolver_match.url_name %}text-purple-400{% else %}text-gray-300{% endif %}">Book
+                        class="nav-link text-sm font-medium tracking-wide uppercase hover:text-purple-400 transition-colors {% if request.resolver_match.url_name == 'booking' %}text-purple-400{% else %}text-gray-300{% endif %}">Book
                         Now</a></li>
                 <li><a href="{% url 'website:contact' %}"
                         class="nav-link text-sm font-medium tracking-wide uppercase hover:text-purple-400 transition-colors {% if request.resolver_match.url_name == 'contact' %}text-purple-400{% else %}text-gray-300{% endif %}">Contact</a>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Reply from Medpoint Massage & Spa</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #110a19;
+            color: #e2e8f0;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #1a1025;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+        .header {
+            background-color: #581c87;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #ffffff;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .reply-box {
+            background-color: rgba(168, 85, 247, 0.05);
+            border-left: 4px solid #a855f7;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 0 8px 8px 0;
+            color: #f3e8ff;
+            font-size: 16px;
+        }
+        .original-msg {
+            background-color: #110a19;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .original-msg-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        .original-msg p {
+            color: #94a3b8;
+            font-size: 14px;
+            margin: 0;
+            font-style: italic;
+        }
+        .footer {
+            background-color: #110a19;
+            padding: 25px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .footer p {
+            color: #64748b;
+            font-size: 13px;
+            margin: 0;
+        }
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.3), transparent);
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Medpoint</h1>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">Hi {{ client_name }},</div>
+            
+            <p>Thank you for reaching out to us. We have received your message and an administrator has replied:</p>
+            
+            <div class="reply-box">
+                {{ reply_text|linebreaksbr }}
+            </div>
+            
+            <p>If you have any further questions, feel free to reply directly to this email or contact us through our website.</p>
+            
+            <div class="original-msg">
+                <div class="original-msg-title">Your Original Message ({{ original_subject }})</div>
+                <p>"{{ original_message|linebreaksbr }}"</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; {% now "Y" %} Medpoint Massage & Spa. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

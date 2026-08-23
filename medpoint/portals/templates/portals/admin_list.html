@@ -116,6 +116,15 @@
         background: rgba(239, 68, 68, 0.12);
         border-color: rgba(239, 68, 68, 0.35);
     }
+    .btn-sm-success {
+        border-color: rgba(34, 197, 94, 0.2);
+        color: var(--green-400);
+        background: rgba(34, 197, 94, 0.05);
+    }
+    .btn-sm-success:hover {
+        background: rgba(34, 197, 94, 0.12);
+        border-color: rgba(34, 197, 94, 0.35);
+    }
 </style>
 {% endblock %}
 
@@ -150,6 +159,13 @@
                 <span><i class="fas fa-envelope" style="color: var(--text-muted);"></i> {{ admin_user.email }}</span>
                 {% endif %}
                 <span><i class="fas fa-shield-alt" style="color: var(--green-400);"></i> Superuser</span>
+                <span>
+                    {% if admin_user.is_active %}
+                    <i class="fas fa-circle" style="color: var(--green-400); font-size: 0.5rem;"></i> Active
+                    {% else %}
+                    <i class="fas fa-circle" style="color: var(--red-400); font-size: 0.5rem;"></i> Deactivated
+                    {% endif %}
+                </span>
             </div>
         </div>
         
@@ -158,15 +174,17 @@
                 <i class="fas fa-pen"></i> Edit
             </a>
             {% if admin_user != request.user %}
-            <form method="post" action="{% url 'portals:admin_management_delete' admin_user.pk %}" style="display:inline;" onsubmit="return confirm('Remove administrator {{ admin_user.username }}?');">
+            <form method="post" action="{% url 'portals:admin_management_delete' admin_user.pk %}" style="display:inline;"
+                onsubmit="return confirm('{% if admin_user.is_active %}Deactivate{% else %}Reactivate{% endif %} administrator {{ admin_user.username }}?');">
                 {% csrf_token %}
-                <button type="submit" class="btn-sm btn-sm-danger">
-                    <i class="fas fa-trash-alt"></i> Remove
+                <button type="submit" class="btn-sm {% if admin_user.is_active %}btn-sm-danger{% else %}btn-sm-success{% endif %}">
+                    <i class="fas {% if admin_user.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                    {% if admin_user.is_active %}Deactivate{% else %}Reactivate{% endif %}
                 </button>
             </form>
             {% else %}
-            <button class="btn-sm" style="opacity: 0.5; cursor: not-allowed;" title="You cannot delete yourself">
-                <i class="fas fa-trash-alt"></i> Remove
+            <button class="btn-sm" style="opacity: 0.5; cursor: not-allowed;" title="You cannot deactivate yourself">
+                <i class="fas fa-user-slash"></i> Deactivate
             </button>
             {% endif %}
         </div>

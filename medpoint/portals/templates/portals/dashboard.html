@@ -79,6 +79,37 @@
     </div>
 </div>
 
+<!-- Revenue Chart Section -->
+<h3 class="section-heading" id="revenue-section-heading"><i class="fas fa-chart-line" style="color:var(--purple-400);font-size:0.8rem;"></i> Revenue Overview</h3>
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display:flex; align-items:center; gap:0.75rem; flex:1; min-width:0;">
+            <span class="card-header-title"><i class="fas fa-coins" style="margin-right:0.5rem; color:var(--amber-400); font-size:0.85rem;"></i>Therapist Revenue</span>
+            <div id="total-revenue-badge" style="padding: 0.2rem 0.75rem; background: rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.25); border-radius: 9999px; font-size: 0.78rem; font-weight: 700; color: var(--purple-400);">
+                Total: ₱<span id="total-revenue-value">0.00</span>
+            </div>
+        </div>
+        <!-- Period Filter Tabs -->
+        <div class="revenue-period-tabs">
+            <button class="rev-tab active" data-period="day">Day</button>
+            <button class="rev-tab" data-period="week">Week</button>
+            <button class="rev-tab" data-period="month">Month</button>
+            <button class="rev-tab" data-period="year">Year</button>
+        </div>
+    </div>
+    <div style="padding: 1.25rem 1.5rem 1rem; position: relative; min-height: 300px;">
+        <div id="revenue-chart-loading" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background: var(--bg-card); border-radius: 8px; z-index:5; opacity:0; pointer-events:none; transition: opacity 0.2s;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:0.5rem; color:var(--text-muted);">
+                <i class="fas fa-circle-notch fa-spin" style="font-size:1.5rem; color:var(--purple-400);"></i>
+                <span style="font-size:0.8rem;">Loading chart...</span>
+            </div>
+        </div>
+        <canvas id="revenueChart" height="300"></canvas>
+    </div>
+    <!-- Therapist Legend -->
+    <div id="therapist-legend" style="padding: 0.75rem 1.5rem 1rem; display:flex; flex-wrap:wrap; gap:0.75rem; border-top: 1px solid var(--border-color);"></div>
+</div>
+
 <!-- Recent Bookings Table -->
 <div class="card">
     <div class="card-header">
@@ -101,7 +132,7 @@
                 {% for booking in recent_bookings %}
                 <tr>
                     <td style="color: var(--text-primary); font-weight: 500;">{{ booking.client_name }}</td>
-                    <td>{{ booking.service.name }}</td>
+                    <td>{{ booking.service_names }}</td>
                     <td>
                         <span class="booking-type-badge booking-type-{{ booking.booking_type }}">
                             <i class="fas {% if booking.booking_type == 'online' %}fa-globe{% else %}fa-walking{% endif %}"></i>
@@ -247,6 +278,7 @@
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.04em;
+        white-space: nowrap;
     }
     .booking-type-badge i { font-size: 0.6rem; }
     .booking-type-online {
@@ -259,27 +291,238 @@
     }
     
     .empty-state { text-align: center; padding: 2rem; }
+
+    /* Revenue Period Filter Tabs */
+    .revenue-period-tabs {
+        display: flex;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--bg-secondary);
+    }
+    .rev-tab {
+        padding: 0.35rem 0.9rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        border-right: 1px solid var(--border-color);
+        font-family: inherit;
+        transition: all 0.2s;
+        letter-spacing: 0.03em;
+    }
+    .rev-tab:last-child { border-right: none; }
+    .rev-tab:hover { color: var(--purple-400); background: var(--sidebar-hover-bg); }
+    .rev-tab.active {
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+    }
+
+    /* Legend pill */
+    .legend-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.7rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        white-space: nowrap;
+    }
+    .legend-pill:hover { opacity: 0.75; }
+    .legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
 </style>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
+    // ── Live Clock ──
     document.addEventListener('DOMContentLoaded', function() {
         function updateClock() {
             const dateEl = document.getElementById('date-display');
             const clockEl = document.getElementById('clock-display');
             if(!dateEl || !clockEl) return;
-            
             const now = new Date();
-            const dateOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-            dateEl.textContent = now.toLocaleDateString(undefined, dateOptions);
-            
-            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
-            clockEl.textContent = now.toLocaleTimeString(undefined, timeOptions);
+            dateEl.textContent = now.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+            clockEl.textContent = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
-        
         updateClock();
         setInterval(updateClock, 1000);
     });
+
+    // ── Revenue Chart ──
+    let revenueChart = null;
+    let currentPeriod = 'day';
+
+    // Determine if dark mode
+    function isDark() {
+        return document.documentElement.getAttribute('data-theme') !== 'light';
+    }
+
+    function getChartColors() {
+        return {
+            grid: isDark() ? 'rgba(168,85,247,0.06)' : 'rgba(147,51,234,0.06)',
+            tick: isDark() ? '#6b7280' : '#9ca3af',
+            border: isDark() ? 'rgba(168,85,247,0.1)' : 'rgba(147,51,234,0.1)',
+        };
+    }
+
+    function buildChart(labels, datasets) {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const c = getChartColors();
+
+        if (revenueChart) { revenueChart.destroy(); }
+
+        // Gradient fill for each dataset
+        datasets.forEach(ds => {
+            if (!ds.fill) return;
+            const grad = ctx.createLinearGradient(0, 0, 0, 300);
+            const base = ds.borderColor.replace('1)', '0.3)');
+            grad.addColorStop(0, base);
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ds.backgroundColor = grad;
+            ds.fill = true;
+        });
+
+        revenueChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                animation: { duration: 600, easing: 'easeInOutQuart' },
+                plugins: {
+                    legend: { display: false }, // we use custom legend
+                    tooltip: {
+                        backgroundColor: isDark() ? 'rgba(18,12,30,0.95)' : 'rgba(255,255,255,0.97)',
+                        borderColor: c.border,
+                        borderWidth: 1,
+                        titleColor: isDark() ? '#f3f4f6' : '#1f1535',
+                        bodyColor: isDark() ? '#9ca3af' : '#4a3f5c',
+                        padding: 12,
+                        cornerRadius: 10,
+                        boxPadding: 5,
+                        callbacks: {
+                            label: function(ctx) {
+                                const val = ctx.parsed.y;
+                                return `  ${ctx.dataset.label}: ₱${val.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: c.grid, drawBorder: false },
+                        border: { color: c.border },
+                        ticks: {
+                            color: c.tick,
+                            font: { size: 10, family: 'Inter' },
+                            maxTicksLimit: 12,
+                            maxRotation: 30,
+                        }
+                    },
+                    y: {
+                        grid: { color: c.grid, drawBorder: false },
+                        border: { color: 'transparent' },
+                        ticks: {
+                            color: c.tick,
+                            font: { size: 10, family: 'Inter' },
+                            callback: v => '₱' + v.toLocaleString('en-PH', {minimumFractionDigits:0})
+                        },
+                        beginAtZero: true,
+                    }
+                }
+            }
+        });
+    }
+
+    function buildLegend(datasets) {
+        const container = document.getElementById('therapist-legend');
+        container.innerHTML = '';
+        datasets.forEach((ds, i) => {
+            const pill = document.createElement('div');
+            pill.className = 'legend-pill';
+            const solidColor = ds.borderColor;
+            pill.style.borderColor = solidColor.replace('1)', '0.3)');
+            pill.style.background = solidColor.replace('1)', '0.08)');
+            pill.style.color = solidColor;
+            pill.innerHTML = `<span class="legend-dot" style="background:${solidColor};"></span>${ds.label}`;
+            // Toggle dataset visibility on click
+            pill.addEventListener('click', () => {
+                const meta = revenueChart.getDatasetMeta(i);
+                meta.hidden = !meta.hidden;
+                pill.style.opacity = meta.hidden ? '0.35' : '1';
+                revenueChart.update();
+            });
+            container.appendChild(pill);
+        });
+    }
+
+    function loadRevenueChart(period) {
+        const loading = document.getElementById('revenue-chart-loading');
+        loading.style.opacity = '1';
+        loading.style.pointerEvents = 'auto';
+
+        fetch(`{% url 'portals:revenue_chart_data' %}?period=${period}`)
+            .then(r => r.json())
+            .then(data => {
+                loading.style.opacity = '0';
+                loading.style.pointerEvents = 'none';
+
+                // Update total badge
+                const total = data.total_revenue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('total-revenue-value').textContent = total;
+
+                buildChart(data.labels, data.datasets);
+                buildLegend(data.datasets);
+            })
+            .catch(err => {
+                loading.style.opacity = '0';
+                loading.style.pointerEvents = 'none';
+                console.error('Revenue chart error:', err);
+            });
+    }
+
+    // Period tab switching
+    document.querySelectorAll('.rev-tab').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.rev-tab').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentPeriod = this.dataset.period;
+            loadRevenueChart(currentPeriod);
+        });
+    });
+
+    // Initial load — script runs after DOM, so call directly
+    loadRevenueChart('day');
+
+    // Re-render on theme change
+    const themeToggleBtn = document.getElementById('themeToggle');
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            setTimeout(() => {
+                if (revenueChart) {
+                    const c = getChartColors();
+                    revenueChart.options.scales.x.grid.color = c.grid;
+                    revenueChart.options.scales.y.grid.color = c.grid;
+                    revenueChart.options.scales.x.ticks.color = c.tick;
+                    revenueChart.options.scales.y.ticks.color = c.tick;
+                    revenueChart.update();
+                }
+            }, 50);
+        });
+    }
 </script>
 {% endblock %}

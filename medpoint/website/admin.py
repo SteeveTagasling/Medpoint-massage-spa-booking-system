@@ -39,11 +39,18 @@ class TestimonialAdmin(admin.ModelAdmin):
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ['client_name', 'service', 'therapist', 'booking_type', 'date', 'time', 'status', 'created_at']
-    list_filter = ['status', 'booking_type', 'date', 'service']
+    list_display = ['client_name', 'get_services', 'therapist', 'booking_type', 'date', 'time', 'status', 'created_at']
+    list_filter = ['status', 'booking_type', 'date', 'services']
     list_editable = ['status']
     search_fields = ['client_name', 'client_email', 'client_phone']
     readonly_fields = ['created_at', 'updated_at']
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def get_services(self, obj):
+        return ", ".join([s.name for s in obj.services.all()])
+    get_services.short_description = 'Services'
 
 
 @admin.register(ContactMessage)

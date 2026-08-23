@@ -159,22 +159,21 @@
         
         /* Hide all non-essential UI */
         .sidebar, .topbar-actions, .mobile-header, .sidebar-footer, .print-btn,
-        .period-tabs, .sidebar-toggle, .no-profile-alert, .header-row { display: none !important; }
+        .period-tabs, .sidebar-toggle, .no-profile-alert, .header-row, .topbar { display: none !important; }
         
         .print-staff-name { display: inline !important; }
         
         .main-content { margin: 0 !important; padding: 0 !important; }
-        
-        /* Minimalist Header */
-        .topbar { 
-            padding: 0 0 4px 0 !important; 
-            border-bottom: 1px solid #000 !important; 
-            margin-bottom: 10px !important; 
-            position: static !important; 
-            background: transparent !important;
-        }
-        .topbar-title { color: #000 !important; font-size: 14pt !important; font-weight: bold !important; margin: 0 !important; }
-        .topbar-subtitle { color: #333 !important; font-size: 8pt !important; margin: 2px 0 0 0 !important; }
+
+        /* ── Print Logo Header ── */
+        .print-logo-header { display: flex !important; align-items: center; gap: 12px; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 14px; }
+        .print-logo-icon { font-size: 28pt; color: #7c3aed !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        .print-logo-text { line-height: 1.2; }
+        .print-logo-name { font-size: 18pt; font-weight: 800; letter-spacing: 0.1em; color: #000 !important; }
+        .print-logo-sub  { font-size: 8pt; letter-spacing: 0.2em; text-transform: uppercase; color: #555 !important; }
+        .print-logo-report-title { margin-left: auto; text-align: right; }
+        .print-logo-report-title h2 { font-size: 13pt; font-weight: 700; margin: 0; }
+        .print-logo-report-title p  { font-size: 8pt; color: #555 !important; margin: 2px 0 0 0; }
 
         /* Compact Metrics */
         .metrics-grid { 
@@ -243,11 +242,36 @@
         .revenue-highlight, .commission-highlight { color: #000 !important; font-weight: bold !important; }
         .status, .commission-badge { padding: 0 !important; border: none !important; font-size: 7.5pt !important; font-weight: normal !important; text-transform: none !important; }
         .status::before, .commission-badge i { display: none !important; }
+
+        /* ── Revenue Summary Footer ── */
+        .print-revenue-summary { display: block !important; border-top: 2px solid #000; margin-top: 14px; padding-top: 8px; }
+        .print-revenue-summary table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+        .print-revenue-summary td { padding: 3px 6px; border: 1px solid #aaa; }
+        .print-revenue-summary .rev-label { font-weight: 700; text-transform: uppercase; font-size: 8pt; }
+        .print-revenue-summary .rev-value { font-weight: 800; font-size: 11pt; text-align: right; }
+
+        /* ── Signature Fields ── */
+        .print-signatures { display: flex !important; gap: 40px; margin-top: 32px; }
+        .print-sig-block { flex: 1; }
+        .print-sig-line { border-bottom: 1px solid #000; margin-bottom: 4px; height: 24px; }
+        .print-sig-label { font-size: 7.5pt; color: #333 !important; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Print-only Logo Header (hidden on screen) -->
+<div class="print-logo-header" style="display:none;">
+    <div class="print-logo-icon"><i class="fas fa-spa"></i></div>
+    <div class="print-logo-text">
+        <div class="print-logo-name">MEDPOINT</div>
+        <div class="print-logo-sub">Massage &amp; Spa</div>
+    </div>
+    <div class="print-logo-report-title">
+        <h2>Staff Activity Report</h2>
+        <p>Staff: {{ therapist.name|default:request.user.get_full_name }} &nbsp;|&nbsp; Period: {{ period_label }}</p>
+    </div>
+</div>
 {% if not therapist %}
 <div class="no-profile-alert">
     <i class="fas fa-exclamation-triangle"></i>
@@ -351,7 +375,7 @@
                     <td style="font-weight: 500; color: var(--text-primary);">{{ item.booking.date|date:"M d, Y" }}</td>
                     <td>{{ item.booking.get_time_display }}</td>
                     <td>{{ item.booking.client_name }}</td>
-                    <td>{{ item.booking.service.name }}</td>
+                    <td>{{ item.booking.service_names }}</td>
                     <td class="revenue-highlight">₱{{ item.price|floatformat:2 }}</td>
                     <td><span class="status status-{{ item.booking.status }}">{{ item.booking.get_status_display }}</span></td>
                 </tr>
@@ -383,6 +407,40 @@
             </tfoot>
             {% endif %}
         </table>
+    </div>
+</div>
+
+<!-- Print-only: Revenue Summary -->
+<div class="print-revenue-summary" style="display:none;">
+    <table>
+        <tr>
+            <td class="rev-label">Total Revenue Generated — {{ period_label }}</td>
+            <td class="rev-value">&#8369;{{ total_revenue|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td class="rev-label">Commission Earned ({{ therapist.commission_percentage|default:0 }}%)</td>
+            <td class="rev-value">&#8369;{{ commission_earned|floatformat:2 }}</td>
+        </tr>
+        <tr>
+            <td class="rev-label">Total Services Rendered</td>
+            <td class="rev-value">{{ services_rendered }}</td>
+        </tr>
+    </table>
+</div>
+
+<!-- Print-only: Signature Fields -->
+<div class="print-signatures" style="display:none;">
+    <div class="print-sig-block">
+        <div class="print-sig-line"></div>
+        <div class="print-sig-label">Prepared by (Staff): {{ therapist.name|default:"" }}</div>
+    </div>
+    <div class="print-sig-block">
+        <div class="print-sig-line"></div>
+        <div class="print-sig-label">Noted by (Admin):</div>
+    </div>
+    <div class="print-sig-block">
+        <div class="print-sig-line"></div>
+        <div class="print-sig-label">Approved by (Owner/Manager):</div>
     </div>
 </div>
 {% endblock %}

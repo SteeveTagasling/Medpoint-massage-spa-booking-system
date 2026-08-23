@@ -18,23 +18,78 @@
 
     <!-- Messages List -->
     {% for msg in contact_messages %}
-    <div class="message-item {% if not msg.is_read %}unread{% endif %}" id="message-{{ msg.pk }}">
-        <div class="message-avatar">{{ msg.name|first|upper }}</div>
-        <div class="message-body">
-            <div class="message-header">
-                <span class="message-sender">{{ msg.name }}</span>
-                <span class="message-time">{{ msg.created_at|date:"M d, Y g:i A" }}</span>
+    <div class="message-item {% if not msg.is_read %}unread{% endif %}" id="message-{{ msg.pk }}" style="padding: 1.25rem; transition: all 0.3s ease; display: flex; flex-direction: column;">
+        
+        <!-- Header (Clickable) -->
+        <div onclick="toggleMessageContent({{ msg.pk }}, {{ msg.is_read|yesno:'true,false' }})" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0;">
+                <div class="message-avatar" style="margin: 0; flex-shrink: 0;">{{ msg.name|first|upper }}</div>
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
+                        <span class="message-sender" style="font-weight: 600; font-size: 0.95rem;">{{ msg.name }}</span>
+                        <span class="message-time" style="font-size: 0.75rem; color: var(--text-muted); flex-shrink: 0; margin-left: 1rem;">
+                            {{ msg.created_at|date:"M d, Y g:i A" }}
+                        </span>
+                    </div>
+                    <div class="message-subject" style="font-size: 0.85rem; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <strong style="color: #fff;">{{ msg.subject }}</strong>
+                        <span id="preview-{{ msg.pk }}" style="color: var(--text-muted); font-weight: normal; margin-left: 0.4rem;">
+                            <span style="opacity: 0.5;">—</span> {{ msg.message|truncatechars:70 }}
+                        </span>
+                    </div>
+                </div>
             </div>
-            <div class="message-subject"><strong>{{ msg.subject }}</strong></div>
-            <div class="message-preview">{{ msg.message|truncatewords:20 }}</div>
-            <div style="margin-top: 0.5rem; font-size: 0.725rem; color: var(--text-muted);">
-                <i class="fas fa-envelope" style="margin-right: 0.25rem;"></i> {{ msg.email }}
-                {% if msg.phone %}<span style="margin-left: 0.75rem;"><i class="fas fa-phone" style="margin-right: 0.25rem;"></i> {{ msg.phone }}</span>{% endif %}
+            
+            <button type="button" class="message-actions-btn" title="Toggle read status" onclick="event.stopPropagation(); manualToggleRead({{ msg.pk }})" id="toggle-btn-{{ msg.pk }}" style="flex-shrink: 0; margin: 0; align-self: center;">
+                <i class="fas {% if msg.is_read %}fa-envelope{% else %}fa-envelope-open{% endif %}"></i>
+            </button>
+        </div>
+
+        <!-- Collapsible Content -->
+        <div id="content-{{ msg.pk }}" class="message-content" style="display: none; padding-left: 3.5rem; margin-top: 1.5rem;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.3rem;">
+                    <span><i class="fas fa-envelope" style="margin-right: 0.3rem;"></i> <a href="mailto:{{ msg.email }}" style="color: var(--primary-color); text-decoration: none;">{{ msg.email }}</a></span>
+                    {% if msg.phone %}<span><i class="fas fa-phone" style="margin-right: 0.3rem;"></i> {{ msg.phone }}</span>{% endif %}
+                </div>
+            </div>
+
+            <!-- Full Message -->
+            <div style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.6; padding: 1.25rem; background: rgba(0,0,0,0.15); border-radius: 0.75rem; border: 1px solid rgba(255,255,255,0.03);">
+                {{ msg.message|linebreaksbr }}
+            </div>
+            
+            <!-- Reply Section -->
+            <div style="margin-top: 2rem;">
+                {% if msg.reply_text %}
+                    <div style="background: rgba(168, 85, 247, 0.05); border-left: 4px solid var(--primary-color); padding: 1.25rem; border-radius: 0 0.75rem 0.75rem 0;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="fas fa-reply"></i> Replied on {{ msg.replied_at|date:"M d, Y g:i A" }}
+                        </div>
+                        <div style="color: #f3e8ff; font-size: 0.9rem; line-height: 1.6;">{{ msg.reply_text|linebreaksbr }}</div>
+                    </div>
+                {% else %}
+                    <form action="{% url 'portals:message_reply' msg.pk %}" method="POST">
+                        {% csrf_token %}
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; color: var(--primary-color); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <i class="fas fa-reply"></i> Reply to {{ msg.name }}
+                            </label>
+                            <textarea name="reply_text" required rows="4" style="width: 100%; background: var(--bg-dark); border: 1px solid var(--border-color); color: #fff; padding: 1rem; border-radius: 0.75rem; font-size: 0.9rem; resize: vertical; transition: border-color 0.3s;" placeholder="Type your reply here..." onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='var(--border-color)'"></textarea>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 1rem;">
+                            <button type="button" onclick="toggleMessageContent({{ msg.pk }}, true)" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 2rem; cursor: pointer; transition: all 0.3s hover:bg-white/5;">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.5rem; font-size: 0.85rem; border-radius: 2rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-paper-plane"></i> Send Reply
+                            </button>
+                        </div>
+                    </form>
+                {% endif %}
             </div>
         </div>
-        <button class="message-actions-btn" onclick="toggleRead({{ msg.pk }})" title="Toggle read status" id="toggle-btn-{{ msg.pk }}">
-            <i class="fas {% if msg.is_read %}fa-envelope{% else %}fa-envelope-open{% endif %}"></i>
-        </button>
     </div>
     {% empty %}
     <div class="empty-state">
@@ -47,7 +102,25 @@
 
 {% block extra_js %}
 <script>
-    function toggleRead(msgId) {
+    function toggleMessageContent(msgId, isRead) {
+        const content = document.getElementById(`content-${msgId}`);
+        const preview = document.getElementById(`preview-${msgId}`);
+        const isHidden = content.style.display === 'none';
+        
+        if (isHidden) {
+            content.style.display = 'block';
+            preview.style.display = 'none';
+            // Mark as read automatically when opened, if not already read
+            if (!isRead) {
+                manualToggleRead(msgId, true);
+            }
+        } else {
+            content.style.display = 'none';
+            preview.style.display = 'inline';
+        }
+    }
+
+    function manualToggleRead(msgId, forceRead = false) {
         fetch(`/portal/messages/${msgId}/toggle-read/`, {
             method: 'POST',
             headers: {
@@ -61,10 +134,10 @@
                 const btn = document.getElementById(`toggle-btn-${msgId}`);
                 if (data.is_read) {
                     item.classList.remove('unread');
-                    btn.innerHTML = '<i class="fas fa-envelope"></i>';
-                } else {
+                    if (btn) btn.innerHTML = '<i class="fas fa-envelope"></i>';
+                } else if (!forceRead) {
                     item.classList.add('unread');
-                    btn.innerHTML = '<i class="fas fa-envelope-open"></i>';
+                    if (btn) btn.innerHTML = '<i class="fas fa-envelope-open"></i>';
                 }
             }
         })

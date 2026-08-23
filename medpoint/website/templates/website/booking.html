@@ -11,6 +11,7 @@
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
         gap: 1rem;
     }
+
     .therapist-card {
         position: relative;
         border-radius: 1rem;
@@ -20,16 +21,19 @@
         cursor: pointer;
         transition: all 0.3s ease;
     }
+
     .therapist-card:hover {
         border-color: rgba(139, 92, 246, 0.4);
         transform: translateY(-4px);
         box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
     }
+
     .therapist-card.selected {
         border-color: #a855f7;
         background: rgba(139, 92, 246, 0.15);
         box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3), 0 8px 24px rgba(139, 92, 246, 0.2);
     }
+
     .therapist-card.selected::after {
         content: '\f00c';
         font-family: 'Font Awesome 6 Free';
@@ -48,25 +52,29 @@
         font-size: 0.65rem;
         z-index: 10;
     }
+
     .therapist-card-photo {
         width: 100%;
         aspect-ratio: 1;
         object-fit: cover;
         display: block;
     }
+
     .therapist-card-photo-placeholder {
         width: 100%;
         aspect-ratio: 1;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(109,40,217,0.15));
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(109, 40, 217, 0.15));
         font-size: 2.5rem;
-        color: rgba(168,85,247,0.5);
+        color: rgba(168, 85, 247, 0.5);
     }
+
     .therapist-card-info {
         padding: 0.6rem 0.75rem;
     }
+
     .therapist-card-name {
         font-size: 0.8rem;
         font-weight: 600;
@@ -75,6 +83,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+
     .therapist-card-title {
         font-size: 0.65rem;
         color: #9ca3af;
@@ -83,16 +92,19 @@
         text-overflow: ellipsis;
         margin-top: 2px;
     }
+
     .therapist-section {
         margin-top: 1.25rem;
         transition: all 0.4s ease;
     }
+
     .therapist-section-hidden {
         opacity: 0;
         max-height: 0;
         overflow: hidden;
         margin-top: 0;
     }
+
     .gender-info-badge {
         display: inline-flex;
         align-items: center;
@@ -101,34 +113,43 @@
         border-radius: 999px;
         font-size: 0.7rem;
         font-weight: 500;
-        background: rgba(139,92,246,0.1);
-        border: 1px solid rgba(139,92,246,0.2);
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.2);
         color: #c4b5fd;
     }
+
     .gender-info-badge i {
         font-size: 0.6rem;
     }
+
     .no-therapists-msg {
         text-align: center;
         padding: 2rem 1rem;
         color: #9ca3af;
         font-size: 0.85rem;
     }
+
     .loading-spinner {
         display: flex;
         justify-content: center;
         padding: 2rem;
     }
+
     .loading-spinner::after {
         content: '';
         width: 24px;
         height: 24px;
-        border: 3px solid rgba(139,92,246,0.2);
+        border: 3px solid rgba(139, 92, 246, 0.2);
         border-top-color: #a855f7;
         border-radius: 50%;
         animation: spin 0.6s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
 
     /* ── Booking Mode Toggle ── */
     .booking-mode-toggle {
@@ -140,6 +161,7 @@
         border-radius: 0.75rem;
         border: 1px solid rgba(139, 92, 246, 0.15);
     }
+
     .booking-mode-btn {
         flex: 1;
         padding: 0.65rem 1rem;
@@ -156,9 +178,11 @@
         justify-content: center;
         gap: 0.5rem;
     }
+
     .booking-mode-btn:hover {
         color: #c4b5fd;
     }
+
     .booking-mode-btn.active {
         background: rgba(139, 92, 246, 0.2);
         color: #e9d5ff;
@@ -175,15 +199,18 @@
         position: relative;
         transition: all 0.3s ease;
     }
+
     .family-member-card:hover {
         border-color: rgba(139, 92, 246, 0.3);
     }
+
     .family-member-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         margin-bottom: 1rem;
     }
+
     .family-member-label {
         font-size: 0.8rem;
         font-weight: 600;
@@ -192,6 +219,7 @@
         align-items: center;
         gap: 0.5rem;
     }
+
     .family-member-label .member-number {
         width: 24px;
         height: 24px;
@@ -204,6 +232,7 @@
         font-weight: 700;
         color: #a855f7;
     }
+
     .remove-member-btn {
         background: rgba(239, 68, 68, 0.1);
         border: 1px solid rgba(239, 68, 68, 0.2);
@@ -217,10 +246,12 @@
         align-items: center;
         gap: 0.35rem;
     }
+
     .remove-member-btn:hover {
         background: rgba(239, 68, 68, 0.2);
         border-color: rgba(239, 68, 68, 0.4);
     }
+
     .add-member-btn {
         width: 100%;
         padding: 0.75rem;
@@ -238,14 +269,17 @@
         gap: 0.5rem;
         margin-bottom: 1.5rem;
     }
+
     .add-member-btn:hover {
         border-color: rgba(139, 92, 246, 0.4);
         background: rgba(139, 92, 246, 0.05);
     }
+
     .add-member-btn:disabled {
         opacity: 0.4;
         cursor: not-allowed;
     }
+
     .member-count-badge {
         display: inline-flex;
         align-items: center;
@@ -254,8 +288,91 @@
         border-radius: 999px;
         font-size: 0.7rem;
         font-weight: 600;
-        background: rgba(139,92,246,0.15);
+        background: rgba(139, 92, 246, 0.15);
         color: #c4b5fd;
+    }
+
+    /* ── Service Selection Chips ── */
+    .service-chip {
+        display: flex;
+        cursor: pointer;
+        border-radius: 0.75rem;
+        border: 1.5px solid rgba(139, 92, 246, 0.15);
+        background: rgba(139, 92, 246, 0.04);
+        transition: all 0.25s ease;
+        position: relative;
+        overflow: hidden;
+        user-select: none;
+    }
+
+    .service-chip:hover {
+        border-color: rgba(139, 92, 246, 0.35);
+        background: rgba(139, 92, 246, 0.09);
+        transform: translateY(-1px);
+    }
+
+    .service-chip-input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+    }
+
+    .service-chip-inner {
+        padding: 0.65rem 0.9rem;
+        width: 100%;
+    }
+
+    .service-chip-name {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #e5e7eb;
+        margin-bottom: 2px;
+        line-height: 1.3;
+    }
+
+    .service-chip-meta {
+        font-size: 0.68rem;
+        color: #9ca3af;
+    }
+
+    .service-chip.active {
+        border-color: #a855f7;
+        background: rgba(139, 92, 246, 0.18);
+        box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.25), 0 4px 12px rgba(139, 92, 246, 0.15);
+    }
+
+    .service-chip.active .service-chip-name {
+        color: #e9d5ff;
+    }
+
+    .service-chip.active .service-chip-meta {
+        color: #c4b5fd;
+    }
+
+    .service-chip.active::after {
+        content: '\f00c';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        top: 7px;
+        right: 8px;
+        font-size: 0.6rem;
+        color: #a855f7;
+        background: rgba(168, 85, 247, 0.15);
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 16px;
+        text-align: center;
+    }
+
+    #service-total-display {
+        transition: all 0.3s ease;
     }
 </style>
 {% endblock %}
@@ -269,7 +386,8 @@
             <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Reserve Your Session</span>
         </div>
         <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in-up">
-            Book Your <span class="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">Appointment</span>
+            Book Your <span
+                class="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">Appointment</span>
         </h1>
         <p class="text-gray-400 text-lg max-w-xl animate-fade-in-up" style="animation-delay:0.2s">
             Choose your preferred service, therapist, date, and time. We'll confirm your booking shortly.
@@ -305,7 +423,9 @@
 
                     {% if form.non_field_errors %}
                     <div class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
-                        <div class="flex items-center gap-2 mb-1"><i class="fas fa-exclamation-triangle"></i> <strong>Please fix the following:</strong></div>
+                        <div class="flex items-center gap-2 mb-1"><i class="fas fa-exclamation-triangle"></i>
+                            <strong>Please fix the following:</strong>
+                        </div>
                         {% for error in form.non_field_errors %}
                         <p>{{ error }}</p>
                         {% endfor %}
@@ -314,7 +434,9 @@
 
                     {% if family_errors %}
                     <div class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
-                        <div class="flex items-center gap-2 mb-1"><i class="fas fa-exclamation-triangle"></i> <strong>Please fix the following:</strong></div>
+                        <div class="flex items-center gap-2 mb-1"><i class="fas fa-exclamation-triangle"></i>
+                            <strong>Please fix the following:</strong>
+                        </div>
                         {% for error in family_errors %}
                         <p>{{ error }}</p>
                         {% endfor %}
@@ -331,19 +453,22 @@
 
                             <!-- Personal Information -->
                             <div class="mb-8">
-                                <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <h3
+                                    class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                     <i class="fas fa-user text-xs"></i> Personal Information
                                 </h3>
                                 <div class="grid sm:grid-cols-2 gap-5">
                                     <div>
-                                        <label for="booking-name" class="form-label">Full Name <span class="text-red-400">*</span></label>
+                                        <label for="booking-name" class="form-label">Full Name <span
+                                                class="text-red-400">*</span></label>
                                         {{ form.client_name }}
                                         {% if form.client_name.errors %}
                                         <span class="form-error">{{ form.client_name.errors.0 }}</span>
                                         {% endif %}
                                     </div>
                                     <div>
-                                        <label for="booking-phone" class="form-label">Phone Number <span class="text-red-400">*</span></label>
+                                        <label for="booking-phone" class="form-label">Phone Number <span
+                                                class="text-red-400">*</span></label>
                                         {{ form.client_phone }}
                                         {% if form.client_phone.errors %}
                                         <span class="form-error">{{ form.client_phone.errors.0 }}</span>
@@ -352,38 +477,45 @@
                                 </div>
                                 <div class="grid sm:grid-cols-2 gap-5 mt-5">
                                     <div>
-                                        <label for="booking-email" class="form-label">Email Address <span class="text-red-400">*</span></label>
+                                        <label for="booking-email" class="form-label">Email Address <span
+                                                class="text-red-400">*</span></label>
                                         {{ form.client_email }}
                                         {% if form.client_email.errors %}
                                         <span class="form-error">{{ form.client_email.errors.0 }}</span>
                                         {% endif %}
                                     </div>
                                     <div>
-                                        <label for="booking-client-gender" class="form-label">Your Gender <span class="text-red-400">*</span></label>
+                                        <label for="booking-client-gender" class="form-label">Your Gender <span
+                                                class="text-red-400">*</span></label>
                                         {{ form.client_gender }}
                                         {% if form.client_gender.errors %}
                                         <span class="form-error">{{ form.client_gender.errors.0 }}</span>
                                         {% endif %}
-                                        <p class="text-gray-500 text-xs mt-1.5"><i class="fas fa-info-circle text-purple-400/50"></i> This affects available therapist options</p>
+                                        <p class="text-gray-500 text-xs mt-1.5"><i
+                                                class="fas fa-info-circle text-purple-400/50"></i> This affects
+                                            available therapist options</p>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Schedule -->
                             <div class="mb-8">
-                                <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <h3
+                                    class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                     <i class="fas fa-calendar text-xs"></i> Schedule
                                 </h3>
                                 <div class="grid sm:grid-cols-2 gap-5">
                                     <div>
-                                        <label for="booking-date" class="form-label">Preferred Date <span class="text-red-400">*</span></label>
+                                        <label for="booking-date" class="form-label">Preferred Date <span
+                                                class="text-red-400">*</span></label>
                                         {{ form.date }}
                                         {% if form.date.errors %}
                                         <span class="form-error">{{ form.date.errors.0 }}</span>
                                         {% endif %}
                                     </div>
                                     <div>
-                                        <label for="booking-time" class="form-label">Preferred Time <span class="text-red-400">*</span></label>
+                                        <label for="booking-time" class="form-label">Preferred Time <span
+                                                class="text-red-400">*</span></label>
                                         {{ form.time }}
                                         {% if form.time.errors %}
                                         <span class="form-error">{{ form.time.errors.0 }}</span>
@@ -394,32 +526,56 @@
 
                             <!-- Service & Therapist Selection -->
                             <div class="mb-8">
-                                <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <h3
+                                    class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                     <i class="fas fa-spa text-xs"></i> Service & Therapist
                                 </h3>
-                                <div class="grid sm:grid-cols-2 gap-5">
-                                    <div>
-                                        <label for="booking-service" class="form-label">Service <span class="text-red-400">*</span></label>
-                                        {{ form.service }}
-                                        {% if form.service.errors %}
-                                        <span class="form-error">{{ form.service.errors.0 }}</span>
-                                        {% endif %}
-                                        <p id="service-price-display" class="text-sm font-semibold text-purple-400 mt-2 hidden"></p>
-                                        <script type="application/json" id="service-price-map">
-                                            {
-                                                {% for svc in services %}
-                                                "{{ svc.pk }}": "{{ svc.discounted_price|floatformat:2 }}"{% if not forloop.last %},{% endif %}
-                                                {% endfor %}
-                                            }
-                                        </script>
+                                <!-- Visual multi-service selector -->
+                                <div class="mb-5">
+                                    <label class="form-label">Select Service(s) <span class="text-red-400">*</span></label>
+                                    <p class="text-gray-500 text-xs mb-3"><i class="fas fa-info-circle text-purple-400/50"></i>
+                                        Click to select. You can choose multiple services to add-on.</p>
+                                    <div id="service-chips-container" class="grid sm:grid-cols-2 gap-2 mb-2">
+                                        {% for svc in services %}
+                                        <label class="service-chip" id="chip-label-{{ svc.pk }}">
+                                            <input type="checkbox" class="service-chip-input" value="{{ svc.pk }}" id="chip-{{ svc.pk }}">
+                                            <div class="service-chip-inner">
+                                                <div class="service-chip-name">{{ svc.name }}</div>
+                                                <div class="service-chip-meta">₱{{ svc.discounted_price|floatformat:2 }} &middot; {{ svc.duration_minutes }} min</div>
+                                            </div>
+                                        </label>
+                                        {% endfor %}
                                     </div>
-                                    <div>
-                                        <label for="booking-therapist-preference" class="form-label">Therapist Preference <span class="text-red-400">*</span></label>
-                                        {{ form.therapist_preference }}
-                                        {% if form.therapist_preference.errors %}
-                                        <span class="form-error">{{ form.therapist_preference.errors.0 }}</span>
-                                        {% endif %}
+                                    <!-- Hidden native multi-select synced by JS for form submission -->
+                                    <div style="display:none;">{{ form.services }}</div>
+                                    {% if form.services.errors %}
+                                    <span class="form-error">{{ form.services.errors.0 }}</span>
+                                    {% endif %}
+                                    <!-- Selected services summary -->
+                                    <div id="service-total-display" class="hidden mt-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-400 text-xs flex items-center gap-1.5"><i class="fas fa-spa text-purple-400"></i> Selected Services</span>
+                                            <span id="service-total-price" class="font-bold text-purple-300 text-sm"></span>
+                                        </div>
+                                        <div id="service-total-duration" class="text-gray-500 text-xs mt-1"></div>
+                                        <div id="service-selected-names" class="text-purple-300/70 text-xs mt-1 leading-relaxed"></div>
                                     </div>
+                                    <script type="application/json" id="service-price-map">
+                                        {
+                                            {% for svc in services %}
+                                            "{{ svc.pk }}": {"price": "{{ svc.discounted_price|floatformat:2 }}", "name": "{{ svc.name }}", "duration": {{ svc.duration_minutes }}}{% if not forloop.last %},{% endif %}
+                                            {% endfor %}
+                                        }
+                                    </script>
+                                </div>
+                                <!-- Therapist Preference -->
+                                <div>
+                                    <label for="booking-therapist-preference" class="form-label">Therapist
+                                        Preference <span class="text-red-400">*</span></label>
+                                    {{ form.therapist_preference }}
+                                    {% if form.therapist_preference.errors %}
+                                    <span class="form-error">{{ form.therapist_preference.errors.0 }}</span>
+                                    {% endif %}
                                 </div>
 
                                 <!-- Dynamic Therapist Cards -->
@@ -438,7 +594,8 @@
 
                             <!-- Notes -->
                             <div class="mb-8">
-                                <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <h3
+                                    class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                     <i class="fas fa-pen text-xs"></i> Additional Notes
                                 </h3>
                                 <div>
@@ -447,7 +604,8 @@
                                 </div>
                             </div>
 
-                            <button type="submit" id="booking-submit" class="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                            <button type="submit" id="booking-submit"
+                                class="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2">
                                 <i class="fas fa-calendar-check"></i> Confirm Booking
                             </button>
                         </form>
@@ -464,37 +622,48 @@
 
                             <!-- Shared Contact Info -->
                             <div class="mb-8">
-                                <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <h3
+                                    class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                     <i class="fas fa-address-card text-xs"></i> Contact Information
                                 </h3>
-                                <p class="text-gray-500 text-xs mb-4"><i class="fas fa-info-circle text-purple-400/50"></i> Shared across all family members</p>
+                                <p class="text-gray-500 text-xs mb-4"><i
+                                        class="fas fa-info-circle text-purple-400/50"></i> Shared across all family
+                                    members</p>
                                 <div class="grid sm:grid-cols-2 gap-5">
                                     <div>
-                                        <label class="form-label">Email Address <span class="text-red-400">*</span></label>
-                                        <input type="email" name="client_email" class="form-input" placeholder="your.email@example.com" required id="family-email">
+                                        <label class="form-label">Email Address <span
+                                                class="text-red-400">*</span></label>
+                                        <input type="email" name="client_email" class="form-input"
+                                            placeholder="your.email@example.com" required id="family-email">
                                     </div>
                                     <div>
-                                        <label class="form-label">Phone Number <span class="text-red-400">*</span></label>
-                                        <input type="text" name="client_phone" class="form-input" placeholder="+63 9XX XXX XXXX" required id="family-phone">
+                                        <label class="form-label">Phone Number <span
+                                                class="text-red-400">*</span></label>
+                                        <input type="text" name="client_phone" class="form-input"
+                                            placeholder="+63 9XX XXX XXXX" required id="family-phone">
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Shared Schedule -->
                             <div class="mb-8">
-                                <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <h3
+                                    class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                     <i class="fas fa-calendar text-xs"></i> Schedule
                                 </h3>
-                                <p class="text-gray-500 text-xs mb-4"><i class="fas fa-info-circle text-purple-400/50"></i> All family members will be booked for the same date & time</p>
+                                <p class="text-gray-500 text-xs mb-4"><i
+                                        class="fas fa-info-circle text-purple-400/50"></i> All family members will be
+                                    booked for the same date & time</p>
                                 <div class="grid sm:grid-cols-2 gap-5">
                                     <div>
-                                        <label class="form-label">Preferred Date <span class="text-red-400">*</span></label>
+                                        <label class="form-label">Preferred Date <span
+                                                class="text-red-400">*</span></label>
                                         <input type="date" name="date" class="form-input" required id="family-date">
                                     </div>
                                     <div>
-                                        <label class="form-label">Preferred Time <span class="text-red-400">*</span></label>
+                                        <label class="form-label">Preferred Time <span
+                                                class="text-red-400">*</span></label>
                                         <select name="time" class="form-input" required id="family-time">
-                                            <option value="09:00">9:00 AM</option>
                                             <option value="10:00">10:00 AM</option>
                                             <option value="11:00">11:00 AM</option>
                                             <option value="12:00">12:00 PM</option>
@@ -506,6 +675,10 @@
                                             <option value="18:00">6:00 PM</option>
                                             <option value="19:00">7:00 PM</option>
                                             <option value="20:00">8:00 PM</option>
+                                            <option value="21:00">9:00 PM</option>
+                                            <option value="22:00">10:00 PM</option>
+                                            <option value="23:00">11:00 PM</option>
+                                            <option value="00:00">12:00 MN</option>
                                         </select>
                                     </div>
                                 </div>
@@ -514,7 +687,8 @@
                             <!-- Family Members Section -->
                             <div class="mb-8">
                                 <div class="flex items-center justify-between mb-4">
-                                    <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider flex items-center gap-2">
+                                    <h3
+                                        class="text-sm font-semibold text-purple-400 uppercase tracking-wider flex items-center gap-2">
                                         <i class="fas fa-users text-xs"></i> Family Members
                                     </h3>
                                     <span class="member-count-badge" id="member-count-badge">
@@ -532,30 +706,50 @@
                                         </div>
                                         <div class="grid sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label class="form-label">Full Name <span class="text-red-400">*</span></label>
-                                                <input type="text" name="member_0_name" class="form-input" placeholder="Member's full name" required>
+                                                <label class="form-label">Full Name <span
+                                                        class="text-red-400">*</span></label>
+                                                <input type="text" name="member_0_name" class="form-input"
+                                                    placeholder="Member's full name" required>
                                             </div>
                                             <div>
-                                                <label class="form-label">Gender <span class="text-red-400">*</span></label>
-                                                <select name="member_0_gender" class="form-input member-gender-select" data-index="0" required>
+                                                <label class="form-label">Gender <span
+                                                        class="text-red-400">*</span></label>
+                                                <select name="member_0_gender" class="form-input member-gender-select"
+                                                    data-index="0" required>
                                                     <option value="male">Male</option>
                                                     <option value="female">Female</option>
                                                 </select>
                                             </div>
                                         </div>
                                         <div class="grid sm:grid-cols-2 gap-4 mt-4">
-                                            <div>
-                                                <label class="form-label">Service <span class="text-red-400">*</span></label>
-                                                <select name="member_0_service" class="form-input member-service-select" data-index="0" required>
-                                                    <option value="">— Select Service —</option>
+                                            <div class="sm:col-span-2">
+                                                <label class="form-label">Select Service(s) <span class="text-red-400">*</span></label>
+                                                <p class="text-gray-500 text-xs mb-3"><i class="fas fa-info-circle text-purple-400/50"></i> Click to select. You can choose multiple services to add-on.</p>
+                                                <div class="grid sm:grid-cols-2 gap-2 mb-2 family-chip-grid" data-member-index="0">
                                                     {% for svc in services %}
-                                                    <option value="{{ svc.pk }}">{{ svc.name }} — ₱{{ svc.discounted_price|floatformat:2 }}</option>
+                                                    <label class="service-chip">
+                                                        <input type="checkbox" class="service-chip-input family-service-chip" name="member_0_services" value="{{ svc.pk }}" data-price="{{ svc.discounted_price|floatformat:2 }}" data-duration="{{ svc.duration_minutes }}" data-name="{{ svc.name }}">
+                                                        <div class="service-chip-inner">
+                                                            <div class="service-chip-name">{{ svc.name }}</div>
+                                                            <div class="service-chip-meta">₱{{ svc.discounted_price|floatformat:2 }} &middot; {{ svc.duration_minutes }} min</div>
+                                                        </div>
+                                                    </label>
                                                     {% endfor %}
-                                                </select>
+                                                </div>
+                                                <!-- Per-member total summary -->
+                                                <div id="member-0-total" class="hidden mt-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                                                    <div class="flex items-center justify-between">
+                                                        <span class="text-gray-400 text-xs flex items-center gap-1.5"><i class="fas fa-spa text-purple-400"></i> Selected</span>
+                                                        <span class="member-total-price font-bold text-purple-300 text-sm"></span>
+                                                    </div>
+                                                    <div class="member-total-duration text-gray-500 text-xs mt-1"></div>
+                                                </div>
                                             </div>
                                             <div>
-                                                <label class="form-label">Therapist Preference <span class="text-red-400">*</span></label>
-                                                <select name="member_0_therapist_preference" class="form-input member-pref-select" data-index="0" required>
+                                                <label class="form-label">Therapist Preference <span
+                                                        class="text-red-400">*</span></label>
+                                                <select name="member_0_therapist_preference"
+                                                    class="form-input member-pref-select" data-index="0" required>
                                                     <option value="male">Male Therapist</option>
                                                     <option value="female">Female Therapist</option>
                                                     <option value="random" selected>Any / Random</option>
@@ -563,7 +757,8 @@
                                             </div>
                                         </div>
                                         <!-- Dynamic Therapist Cards for Family Member -->
-                                        <div id="family-therapist-section-0" class="therapist-section therapist-section-hidden mt-4 pt-4 border-t border-purple-500/10">
+                                        <div id="family-therapist-section-0"
+                                            class="therapist-section therapist-section-hidden mt-4 pt-4 border-t border-purple-500/10">
                                             <div class="flex items-center justify-between mb-3">
                                                 <label class="form-label mb-0">Select Therapist (Optional)</label>
                                                 <span id="family-gender-info-badge-0" class="gender-info-badge"></span>
@@ -573,7 +768,8 @@
                                             </div>
                                         </div>
                                         <!-- Hidden therapist field for this member -->
-                                        <input type="hidden" name="member_0_therapist" class="member-therapist-hidden" id="member_0_therapist_hidden" data-index="0" value="">
+                                        <input type="hidden" name="member_0_therapist" class="member-therapist-hidden"
+                                            id="member_0_therapist_hidden" data-index="0" value="">
                                     </div>
                                 </div>
 
@@ -584,16 +780,20 @@
 
                             <!-- Notes -->
                             <div class="mb-8">
-                                <h3 class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                <h3
+                                    class="text-sm font-semibold text-purple-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                                     <i class="fas fa-pen text-xs"></i> Additional Notes
                                 </h3>
                                 <div>
                                     <label class="form-label">Special Requests</label>
-                                    <textarea name="notes" class="form-input" placeholder="Any special requests or notes for the group..." rows="3"></textarea>
+                                    <textarea name="notes" class="form-input"
+                                        placeholder="Any special requests or notes for the group..."
+                                        rows="3"></textarea>
                                 </div>
                             </div>
 
-                            <button type="submit" id="family-booking-submit" class="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                            <button type="submit" id="family-booking-submit"
+                                class="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2">
                                 <i class="fas fa-calendar-check"></i> Confirm Family Booking
                             </button>
                         </form>
@@ -612,17 +812,7 @@
                     <div class="space-y-3">
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-400">Monday - Friday</span>
-                            <span class="text-white font-medium">9:00 AM - 9:00 PM</span>
-                        </div>
-                        <div class="w-full h-px bg-purple-500/10"></div>
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-400">Saturday</span>
-                            <span class="text-white font-medium">9:00 AM - 9:00 PM</span>
-                        </div>
-                        <div class="w-full h-px bg-purple-500/10"></div>
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-400">Sunday</span>
-                            <span class="text-white font-medium">10:00 AM - 8:00 PM</span>
+                            <span class="text-white font-medium">10:00 AM - 12:00 MN</span>
                         </div>
                     </div>
                 </div>
@@ -632,8 +822,10 @@
                     <h3 class="font-display text-lg font-semibold text-white mb-3 flex items-center gap-2">
                         <i class="fas fa-history text-purple-400"></i> Have a Booking?
                     </h3>
-                    <p class="text-gray-400 text-sm mb-4">Track your appointments, check status updates, or manage cancellations.</p>
-                    <a href="{% url 'website:my_bookings' %}" class="flex items-center gap-3 p-3 bg-purple-500/10 border border-purple-500/15 rounded-xl text-purple-300 hover:bg-purple-500/15 transition-all text-sm">
+                    <p class="text-gray-400 text-sm mb-4">Track your appointments, check status updates, or manage
+                        cancellations.</p>
+                    <a href="{% url 'website:my_bookings' %}"
+                        class="flex items-center gap-3 p-3 bg-purple-500/10 border border-purple-500/15 rounded-xl text-purple-300 hover:bg-purple-500/15 transition-all text-sm">
                         <i class="fas fa-clipboard-list"></i>
                         <span>View My Bookings</span>
                         <i class="fas fa-arrow-right ml-auto text-xs opacity-50"></i>
@@ -645,8 +837,10 @@
                     <h3 class="font-display text-lg font-semibold text-white mb-5 flex items-center gap-2">
                         <i class="fas fa-phone-alt text-purple-400"></i> Need Help?
                     </h3>
-                    <p class="text-gray-400 text-sm mb-4">Have questions about our services or need help picking the right treatment? Contact us!</p>
-                    <a href="tel:+639123456789" class="flex items-center gap-3 p-3 bg-purple-500/10 border border-purple-500/15 rounded-xl text-purple-300 hover:bg-purple-500/15 transition-all text-sm">
+                    <p class="text-gray-400 text-sm mb-4">Have questions about our services or need help picking the
+                        right treatment? Contact us!</p>
+                    <a href="tel:+639123456789"
+                        class="flex items-center gap-3 p-3 bg-purple-500/10 border border-purple-500/15 rounded-xl text-purple-300 hover:bg-purple-500/15 transition-all text-sm">
                         <i class="fas fa-phone-alt"></i>
                         <span>+63 912 345 6789</span>
                     </a>
@@ -664,7 +858,7 @@
                         </li>
                         <li class="flex items-start gap-2">
                             <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
-                            <span>Please arrive 10 minutes before your appointment.</span>
+                            <span>Please arrive 15 minutes before your appointment.</span>
                         </li>
                         <li class="flex items-start gap-2">
                             <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
@@ -692,76 +886,92 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
 
-    // ═══════════════════════════════════════
-    // BOOKING MODE TOGGLE
-    // ═══════════════════════════════════════
-    const modeSingleBtn = document.getElementById('mode-single-btn');
-    const modeFamilyBtn = document.getElementById('mode-family-btn');
-    const singleSection = document.getElementById('single-booking-section');
-    const familySection = document.getElementById('family-booking-section');
+        // ═══════════════════════════════════════
+        // BOOKING MODE TOGGLE
+        // ═══════════════════════════════════════
+        const modeSingleBtn = document.getElementById('mode-single-btn');
+        const modeFamilyBtn = document.getElementById('mode-family-btn');
+        const singleSection = document.getElementById('single-booking-section');
+        const familySection = document.getElementById('family-booking-section');
 
-    function setBookingMode(mode) {
-        if (mode === 'family') {
-            singleSection.style.display = 'none';
-            familySection.style.display = 'block';
-            modeSingleBtn.classList.remove('active');
-            modeFamilyBtn.classList.add('active');
-            // Set min date for family date input
-            const familyDate = document.getElementById('family-date');
-            if (familyDate) {
-                const today = new Date().toISOString().split('T')[0];
-                familyDate.setAttribute('min', today);
+        function setBookingMode(mode) {
+            if (mode === 'family') {
+                singleSection.style.display = 'none';
+                familySection.style.display = 'block';
+                modeSingleBtn.classList.remove('active');
+                modeFamilyBtn.classList.add('active');
+                // Set min date for family date input
+                const familyDate = document.getElementById('family-date');
+                if (familyDate) {
+                    const today = new Date().toISOString().split('T')[0];
+                    familyDate.setAttribute('min', today);
+                }
+            } else {
+                singleSection.style.display = 'block';
+                familySection.style.display = 'none';
+                modeSingleBtn.classList.add('active');
+                modeFamilyBtn.classList.remove('active');
             }
-        } else {
-            singleSection.style.display = 'block';
-            familySection.style.display = 'none';
-            modeSingleBtn.classList.add('active');
-            modeFamilyBtn.classList.remove('active');
         }
-    }
 
-    modeSingleBtn.addEventListener('click', () => setBookingMode('single'));
-    modeFamilyBtn.addEventListener('click', () => setBookingMode('family'));
+        modeSingleBtn.addEventListener('click', () => setBookingMode('single'));
+        modeFamilyBtn.addEventListener('click', () => setBookingMode('family'));
 
-    {% if family_post_data %}
-    // If we came back from a failed family submission, show family mode
-    setBookingMode('family');
-    {% endif %}
+        {% if family_post_data %}
+        // If we came back from a failed family submission, show family mode
+        setBookingMode('family');
+        {% endif %}
 
-    // ═══════════════════════════════════════
-    // FAMILY MEMBER MANAGEMENT
-    // ═══════════════════════════════════════
-    const MAX_MEMBERS = 5;
-    let memberCount = 1;
-    const container = document.getElementById('family-members-container');
-    const addBtn = document.getElementById('add-member-btn');
-    const countInput = document.getElementById('family-member-count');
-    const countText = document.getElementById('member-count-text');
+        // ═══════════════════════════════════════
+        // FAMILY MEMBER MANAGEMENT
+        // ═══════════════════════════════════════
+        const MAX_MEMBERS = 5;
+        let memberCount = 1;
+        const container = document.getElementById('family-members-container');
+        const addBtn = document.getElementById('add-member-btn');
+        const countInput = document.getElementById('family-member-count');
+        const countText = document.getElementById('member-count-text');
 
-    // Build service options HTML from the existing first member's select
-    const firstServiceSelect = document.querySelector('[name="member_0_service"]');
-    const serviceOptionsHTML = firstServiceSelect ? firstServiceSelect.innerHTML : '';
+        // Build service data map for family chips (from the service-price-map script tag used by single booking)
+        let familyServiceData = {};
+        try {
+            const mapEl = document.getElementById('service-price-map');
+            if (mapEl) familyServiceData = JSON.parse(mapEl.textContent);
+        } catch(e) {}
 
-    function updateMemberCount() {
-        countInput.value = memberCount;
-        countText.textContent = memberCount;
-        addBtn.disabled = memberCount >= MAX_MEMBERS;
-        // Re-number all member cards
-        const cards = container.querySelectorAll('.family-member-card');
-        cards.forEach((card, idx) => {
-            const numberEl = card.querySelector('.member-number');
-            if (numberEl) numberEl.textContent = idx + 1;
-        });
-    }
+        // Generate chip HTML for a given member index using familyServiceData
+        function familyChipOptionsHTML(index) {
+            return Object.entries(familyServiceData).map(([pk, svc]) => {
+                return `<label class="service-chip">
+                    <input type="checkbox" class="service-chip-input family-service-chip" name="member_${index}_services" value="${pk}" data-price="${svc.price}" data-duration="${svc.duration}" data-name="${svc.name}">
+                    <div class="service-chip-inner">
+                        <div class="service-chip-name">${svc.name}</div>
+                        <div class="service-chip-meta">\u20B1${parseFloat(svc.price).toFixed(2)} &middot; ${svc.duration} min</div>
+                    </div>
+                </label>`;
+            }).join('');
+        }
 
-    function createMemberCard(index) {
-        const card = document.createElement('div');
-        card.className = 'family-member-card';
-        card.dataset.memberIndex = index;
-        card.id = `member-card-${index}`;
-        card.innerHTML = `
+        function updateMemberCount() {
+            countInput.value = memberCount;
+            countText.textContent = memberCount;
+            addBtn.disabled = memberCount >= MAX_MEMBERS;
+            // Re-number all member cards
+            const cards = container.querySelectorAll('.family-member-card');
+            cards.forEach((card, idx) => {
+                const numberEl = card.querySelector('.member-number');
+                if (numberEl) numberEl.textContent = idx + 1;
+            });
+        }
+
+        function createMemberCard(index) {
+            const card = document.createElement('div');
+            card.className = 'family-member-card';
+            card.dataset.memberIndex = index;
+            card.id = `member-card-${index}`;
+            card.innerHTML = `
             <div class="family-member-header">
                 <span class="family-member-label">
                     <span class="member-number">${index + 1}</span> Family Member
@@ -784,13 +994,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
             <div class="grid sm:grid-cols-2 gap-4 mt-4">
-                <div>
-                    <label class="form-label">Service <span class="text-red-400">*</span></label>
-                    <select name="member_${index}_service" class="form-input member-service-select" data-index="${index}" required>
-                        ${serviceOptionsHTML}
-                    </select>
+                <div class="sm:col-span-2">
+                    <label class="form-label">Select Service(s) <span class="text-red-400">*</span></label>
+                    <p class="text-gray-500 text-xs mb-3"><i class="fas fa-info-circle text-purple-400/50"></i> Click to select. You can choose multiple services to add-on.</p>
+                    <div class="grid sm:grid-cols-2 gap-2 mb-2 family-chip-grid" data-member-index="${index}">
+                        ${familyChipOptionsHTML(index)}
+                    </div>
+                    <div id="member-${index}-total" class="hidden mt-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-400 text-xs flex items-center gap-1.5"><i class="fas fa-spa text-purple-400"></i> Selected</span>
+                            <span class="member-total-price font-bold text-purple-300 text-sm"></span>
+                        </div>
+                        <div class="member-total-duration text-gray-500 text-xs mt-1"></div>
+                    </div>
                 </div>
-                <div>
+                <div class="sm:col-span-2">
                     <label class="form-label">Therapist Preference <span class="text-red-400">*</span></label>
                     <select name="member_${index}_therapist_preference" class="form-input member-pref-select" data-index="${index}" required>
                         <option value="male">Male Therapist</option>
@@ -812,323 +1030,368 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <input type="hidden" name="member_${index}_therapist" class="member-therapist-hidden" id="member_${index}_therapist_hidden" data-index="${index}" value="">
         `;
-        return card;
-    }
-
-    addBtn.addEventListener('click', () => {
-        if (memberCount >= MAX_MEMBERS) return;
-        const newCard = createMemberCard(memberCount);
-        container.appendChild(newCard);
-        
-        const currentIndex = memberCount;
-        memberCount++;
-        updateMemberCount();
-
-        // Attach gender-preference enforcement
-        const genderSelect = newCard.querySelector('.member-gender-select');
-        const prefSelect = newCard.querySelector('.member-pref-select');
-        const svcSelect = newCard.querySelector('.member-service-select');
-        
-        if (genderSelect && prefSelect) {
-            genderSelect.addEventListener('change', () => {
-                enforceFamilyGenderRules(genderSelect, prefSelect);
-                loadFamilyTherapists(currentIndex);
-            });
-            prefSelect.addEventListener('change', () => {
-                loadFamilyTherapists(currentIndex);
-            });
-        }
-        if (svcSelect) {
-            svcSelect.addEventListener('change', () => {
-                loadFamilyTherapists(currentIndex);
-            });
+            return card;
         }
 
-        // Smooth reveal
-        newCard.style.opacity = '0';
-        newCard.style.transform = 'translateY(10px)';
-        requestAnimationFrame(() => {
-            newCard.style.transition = 'all 0.3s ease';
-            newCard.style.opacity = '1';
-            newCard.style.transform = 'translateY(0)';
-        });
-        
-        // Load initial therapists for this member
-        loadFamilyTherapists(currentIndex);
-    });
+        addBtn.addEventListener('click', () => {
+            if (memberCount >= MAX_MEMBERS) return;
+            const newCard = createMemberCard(memberCount);
+            container.appendChild(newCard);
 
-    window.removeMember = function(index) {
-        const card = document.getElementById(`member-card-${index}`);
-        if (!card) return;
-        card.style.transition = 'all 0.25s ease';
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(-10px)';
-        setTimeout(() => {
-            card.remove();
-            memberCount--;
-            // Re-index all remaining cards so names are sequential 0..N-1
-            reindexMembers();
+            const currentIndex = memberCount;
+            memberCount++;
             updateMemberCount();
-            
-            // Re-evaluate therapist selections because a therapist might have been freed
-            if (typeof updateFamilyTherapistSelections === 'function') {
-                updateFamilyTherapistSelections();
+
+            // Attach gender-preference enforcement
+            const genderSelect = newCard.querySelector('.member-gender-select');
+            const prefSelect = newCard.querySelector('.member-pref-select');
+            const svcSelect = newCard.querySelector('.member-service-select');
+
+            if (genderSelect && prefSelect) {
+                genderSelect.addEventListener('change', () => {
+                    enforceFamilyGenderRules(genderSelect, prefSelect);
+                    loadFamilyTherapists(currentIndex);
+                });
+                prefSelect.addEventListener('change', () => {
+                    loadFamilyTherapists(currentIndex);
+                });
             }
-        }, 250);
-    };
+            // Attach chip listeners for the new member card
+            attachMemberChipListeners(currentIndex);
 
-    function reindexMembers() {
-        const cards = container.querySelectorAll('.family-member-card');
-        cards.forEach((card, newIdx) => {
-            card.dataset.memberIndex = newIdx;
-            card.id = `member-card-${newIdx}`;
-
-            // Update all input/select names
-            card.querySelectorAll('[name]').forEach(el => {
-                el.name = el.name.replace(/member_\d+_/, `member_${newIdx}_`);
+            // Smooth reveal
+            newCard.style.opacity = '0';
+            newCard.style.transform = 'translateY(10px)';
+            requestAnimationFrame(() => {
+                newCard.style.transition = 'all 0.3s ease';
+                newCard.style.opacity = '1';
+                newCard.style.transform = 'translateY(0)';
             });
-            // Update data-index attributes
-            card.querySelectorAll('[data-index]').forEach(el => {
-                el.dataset.index = newIdx;
-            });
-            // Update remove button onclick
-            const removeBtn = card.querySelector('.remove-member-btn');
-            if (removeBtn) {
-                removeBtn.setAttribute('onclick', `removeMember(${newIdx})`);
-            }
-            // First card should not have remove button
-            if (newIdx === 0 && removeBtn) {
-                removeBtn.remove();
-            }
-            
-            // Update family therapist section IDs
-            const tSection = card.querySelector('.therapist-section');
-            if (tSection) tSection.id = `family-therapist-section-${newIdx}`;
-            
-            const badge = card.querySelector('.gender-info-badge');
-            if (badge) badge.id = `family-gender-info-badge-${newIdx}`;
-            
-            const tContainer = card.querySelector('[id^="family-therapist-cards-container-"]');
-            if (tContainer) tContainer.id = `family-therapist-cards-container-${newIdx}`;
-            
-            const tHidden = card.querySelector('.member-therapist-hidden');
-            if (tHidden) tHidden.id = `member_${newIdx}_therapist_hidden`;
-        });
-    }
 
-    // Enforce gender rules: female members can only select female therapist
-    function enforceFamilyGenderRules(genderSelect, prefSelect) {
-        const gender = genderSelect.value;
-        const options = prefSelect.querySelectorAll('option');
-        options.forEach(opt => {
-            opt.disabled = false;
-            opt.style.display = '';
+            // Load initial therapists for this member
+            loadFamilyTherapists(currentIndex);
         });
-        if (gender === 'female') {
+
+        window.removeMember = function (index) {
+            const card = document.getElementById(`member-card-${index}`);
+            if (!card) return;
+            card.style.transition = 'all 0.25s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(-10px)';
+            setTimeout(() => {
+                card.remove();
+                memberCount--;
+                // Re-index all remaining cards so names are sequential 0..N-1
+                reindexMembers();
+                updateMemberCount();
+
+                // Re-evaluate therapist selections because a therapist might have been freed
+                if (typeof updateFamilyTherapistSelections === 'function') {
+                    updateFamilyTherapistSelections();
+                }
+            }, 250);
+        };
+
+        function reindexMembers() {
+            const cards = container.querySelectorAll('.family-member-card');
+            cards.forEach((card, newIdx) => {
+                card.dataset.memberIndex = newIdx;
+                card.id = `member-card-${newIdx}`;
+
+                // Update all input/select names
+                card.querySelectorAll('[name]').forEach(el => {
+                    el.name = el.name.replace(/member_\d+_/, `member_${newIdx}_`);
+                });
+                // Update data-index attributes
+                card.querySelectorAll('[data-index]').forEach(el => {
+                    el.dataset.index = newIdx;
+                });
+                // Update remove button onclick
+                const removeBtn = card.querySelector('.remove-member-btn');
+                if (removeBtn) {
+                    removeBtn.setAttribute('onclick', `removeMember(${newIdx})`);
+                }
+                // First card should not have remove button
+                if (newIdx === 0 && removeBtn) {
+                    removeBtn.remove();
+                }
+
+                // Update family therapist section IDs
+                const tSection = card.querySelector('.therapist-section');
+                if (tSection) tSection.id = `family-therapist-section-${newIdx}`;
+
+                const badge = card.querySelector('.gender-info-badge');
+                if (badge) badge.id = `family-gender-info-badge-${newIdx}`;
+
+                const tContainer = card.querySelector('[id^="family-therapist-cards-container-"]');
+                if (tContainer) tContainer.id = `family-therapist-cards-container-${newIdx}`;
+
+                const tHidden = card.querySelector('.member-therapist-hidden');
+                if (tHidden) tHidden.id = `member_${newIdx}_therapist_hidden`;
+            });
+        }
+
+        // Enforce gender rules: female members can only select female therapist
+        function enforceFamilyGenderRules(genderSelect, prefSelect) {
+            const gender = genderSelect.value;
+            const options = prefSelect.querySelectorAll('option');
             options.forEach(opt => {
-                if (opt.value === 'male') {
-                    opt.disabled = true;
-                    opt.style.display = 'none';
-                }
+                opt.disabled = false;
+                opt.style.display = '';
             });
-            if (prefSelect.value === 'male') {
-                prefSelect.value = 'female';
-            }
-        }
-    }
-
-    // Load therapists for a specific family member
-    function loadFamilyTherapists(index) {
-        const genderSelect = document.querySelector(`[name="member_${index}_gender"]`);
-        const prefSelect = document.querySelector(`[name="member_${index}_therapist_preference"]`);
-        const svcSelect = document.querySelector(`[name="member_${index}_service"]`);
-        const dateInput = document.getElementById('family-date');
-        const timeInput = document.getElementById('family-time');
-        
-        const section = document.getElementById(`family-therapist-section-${index}`);
-        const container = document.getElementById(`family-therapist-cards-container-${index}`);
-        const badge = document.getElementById(`family-gender-info-badge-${index}`);
-        
-        if (!genderSelect || !prefSelect || !svcSelect || !section || !container) return;
-        
-        const clientGender = genderSelect.value;
-        const pref = prefSelect.value;
-        const rawDate = dateInput ? dateInput.value : '';
-        const rawTime = timeInput ? timeInput.value : '';
-        const rawSvc = svcSelect.value;
-        
-        const dateQuery = rawDate ? `&date=${rawDate}` : '';
-        const timeQuery = rawTime ? `&time=${rawTime}` : '';
-        const svcQuery = rawSvc ? `&service_id=${rawSvc}` : '';
-
-        section.classList.remove('therapist-section-hidden');
-        container.innerHTML = '<div class="loading-spinner"></div>';
-
-        if (clientGender === 'female') {
-            badge.innerHTML = '<i class="fas fa-venus"></i> Female therapists only';
-        } else if (pref === 'female') {
-            badge.innerHTML = '<i class="fas fa-venus"></i> Showing female therapists';
-        } else if (pref === 'male') {
-            badge.innerHTML = '<i class="fas fa-mars"></i> Showing male therapists';
-        } else {
-            badge.innerHTML = '<i class="fas fa-users"></i> Showing all therapists';
-        }
-
-        const url = `{% url 'website:api_therapists' %}?preference=${pref}&client_gender=${clientGender}${dateQuery}${timeQuery}${svcQuery}`;
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
-                renderFamilyTherapistCards(data.therapists, index, container);
-            })
-            .catch(() => {
-                container.innerHTML = '<p class="no-therapists-msg">Unable to load therapists. Please try again.</p>';
-            });
-    }
-
-    function getSelectedFamilyTherapists() {
-        const selected = {};
-        for (let i = 0; i < memberCount; i++) {
-            const hidden = document.getElementById(`member_${i}_therapist_hidden`);
-            if (hidden && hidden.value) {
-                selected[i] = hidden.value;
-            }
-        }
-        return selected;
-    }
-
-    function updateFamilyTherapistSelections() {
-        const selected = getSelectedFamilyTherapists();
-        
-        for (let i = 0; i < memberCount; i++) {
-            const container = document.getElementById(`family-therapist-cards-container-${i}`);
-            if (!container) continue;
-            
-            container.querySelectorAll('.therapist-card').forEach(card => {
-                const tId = card.dataset.therapistId;
-                
-                // Remove existing "Selected by" badges
-                const existingBadge = card.querySelector('.selected-by-badge');
-                if (existingBadge) existingBadge.remove();
-                
-                // Check if selected by someone else
-                let selectedByOther = -1;
-                for (const [memberIdx, selId] of Object.entries(selected)) {
-                    if (selId === tId && parseInt(memberIdx) !== i) {
-                        selectedByOther = parseInt(memberIdx);
-                        break;
+            if (gender === 'female') {
+                options.forEach(opt => {
+                    if (opt.value === 'male' || opt.value === 'random') {
+                        opt.disabled = true;
+                        opt.style.display = 'none';
                     }
+                });
+                if (prefSelect.value === 'male' || prefSelect.value === 'random') {
+                    prefSelect.value = 'female';
                 }
-                
-                if (selectedByOther !== -1) {
-                    // Add badge and disable
-                    const badgeHtml = `<div class="selected-by-badge" style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:6; display:flex; align-items:center; justify-content:center; text-align:center;">
+            }
+        }
+
+        // Update per-member service total display
+        function updateMemberServiceTotal(index) {
+            const card = document.getElementById(`member-card-${index}`);
+            if (!card) return;
+            const chips = card.querySelectorAll('.family-service-chip:checked');
+            const totalEl = document.getElementById(`member-${index}-total`);
+            const priceEl = totalEl ? totalEl.querySelector('.member-total-price') : null;
+            const durEl = totalEl ? totalEl.querySelector('.member-total-duration') : null;
+            if (!totalEl) return;
+
+            let totalPrice = 0, totalDur = 0, names = [];
+            chips.forEach(cb => {
+                totalPrice += parseFloat(cb.dataset.price || 0);
+                totalDur += parseInt(cb.dataset.duration || 0);
+                names.push(cb.dataset.name);
+            });
+
+            if (chips.length === 0) {
+                totalEl.classList.add('hidden');
+            } else {
+                totalEl.classList.remove('hidden');
+                if (priceEl) priceEl.textContent = `\u20B1${totalPrice.toFixed(2)}`;
+                if (durEl) durEl.textContent = `${totalDur} min total \u00B7 ${names.join(', ')}`;
+            }
+        }
+
+        // Attach chip toggle logic to a member card
+        function attachMemberChipListeners(index) {
+            const card = document.getElementById(`member-card-${index}`);
+            if (!card) return;
+            card.querySelectorAll('.family-service-chip').forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const label = cb.closest('label');
+                    if (label) label.classList.toggle('active', cb.checked);
+                    updateMemberServiceTotal(index);
+                    loadFamilyTherapists(index);
+                });
+            });
+        }
+
+        // Attach to member 0 on load
+        attachMemberChipListeners(0);
+
+        // Load therapists for a specific family member
+        function loadFamilyTherapists(index) {
+            const genderSelect = document.querySelector(`[name="member_${index}_gender"]`);
+            const prefSelect = document.querySelector(`[name="member_${index}_therapist_preference"]`);
+            const dateInput = document.getElementById('family-date');
+            const timeInput = document.getElementById('family-time');
+
+            const section = document.getElementById(`family-therapist-section-${index}`);
+            const container = document.getElementById(`family-therapist-cards-container-${index}`);
+            const badge = document.getElementById(`family-gender-info-badge-${index}`);
+
+            if (!genderSelect || !prefSelect || !section || !container) return;
+
+            // Collect all checked service IDs for this member
+            const memberCard = document.getElementById(`member-card-${index}`);
+            const checkedServices = memberCard
+                ? [...memberCard.querySelectorAll('.family-service-chip:checked')].map(cb => cb.value)
+                : [];
+
+            const clientGender = genderSelect.value;
+            const pref = prefSelect.value;
+            const rawDate = dateInput ? dateInput.value : '';
+            const rawTime = timeInput ? timeInput.value : '';
+
+            const dateQuery = rawDate ? `&date=${rawDate}` : '';
+            const timeQuery = rawTime ? `&time=${rawTime}` : '';
+            // Pass first selected service for availability check (or none)
+            const svcQuery = checkedServices.length ? `&service_id=${checkedServices[0]}` : '';
+
+            section.classList.remove('therapist-section-hidden');
+            container.innerHTML = '<div class="loading-spinner"></div>';
+
+            if (clientGender === 'female') {
+                badge.innerHTML = '<i class="fas fa-venus"></i> Female therapists only';
+            } else if (pref === 'female') {
+                badge.innerHTML = '<i class="fas fa-venus"></i> Showing female therapists';
+            } else if (pref === 'male') {
+                badge.innerHTML = '<i class="fas fa-mars"></i> Showing male therapists';
+            } else {
+                badge.innerHTML = '<i class="fas fa-users"></i> Showing all therapists';
+            }
+
+            const url = `{% url 'website:api_therapists' %}?preference=${pref}&client_gender=${clientGender}${dateQuery}${timeQuery}${svcQuery}`;
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    renderFamilyTherapistCards(data.therapists, index, container);
+                })
+                .catch(() => {
+                    container.innerHTML = '<p class="no-therapists-msg">Unable to load therapists. Please try again.</p>';
+                });
+        }
+
+        function getSelectedFamilyTherapists() {
+            const selected = {};
+            for (let i = 0; i < memberCount; i++) {
+                const hidden = document.getElementById(`member_${i}_therapist_hidden`);
+                if (hidden && hidden.value) {
+                    selected[i] = hidden.value;
+                }
+            }
+            return selected;
+        }
+
+        function updateFamilyTherapistSelections() {
+            const selected = getSelectedFamilyTherapists();
+
+            for (let i = 0; i < memberCount; i++) {
+                const container = document.getElementById(`family-therapist-cards-container-${i}`);
+                if (!container) continue;
+
+                container.querySelectorAll('.therapist-card').forEach(card => {
+                    const tId = card.dataset.therapistId;
+
+                    // Remove existing "Selected by" badges
+                    const existingBadge = card.querySelector('.selected-by-badge');
+                    if (existingBadge) existingBadge.remove();
+
+                    // Check if selected by someone else
+                    let selectedByOther = -1;
+                    for (const [memberIdx, selId] of Object.entries(selected)) {
+                        if (selId === tId && parseInt(memberIdx) !== i) {
+                            selectedByOther = parseInt(memberIdx);
+                            break;
+                        }
+                    }
+
+                    if (selectedByOther !== -1) {
+                        // Add badge and disable
+                        const badgeHtml = `<div class="selected-by-badge" style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:6; display:flex; align-items:center; justify-content:center; text-align:center;">
                          <span style="background:rgba(59, 130, 246, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Selected by Member ${selectedByOther + 1}</span>
                        </div>`;
-                    card.insertAdjacentHTML('afterbegin', badgeHtml);
-                    card.style.opacity = '0.7';
-                    card.style.cursor = 'not-allowed';
-                    card.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-                    card.classList.add('disabled-by-other');
-                } else {
-                    // Restore styling if it was previously disabled by other
-                    if (card.classList.contains('disabled-by-other')) {
-                        card.style.opacity = '';
-                        card.style.cursor = '';
-                        card.style.borderColor = '';
-                        card.classList.remove('disabled-by-other');
+                        card.insertAdjacentHTML('afterbegin', badgeHtml);
+                        card.style.opacity = '0.7';
+                        card.style.cursor = 'not-allowed';
+                        card.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                        card.classList.add('disabled-by-other');
+                    } else {
+                        // Restore styling if it was previously disabled by other
+                        if (card.classList.contains('disabled-by-other')) {
+                            card.style.opacity = '';
+                            card.style.cursor = '';
+                            card.style.borderColor = '';
+                            card.classList.remove('disabled-by-other');
+                        }
                     }
-                }
-            });
-        }
-    }
-
-    window.selectFamilyTherapist = function(id, index) {
-        const container = document.getElementById(`family-therapist-cards-container-${index}`);
-        if (!container) return;
-        
-        // Prevent selection if already selected by another
-        const card = container.querySelector(`.therapist-card[data-therapist-id="${id}"]`);
-        if (card && card.classList.contains('disabled-by-other')) return;
-
-        const hiddenInput = document.getElementById(`member_${index}_therapist_hidden`);
-        if (!hiddenInput) return;
-        
-        if (hiddenInput.value == id) {
-            hiddenInput.value = ''; // Deselect
-        } else {
-            hiddenInput.value = id;
-        }
-        
-        container.querySelectorAll('.therapist-card').forEach(c => {
-            c.classList.toggle('selected', c.dataset.therapistId == hiddenInput.value);
-        });
-        
-        updateFamilyTherapistSelections();
-    };
-
-    function renderFamilyTherapistCards(therapists, index, container) {
-        if (!therapists || therapists.length === 0) {
-            container.innerHTML = '<p class="no-therapists-msg"><i class="fas fa-user-slash" style="font-size:1.5rem;opacity:0.3;display:block;margin-bottom:0.5rem;"></i>No therapists available for this preference.</p>';
-            return;
-        }
-
-        const hiddenInput = document.getElementById(`member_${index}_therapist_hidden`);
-        let selectedId = hiddenInput ? hiddenInput.value : null;
-        let html = '<div class="therapist-grid">';
-        
-        therapists.forEach(t => {
-            if ((t.is_off || t.is_booked || t.is_outside_schedule) && selectedId == t.id) {
-                selectedId = null;
-                if (hiddenInput) hiddenInput.value = '';
+                });
             }
-            
-            const isSelected = selectedId == t.id;
-            const photoHtml = t.photo
-                ? `<img src="${t.photo}" alt="${t.name}" class="therapist-card-photo" loading="lazy">`
-                : `<div class="therapist-card-photo-placeholder"><i class="fas fa-user"></i></div>`;
+        }
 
-            let badgeHtml = '';
-            let disabledStyle = '';
-            let clickHandler = `onclick="selectFamilyTherapist(${t.id}, ${index})"`;
-            let selectedClass = isSelected ? 'selected' : '';
+        window.selectFamilyTherapist = function (id, index) {
+            const container = document.getElementById(`family-therapist-cards-container-${index}`);
+            if (!container) return;
 
-            if (t.is_closed) {
-                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            // Prevent selection if already selected by another
+            const card = container.querySelector(`.therapist-card[data-therapist-id="${id}"]`);
+            if (card && card.classList.contains('disabled-by-other')) return;
+
+            const hiddenInput = document.getElementById(`member_${index}_therapist_hidden`);
+            if (!hiddenInput) return;
+
+            if (hiddenInput.value == id) {
+                hiddenInput.value = ''; // Deselect
+            } else {
+                hiddenInput.value = id;
+            }
+
+            container.querySelectorAll('.therapist-card').forEach(c => {
+                c.classList.toggle('selected', c.dataset.therapistId == hiddenInput.value);
+            });
+
+            updateFamilyTherapistSelections();
+        };
+
+        function renderFamilyTherapistCards(therapists, index, container) {
+            if (!therapists || therapists.length === 0) {
+                container.innerHTML = '<p class="no-therapists-msg"><i class="fas fa-user-slash" style="font-size:1.5rem;opacity:0.3;display:block;margin-bottom:0.5rem;"></i>No therapists available for this preference.</p>';
+                return;
+            }
+
+            const hiddenInput = document.getElementById(`member_${index}_therapist_hidden`);
+            let selectedId = hiddenInput ? hiddenInput.value : null;
+            let html = '<div class="therapist-grid">';
+
+            therapists.forEach(t => {
+                if ((t.is_off || t.is_booked || t.is_outside_schedule) && selectedId == t.id) {
+                    selectedId = null;
+                    if (hiddenInput) hiddenInput.value = '';
+                }
+
+                const isSelected = selectedId == t.id;
+                const photoHtml = t.photo
+                    ? `<img src="${t.photo}" alt="${t.name}" class="therapist-card-photo" loading="lazy">`
+                    : `<div class="therapist-card-photo-placeholder"><i class="fas fa-user"></i></div>`;
+
+                let badgeHtml = '';
+                let disabledStyle = '';
+                let clickHandler = `onclick="selectFamilyTherapist(${t.id}, ${index})"`;
+                let selectedClass = isSelected ? 'selected' : '';
+
+                if (t.is_closed) {
+                    badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center;">
                      <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.85rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2); margin-bottom: 4px;">CLOSED</span>
                      <span style="color:#fca5a5; font-size:0.65rem; font-weight:600; text-align:center; padding:0 8px; line-height:1.2;">${t.closed_reason || 'Holiday'}</span>
                    </div>`;
-                disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(239, 68, 68, 0.3);';
-                clickHandler = '';
-                selectedClass = '';
-            } else if (t.is_off) {
-                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center;">
+                    disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(239, 68, 68, 0.3);';
+                    clickHandler = '';
+                    selectedClass = '';
+                } else if (t.is_off) {
+                    badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center;">
                      <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Day Off</span>
                    </div>`;
-                disabledStyle = 'opacity: 0.7; cursor: not-allowed;';
-                clickHandler = '';
-                selectedClass = '';
-            } else if (t.is_outside_schedule) {
-                let schedInfo = t.schedule_hours ? `<br><span style="font-size:0.6rem; font-weight:normal;">Schedule: ${t.schedule_hours}</span>` : '';
-                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
+                    disabledStyle = 'opacity: 0.7; cursor: not-allowed;';
+                    clickHandler = '';
+                    selectedClass = '';
+                } else if (t.is_outside_schedule) {
+                    let schedInfo = t.schedule_hours ? `<br><span style="font-size:0.6rem; font-weight:normal;">Schedule: ${t.schedule_hours}</span>` : '';
+                    badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
                      <span style="background:rgba(168, 85, 247, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Not on Shift${schedInfo}</span>
                    </div>`;
-                disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(168, 85, 247, 0.3);';
-                clickHandler = '';
-                selectedClass = '';
-            } else if (t.is_booked) {
-                let badgeText = "Booked";
-                if (t.next_avail) {
-                    badgeText = `Booked<br><span style="font-size:0.65rem; font-weight:normal;">Next: ${t.next_avail}</span>`;
-                }
-                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
+                    disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(168, 85, 247, 0.3);';
+                    clickHandler = '';
+                    selectedClass = '';
+                } else if (t.is_booked) {
+                    let badgeText = "Booked";
+                    if (t.next_avail) {
+                        badgeText = `Booked<br><span style="font-size:0.65rem; font-weight:normal;">Next: ${t.next_avail}</span>`;
+                    }
+                    badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
                      <span style="background:rgba(245, 158, 11, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">${badgeText}</span>
                    </div>`;
-                disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(245, 158, 11, 0.3);';
-                clickHandler = '';
-                selectedClass = '';
-            }
+                    disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(245, 158, 11, 0.3);';
+                    clickHandler = '';
+                    selectedClass = '';
+                }
 
-            html += `
+                html += `
                 <div class="therapist-card ${selectedClass}"
                      style="${disabledStyle}"
                      data-therapist-id="${t.id}"
@@ -1141,305 +1404,383 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="therapist-card-title">${t.title}</div>
                     </div>
                 </div>`;
-        });
-        html += '</div>';
-        container.innerHTML = html;
-        
-        // Ensure any already selected therapists by others show the badge
-        setTimeout(() => {
-            if (typeof updateFamilyTherapistSelections === 'function') {
-                updateFamilyTherapistSelections();
-            }
-        }, 0);
-    }
+            });
+            html += '</div>';
+            container.innerHTML = html;
 
-    function reloadAllFamilyTherapists() {
-        for (let i = 0; i < memberCount; i++) {
-            loadFamilyTherapists(i);
-        }
-    }
-
-    const familyDateInput = document.getElementById('family-date');
-    const familyTimeInput = document.getElementById('family-time');
-    if (familyDateInput) familyDateInput.addEventListener('change', reloadAllFamilyTherapists);
-    if (familyTimeInput) familyTimeInput.addEventListener('change', reloadAllFamilyTherapists);
-
-    // Attach gender enforcement to existing member 0
-    const member0Gender = document.querySelector('[name="member_0_gender"]');
-    const member0Pref = document.querySelector('[name="member_0_therapist_preference"]');
-    const member0Svc = document.querySelector('[name="member_0_service"]');
-    
-    if (member0Gender && member0Pref) {
-        member0Gender.addEventListener('change', () => {
-            enforceFamilyGenderRules(member0Gender, member0Pref);
-            loadFamilyTherapists(0);
-        });
-        member0Pref.addEventListener('change', () => {
-            loadFamilyTherapists(0);
-        });
-    }
-    if (member0Svc) {
-        member0Svc.addEventListener('change', () => {
-            loadFamilyTherapists(0);
-        });
-    }
-    
-    // Initial load for member 0
-    loadFamilyTherapists(0);
-
-
-    // ═══════════════════════════════════════
-    // SINGLE BOOKING — EXISTING LOGIC
-    // ═══════════════════════════════════════
-
-    // Set minimum date to today
-    const dateInput = document.getElementById('booking-date');
-    if (dateInput) {
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.setAttribute('min', today);
-    }
-
-    const genderSelect = document.getElementById('booking-client-gender');
-    const prefSelect = document.getElementById('booking-therapist-preference');
-    const therapistHidden = document.getElementById('booking-therapist');
-    const therapistSection = document.getElementById('therapist-section');
-    const cardsContainer = document.getElementById('therapist-cards-container');
-    const genderBadge = document.getElementById('gender-info-badge');
-
-    let selectedTherapistId = null;
-
-    // Enforce gender rules for therapist preference options
-    function updatePreferenceOptions() {
-        if (!genderSelect || !prefSelect) return;
-        const clientGender = genderSelect.value;
-        const options = prefSelect.querySelectorAll('option');
-
-        options.forEach(opt => {
-            opt.disabled = false;
-            opt.style.display = '';
-        });
-
-        if (clientGender === 'female') {
-            // Female clients: hide "Male Therapist" option, force female or random
-            options.forEach(opt => {
-                if (opt.value === 'male') {
-                    opt.disabled = true;
-                    opt.style.display = 'none';
+            // Ensure any already selected therapists by others show the badge
+            setTimeout(() => {
+                if (typeof updateFamilyTherapistSelections === 'function') {
+                    updateFamilyTherapistSelections();
                 }
-            });
-            // If currently selected male, switch to female
-            if (prefSelect.value === 'male') {
-                prefSelect.value = 'female';
+            }, 0);
+        }
+
+        function reloadAllFamilyTherapists() {
+            for (let i = 0; i < memberCount; i++) {
+                loadFamilyTherapists(i);
             }
         }
 
-        loadTherapists();
-    }
+        const familyDateInput = document.getElementById('family-date');
+        const familyTimeInput = document.getElementById('family-time');
+        if (familyDateInput) familyDateInput.addEventListener('change', reloadAllFamilyTherapists);
+        if (familyTimeInput) familyTimeInput.addEventListener('change', reloadAllFamilyTherapists);
 
-    // Load therapists via API
-    function loadTherapists() {
-        if (!prefSelect) return;
-        const pref = prefSelect.value;
-        const clientGender = genderSelect ? genderSelect.value : 'male';
-        
-        const dateInput = document.getElementById('booking-date');
-        const timeInput = document.getElementById('booking-time');
-        const svcInput = document.getElementById('booking-service');
-        
-        const rawDate = dateInput ? dateInput.value : '';
-        const rawTime = timeInput ? timeInput.value : '';
-        const rawSvc = svcInput ? svcInput.value : '';
-        
-        const dateQuery = rawDate ? `&date=${rawDate}` : '';
-        const timeQuery = rawTime ? `&time=${rawTime}` : '';
-        const svcQuery = rawSvc ? `&service_id=${rawSvc}` : '';
+        // Attach gender enforcement to existing member 0
+        const member0Gender = document.querySelector('[name="member_0_gender"]');
+        const member0Pref = document.querySelector('[name="member_0_therapist_preference"]');
+        const member0Svc = document.querySelector('[name="member_0_service"]');
 
-        // Show the therapist section
-        therapistSection.classList.remove('therapist-section-hidden');
-        cardsContainer.innerHTML = '<div class="loading-spinner"></div>';
-
-        // Update badge
-        if (clientGender === 'female') {
-            genderBadge.innerHTML = '<i class="fas fa-venus"></i> Female therapists only';
-        } else if (pref === 'female') {
-            genderBadge.innerHTML = '<i class="fas fa-venus"></i> Showing female therapists';
-        } else if (pref === 'male') {
-            genderBadge.innerHTML = '<i class="fas fa-mars"></i> Showing male therapists';
-        } else {
-            genderBadge.innerHTML = '<i class="fas fa-users"></i> Showing all therapists';
-        }
-
-        const url = `{% url 'website:api_therapists' %}?preference=${pref}&client_gender=${clientGender}${dateQuery}${timeQuery}${svcQuery}`;
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
-                renderTherapistCards(data.therapists);
-            })
-            .catch(() => {
-                cardsContainer.innerHTML = '<p class="no-therapists-msg">Unable to load therapists. Please try again.</p>';
+        if (member0Gender && member0Pref) {
+            member0Gender.addEventListener('change', () => {
+                enforceFamilyGenderRules(member0Gender, member0Pref);
+                loadFamilyTherapists(0);
             });
-    }
-
-    // Render therapist cards
-    function renderTherapistCards(therapists) {
-        if (!therapists || therapists.length === 0) {
-            cardsContainer.innerHTML = '<p class="no-therapists-msg"><i class="fas fa-user-slash" style="font-size:1.5rem;opacity:0.3;display:block;margin-bottom:0.5rem;"></i>No therapists available for this preference.</p>';
-            return;
+            member0Pref.addEventListener('change', () => {
+                loadFamilyTherapists(0);
+            });
+        }
+        if (member0Svc) {
+            member0Svc.addEventListener('change', () => {
+                loadFamilyTherapists(0);
+            });
         }
 
-        let html = '<div class="therapist-grid">';
-        therapists.forEach(t => {
-            if ((t.is_off || t.is_booked || t.is_outside_schedule) && selectedTherapistId == t.id) {
+        // Initial load for member 0
+        loadFamilyTherapists(0);
+
+
+        // ═══════════════════════════════════════
+        // SINGLE BOOKING — EXISTING LOGIC
+        // ═══════════════════════════════════════
+
+        // Set minimum date to today
+        const dateInput = document.getElementById('booking-date');
+        if (dateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.setAttribute('min', today);
+        }
+
+        const genderSelect = document.getElementById('booking-client-gender');
+        const prefSelect = document.getElementById('booking-therapist-preference');
+        const therapistHidden = document.getElementById('booking-therapist');
+        const therapistSection = document.getElementById('therapist-section');
+        const cardsContainer = document.getElementById('therapist-cards-container');
+        const genderBadge = document.getElementById('gender-info-badge');
+
+        let selectedTherapistId = null;
+
+        // Enforce gender rules for therapist preference options
+        function updatePreferenceOptions() {
+            if (!genderSelect || !prefSelect) return;
+            const clientGender = genderSelect.value;
+            const options = prefSelect.querySelectorAll('option');
+
+            options.forEach(opt => {
+                opt.disabled = false;
+                opt.style.display = '';
+            });
+
+            if (clientGender === 'female') {
+                // Female clients: hide "Male Therapist" and "Random", force female
+                options.forEach(opt => {
+                    if (opt.value === 'male' || opt.value === 'random') {
+                        opt.disabled = true;
+                        opt.style.display = 'none';
+                    }
+                });
+                // If currently selected male or random, switch to female
+                if (prefSelect.value === 'male' || prefSelect.value === 'random') {
+                    prefSelect.value = 'female';
+                }
+            }
+
+            loadTherapists();
+        }
+
+        // Load therapists via API
+        function loadTherapists() {
+            if (!prefSelect) return;
+            const pref = prefSelect.value;
+            const clientGender = genderSelect ? genderSelect.value : 'male';
+
+            const dateInput = document.getElementById('booking-date');
+            const timeInput = document.getElementById('booking-time');
+            const svcSelect = document.getElementById('booking-service');
+
+            const rawDate = dateInput ? dateInput.value : '';
+            const rawTime = timeInput ? timeInput.value : '';
+            // Collect all selected service IDs from the hidden multi-select
+            const selectedSvcIds = svcSelect
+                ? Array.from(svcSelect.selectedOptions).map(o => o.value).filter(Boolean)
+                : [];
+            const rawSvc = selectedSvcIds.join(',');
+
+            const dateQuery = rawDate ? `&date=${rawDate}` : '';
+            const timeQuery = rawTime ? `&time=${rawTime}` : '';
+            const svcQuery = rawSvc ? `&service_id=${rawSvc}` : '';
+
+            // Show the therapist section
+            therapistSection.classList.remove('therapist-section-hidden');
+            cardsContainer.innerHTML = '<div class="loading-spinner"></div>';
+
+            // Update badge
+            if (clientGender === 'female') {
+                genderBadge.innerHTML = '<i class="fas fa-venus"></i> Female therapists only';
+            } else if (pref === 'female') {
+                genderBadge.innerHTML = '<i class="fas fa-venus"></i> Showing female therapists';
+            } else if (pref === 'male') {
+                genderBadge.innerHTML = '<i class="fas fa-mars"></i> Showing male therapists';
+            } else {
+                genderBadge.innerHTML = '<i class="fas fa-users"></i> Showing all therapists';
+            }
+
+            const url = `{% url 'website:api_therapists' %}?preference=${pref}&client_gender=${clientGender}${dateQuery}${timeQuery}${svcQuery}`;
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    renderTherapistCards(data.therapists);
+                })
+                .catch(() => {
+                    cardsContainer.innerHTML = '<p class="no-therapists-msg">Unable to load therapists. Please try again.</p>';
+                });
+        }
+
+        // Render therapist cards
+        function renderTherapistCards(therapists) {
+            if (!therapists || therapists.length === 0) {
+                cardsContainer.innerHTML = '<p class="no-therapists-msg"><i class="fas fa-user-slash" style="font-size:1.5rem;opacity:0.3;display:block;margin-bottom:0.5rem;"></i>No therapists available for this preference.</p>';
+                return;
+            }
+
+            let html = '<div class="therapist-grid">';
+            therapists.forEach(t => {
+                if ((t.is_off || t.is_booked || t.is_outside_schedule) && selectedTherapistId == t.id) {
+                    selectedTherapistId = null;
+                    if (therapistHidden) therapistHidden.value = '';
+                }
+
+                const isSelected = selectedTherapistId == t.id;
+                const photoHtml = t.photo
+                    ? `<img src="${t.photo}" alt="${t.name}" class="therapist-card-photo" loading="lazy">`
+                    : `<div class="therapist-card-photo-placeholder"><i class="fas fa-user"></i></div>`;
+
+                let badgeHtml = '';
+                let disabledStyle = '';
+                let clickHandler = `onclick="selectTherapist(${t.id})"`;
+                let selectedClass = isSelected ? 'selected' : '';
+
+                if (t.is_closed) {
+                    badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                     <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.85rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2); margin-bottom: 4px;">CLOSED</span>
+                     <span style="color:#fca5a5; font-size:0.65rem; font-weight:600; text-align:center; padding:0 8px; line-height:1.2;">${t.closed_reason || 'Holiday'}</span>
+                   </div>`;
+                    disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(239, 68, 68, 0.3);';
+                    clickHandler = '';
+                    selectedClass = '';
+                } else if (t.is_off) {
+                    badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center;">
+                     <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Day Off</span>
+                   </div>`;
+                    disabledStyle = 'opacity: 0.7; cursor: not-allowed;';
+                    clickHandler = '';
+                    selectedClass = '';
+                } else if (t.is_outside_schedule) {
+                    let schedInfo = t.schedule_hours ? `<br><span style="font-size:0.6rem; font-weight:normal;">Schedule: ${t.schedule_hours}</span>` : '';
+                    badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
+                     <span style="background:rgba(168, 85, 247, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Not on Shift${schedInfo}</span>
+                   </div>`;
+                    disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(168, 85, 247, 0.3);';
+                    clickHandler = '';
+                    selectedClass = '';
+                } else if (t.is_booked) {
+                    let badgeText = "Booked";
+                    if (t.next_avail) {
+                        badgeText = `Booked<br><span style="font-size:0.65rem; font-weight:normal;">Next: ${t.next_avail}</span>`;
+                    }
+                    badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
+                     <span style="background:rgba(245, 158, 11, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">${badgeText}</span>
+                   </div>`;
+                    disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(245, 158, 11, 0.3);';
+                    clickHandler = '';
+                    selectedClass = '';
+                }
+
+                html += `
+                <div class="therapist-card ${selectedClass}"
+                     style="${disabledStyle}"
+                     data-therapist-id="${t.id}"
+                     ${clickHandler}
+                     title="${t.name} — ${t.title}">
+                    ${badgeHtml}
+                    ${photoHtml}
+                    <div class="therapist-card-info">
+                        <div class="therapist-card-name">${t.name}</div>
+                        <div class="therapist-card-title">${t.title}</div>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            cardsContainer.innerHTML = html;
+        }
+
+        // Select a therapist
+        window.selectTherapist = function (id) {
+            // Toggle off if re-clicked
+            if (selectedTherapistId == id) {
                 selectedTherapistId = null;
                 if (therapistHidden) therapistHidden.value = '';
-            }
-            
-            const isSelected = selectedTherapistId == t.id;
-            const photoHtml = t.photo
-                ? `<img src="${t.photo}" alt="${t.name}" class="therapist-card-photo" loading="lazy">`
-                : `<div class="therapist-card-photo-placeholder"><i class="fas fa-user"></i></div>`;
-
-            let badgeHtml = '';
-            let disabledStyle = '';
-            let clickHandler = `onclick="selectTherapist(${t.id})"`;
-            let selectedClass = isSelected ? 'selected' : '';
-
-            if (t.is_closed) {
-                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                     <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.85rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2); margin-bottom: 4px;">CLOSED</span>
-                     <span style="color:#fca5a5; font-size:0.65rem; font-weight:600; text-align:center; padding:0 8px; line-height:1.2;">${t.closed_reason || 'Holiday'}</span>
-                   </div>`;
-                disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(239, 68, 68, 0.3);';
-                clickHandler = '';
-                selectedClass = '';
-            } else if (t.is_off) {
-                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center;">
-                     <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Day Off</span>
-                   </div>`;
-                disabledStyle = 'opacity: 0.7; cursor: not-allowed;';
-                clickHandler = '';
-                selectedClass = '';
-            } else if (t.is_outside_schedule) {
-                let schedInfo = t.schedule_hours ? `<br><span style="font-size:0.6rem; font-weight:normal;">Schedule: ${t.schedule_hours}</span>` : '';
-                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
-                     <span style="background:rgba(168, 85, 247, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Not on Shift${schedInfo}</span>
-                   </div>`;
-                disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(168, 85, 247, 0.3);';
-                clickHandler = '';
-                selectedClass = '';
-            } else if (t.is_booked) {
-                let badgeText = "Booked";
-                if (t.next_avail) {
-                    badgeText = `Booked<br><span style="font-size:0.65rem; font-weight:normal;">Next: ${t.next_avail}</span>`;
-                }
-                badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
-                     <span style="background:rgba(245, 158, 11, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">${badgeText}</span>
-                   </div>`;
-                disabledStyle = 'opacity: 0.7; cursor: not-allowed; border-color: rgba(245, 158, 11, 0.3);';
-                clickHandler = '';
-                selectedClass = '';
-            }
-
-            html += `
-                <div class="therapist-card ${selectedClass}"
-                     style="${disabledStyle}"
-                     data-therapist-id="${t.id}"
-                     ${clickHandler}
-                     title="${t.name} — ${t.title}">
-                    ${badgeHtml}
-                    ${photoHtml}
-                    <div class="therapist-card-info">
-                        <div class="therapist-card-name">${t.name}</div>
-                        <div class="therapist-card-title">${t.title}</div>
-                    </div>
-                </div>`;
-        });
-        html += '</div>';
-        cardsContainer.innerHTML = html;
-    }
-
-    // Select a therapist
-    window.selectTherapist = function(id) {
-        // Toggle off if re-clicked
-        if (selectedTherapistId == id) {
-            selectedTherapistId = null;
-            if (therapistHidden) therapistHidden.value = '';
-        } else {
-            selectedTherapistId = id;
-            if (therapistHidden) therapistHidden.value = id;
-        }
-        // Update card visuals
-        document.querySelectorAll('.therapist-card').forEach(card => {
-            card.classList.toggle('selected', card.dataset.therapistId == selectedTherapistId);
-        });
-    };
-
-    // Event listeners
-    if (genderSelect) {
-        genderSelect.addEventListener('change', () => {
-            selectedTherapistId = null;
-            if (therapistHidden) therapistHidden.value = '';
-            updatePreferenceOptions();
-        });
-    }
-    if (prefSelect) {
-        prefSelect.addEventListener('change', () => {
-            selectedTherapistId = null;
-            if (therapistHidden) therapistHidden.value = '';
-            loadTherapists();
-        });
-    }
-
-    if (dateInput) {
-        dateInput.addEventListener('change', () => {
-            selectedTherapistId = null;
-            if (therapistHidden) therapistHidden.value = '';
-            loadTherapists();
-        });
-    }
-
-    const timeInput = document.getElementById('booking-time');
-    if (timeInput) {
-        timeInput.addEventListener('change', () => {
-            selectedTherapistId = null;
-            if (therapistHidden) therapistHidden.value = '';
-            loadTherapists();
-        });
-    }
-    
-    const svcInput = document.getElementById('booking-service');
-    if (svcInput) {
-        svcInput.addEventListener('change', () => {
-            selectedTherapistId = null;
-            if (therapistHidden) therapistHidden.value = '';
-            loadTherapists();
-        });
-    }
-
-    // Initial load
-    updatePreferenceOptions();
-
-    // Service Price Display
-    const serviceSelect = document.getElementById('booking-service');
-    const priceDisplay = document.getElementById('service-price-display');
-    const priceMapEl = document.getElementById('service-price-map');
-    
-    if (serviceSelect && priceDisplay && priceMapEl) {
-        const prices = JSON.parse(priceMapEl.textContent);
-        
-        function updatePrice() {
-            const selectedId = serviceSelect.value;
-            if (selectedId && prices[selectedId]) {
-                priceDisplay.textContent = 'Price: ₱' + prices[selectedId];
-                priceDisplay.classList.remove('hidden');
             } else {
-                priceDisplay.classList.add('hidden');
+                selectedTherapistId = id;
+                if (therapistHidden) therapistHidden.value = id;
             }
+            // Update card visuals
+            document.querySelectorAll('.therapist-card').forEach(card => {
+                card.classList.toggle('selected', card.dataset.therapistId == selectedTherapistId);
+            });
+        };
+
+        // Event listeners
+        if (genderSelect) {
+            genderSelect.addEventListener('change', () => {
+                selectedTherapistId = null;
+                if (therapistHidden) therapistHidden.value = '';
+                updatePreferenceOptions();
+            });
         }
-        
-        serviceSelect.addEventListener('change', updatePrice);
-        updatePrice(); // Init display
-    }
-});
+        if (prefSelect) {
+            prefSelect.addEventListener('change', () => {
+                selectedTherapistId = null;
+                if (therapistHidden) therapistHidden.value = '';
+                loadTherapists();
+            });
+        }
+
+        if (dateInput) {
+            dateInput.addEventListener('change', () => {
+                selectedTherapistId = null;
+                if (therapistHidden) therapistHidden.value = '';
+                loadTherapists();
+            });
+        }
+
+        const timeInput = document.getElementById('booking-time');
+        if (timeInput) {
+            timeInput.addEventListener('change', () => {
+                selectedTherapistId = null;
+                if (therapistHidden) therapistHidden.value = '';
+                loadTherapists();
+            });
+        }
+
+        // Initial load
+        updatePreferenceOptions();
+
+        // ═══════════════════════════════════════
+        // SERVICE CHIP MULTI-SELECTION LOGIC
+        // ═══════════════════════════════════════
+        const priceMapEl = document.getElementById('service-price-map');
+        const serviceHiddenSelect = document.getElementById('booking-service');
+        const serviceTotalDisplay = document.getElementById('service-total-display');
+        const serviceTotalPrice = document.getElementById('service-total-price');
+        const serviceTotalDuration = document.getElementById('service-total-duration');
+        const serviceSelectedNames = document.getElementById('service-selected-names');
+        const serviceChips = document.querySelectorAll('.service-chip');
+        let serviceDataMap = {};
+
+        if (priceMapEl) {
+            try { serviceDataMap = JSON.parse(priceMapEl.textContent.trim()); } catch(e) {}
+        }
+
+        function getSelectedChipIds() {
+            return Array.from(document.querySelectorAll('.service-chip-input:checked')).map(el => el.value);
+        }
+
+        function syncHiddenSelect(ids) {
+            if (!serviceHiddenSelect) return;
+            Array.from(serviceHiddenSelect.options).forEach(opt => {
+                opt.selected = ids.includes(opt.value);
+            });
+        }
+
+        function updateServiceSummary() {
+            const ids = getSelectedChipIds();
+            syncHiddenSelect(ids);
+
+            if (ids.length === 0) {
+                if (serviceTotalDisplay) serviceTotalDisplay.classList.add('hidden');
+            } else {
+                let total = 0, totalDur = 0, names = [];
+                ids.forEach(id => {
+                    const d = serviceDataMap[id];
+                    if (d) {
+                        total += parseFloat(d.price);
+                        totalDur += parseInt(d.duration);
+                        names.push(d.name);
+                    }
+                });
+                if (serviceTotalPrice) serviceTotalPrice.textContent = '₱' + total.toFixed(2);
+                if (serviceTotalDuration) serviceTotalDuration.textContent = 'Total duration: ~' + totalDur + ' min';
+                if (serviceSelectedNames) serviceSelectedNames.textContent = names.join(' + ');
+                if (serviceTotalDisplay) serviceTotalDisplay.classList.remove('hidden');
+            }
+
+            // Reload therapists whenever services change
+            selectedTherapistId = null;
+            if (therapistHidden) therapistHidden.value = '';
+            loadTherapists();
+        }
+
+        function activateChip(id, active) {
+            const label = document.getElementById(`chip-label-${id}`);
+            const input = document.getElementById(`chip-${id}`);
+            if (label) label.classList.toggle('active', active);
+            if (input) input.checked = active;
+        }
+
+        // Attach click handlers to service chips
+        serviceChips.forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                e.preventDefault(); // prevent double-fire from label->input
+                const input = chip.querySelector('.service-chip-input');
+                if (!input) return;
+                input.checked = !input.checked;
+                chip.classList.toggle('active', input.checked);
+                updateServiceSummary();
+            });
+        });
+
+        // Pre-select services already selected by the form (e.g., on validation error return)
+        if (serviceHiddenSelect) {
+            Array.from(serviceHiddenSelect.selectedOptions).forEach(opt => {
+                activateChip(opt.value, true);
+            });
+        }
+
+        // ═══════════════════════════════════════
+        // PRE-SELECT FROM URL PARAM (?service=ID)
+        // ═══════════════════════════════════════
+        (function preSelectFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const svcParam = params.get('service');
+            if (!svcParam) return;
+
+            const ids = svcParam.split(',').map(s => s.trim()).filter(Boolean);
+            ids.forEach(id => activateChip(id, true));
+
+            if (ids.length > 0) {
+                updateServiceSummary();
+                // Smooth-scroll the booking form into view
+                const formEl = document.getElementById('booking-form');
+                if (formEl) {
+                    setTimeout(() => formEl.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+                }
+            }
+        })();
+
+        // Run initial summary if chips already active
+        updateServiceSummary();
+    });
 </script>
 {% endblock %}

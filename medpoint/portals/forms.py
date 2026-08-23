@@ -173,7 +173,7 @@ class WalkInBookingForm(forms.ModelForm):
         model = Booking
         fields = [
             'client_name', 'client_gender', 'client_email', 'client_phone',
-            'service', 'therapist_preference', 'therapist', 'date', 'time', 'notes', 'status'
+            'services', 'therapist_preference', 'therapist', 'date', 'time', 'notes', 'status'
         ]
         widgets = {
             'client_name': forms.TextInput(attrs={
@@ -186,7 +186,7 @@ class WalkInBookingForm(forms.ModelForm):
             'client_phone': forms.TextInput(attrs={
                 'class': 'portal-input', 'placeholder': '+63 9XX XXX XXXX',
             }),
-            'service': forms.Select(attrs={'class': 'portal-input'}),
+            'services': forms.SelectMultiple(attrs={'class': 'portal-input'}),
             'therapist_preference': forms.Select(attrs={'class': 'portal-input'}),
             'therapist': forms.Select(attrs={'class': 'portal-input'}),
             'time': forms.Select(attrs={'class': 'portal-input'}),
@@ -199,7 +199,7 @@ class WalkInBookingForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['service'].queryset = Service.objects.filter(is_active=True)
+        self.fields['services'].queryset = Service.objects.filter(is_active=True)
         self.fields['therapist'].queryset = Therapist.objects.filter(is_active=True)
         self.fields['therapist'].required = False
         self.fields['notes'].required = False
@@ -209,6 +209,7 @@ class WalkInBookingForm(forms.ModelForm):
         instance.booking_type = 'walk_in'
         if commit:
             instance.save()
+            self.save_m2m()
         return instance
 
 
@@ -218,13 +219,13 @@ class StaffScheduleForm(forms.ModelForm):
     start_time = forms.TimeField(
         required=False,
         widget=forms.TimeInput(attrs={
-            'type': 'time', 'class': 'portal-input',
+            'type': 'time', 'class': 'portal-input'
         })
     )
     end_time = forms.TimeField(
         required=False,
         widget=forms.TimeInput(attrs={
-            'type': 'time', 'class': 'portal-input',
+            'type': 'time', 'class': 'portal-input'
         })
     )
 
@@ -254,9 +255,15 @@ class StaffScheduleForm(forms.ModelForm):
         if is_available:
             if not start:
                 self.add_error('start_time', "Start time is required when available.")
+            elif start < datetime.time(10, 0):
+                self.add_error('start_time', "Schedules cannot start before 10:00 AM.")
+                
             if not end:
                 self.add_error('end_time', "End time is required when available.")
-            if start and end and start >= end:
+            elif end != datetime.time(0, 0) and end < datetime.time(10, 0):
+                self.add_error('end_time', "Schedules must end between 10:00 AM and 12 Midnight.")
+                
+            if start and end and start >= end and end != datetime.time(0, 0):
                 raise forms.ValidationError("End time must be after start time.")
         else:
             # Set dummy times if not available to satisfy database constraints
@@ -307,9 +314,15 @@ class BulkStaffScheduleForm(forms.Form):
         if is_available:
             if not start:
                 self.add_error('start_time', "Start time is required when available.")
+            elif start < datetime.time(10, 0):
+                self.add_error('start_time', "Schedules cannot start before 10:00 AM.")
+                
             if not end:
                 self.add_error('end_time', "End time is required when available.")
-            if start and end and start >= end:
+            elif end != datetime.time(0, 0) and end < datetime.time(10, 0):
+                self.add_error('end_time', "Schedules must end between 10:00 AM and 12 Midnight.")
+                
+            if start and end and start >= end and end != datetime.time(0, 0):
                 raise forms.ValidationError("End time must be after start time.")
         else:
             if not start:
@@ -371,7 +384,7 @@ class StaffSettingsForm(forms.ModelForm):
 
 
 class StaffLeaveForm(forms.ModelForm):
-    """Form for assigning leave to a therapist."""
+    """Form for assigning leave to a therapist (Admin use)."""
     class Meta:
         from website.models import StaffLeave
         model = StaffLeave
@@ -391,3 +404,26 @@ class StaffLeaveForm(forms.ModelForm):
         if start_date and end_date and start_date > end_date:
             raise forms.ValidationError("End date cannot be earlier than start date.")
         return cleaned_data
+
+
+class StaffLeaveRequestForm(forms.ModelForm):
+    """Form for staff to apply for leave (no therapist selector; auto-filled in view)."""
+    class Meta:
+        from website.models import StaffLeave
+        model = StaffLeave
+        fields = ['start_date', 'end_date', 'reason']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'class': 'portal-input', 'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'class': 'portal-input', 'type': 'date'}),
+            'reason': forms.TextInput(attrs={'class': 'portal-input', 'placeholder': 'e.g. Vacation, Sick Leave, Personal'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+
+        if start_date and end_date and start_date > end_date:
+            raise forms.ValidationError("End date cannot be earlier than start date.")
+        return cleaned_data
+

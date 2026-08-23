@@ -7,39 +7,99 @@
 
 {% block content %}
 <style>
-    .notif-container {
-        max-width: 900px;
+    /* ── Layout ───────────────────────────────────────────────── */
+    .notif-wrapper {
         margin: 0 auto;
+        width: 100%;
     }
 
-    .notif-header-actions {
+    /* ── Toolbar ──────────────────────────────────────────────── */
+    .notif-toolbar {
         display: flex;
-        justify-content: flex-end;
-        margin-bottom: 1.5rem;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
     }
 
-    .btn-outline-primary {
+    /* Filter tabs */
+    .notif-tabs {
+        display: flex;
+        gap: 0.25rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0.25rem;
+    }
+
+    .notif-tab {
+        padding: 0.4rem 1rem;
+        border-radius: 7px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        transition: all 0.18s;
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.6rem 1.25rem;
+        gap: 0.4rem;
+    }
+
+    .notif-tab.active {
+        background: var(--purple-600);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(147, 51, 234, 0.35);
+    }
+
+    .notif-tab .tab-badge {
+        background: rgba(255,255,255,0.2);
+        color: #fff;
+        border-radius: 99px;
+        padding: 0 0.45rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        line-height: 1.6;
+    }
+
+    .notif-tab:not(.active) .tab-badge {
+        background: var(--border-color);
+        color: var(--text-muted);
+    }
+
+    .btn-mark-all {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 1rem;
+        border-radius: 8px;
         background: transparent;
         border: 1px solid var(--border-color);
-        border-radius: 8px;
-        color: var(--text-primary);
-        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
         font-weight: 500;
         cursor: pointer;
-        transition: var(--transition);
-        text-decoration: none;
+        transition: all 0.18s;
+        white-space: nowrap;
     }
 
-    .btn-outline-primary:hover {
+    .btn-mark-all:hover {
         border-color: var(--purple-400);
         color: var(--purple-400);
-        background: rgba(147, 51, 234, 0.05);
+        background: rgba(147, 51, 234, 0.06);
     }
 
+    /* ── Card shell ───────────────────────────────────────────── */
+    .notif-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    /* ── List items ───────────────────────────────────────────── */
     .notif-list {
         display: flex;
         flex-direction: column;
@@ -47,208 +107,280 @@
 
     .notif-item {
         display: flex;
-        gap: 1.25rem;
-        padding: 1.5rem;
+        gap: 1rem;
+        padding: 1.25rem 1.5rem;
         border-bottom: 1px solid var(--border-color);
-        transition: var(--transition);
+        transition: background 0.15s;
         position: relative;
+        animation: notif-in 0.25s ease both;
     }
 
-    .notif-item:last-child {
-        border-bottom: none;
-    }
+    .notif-item:last-child { border-bottom: none; }
 
     .notif-item.unread {
-        background: rgba(147, 51, 234, 0.05);
+        background: rgba(147, 51, 234, 0.04);
+        border-left: 3px solid var(--purple-500);
     }
 
-    .notif-item:hover {
-        background: var(--table-row-hover);
+    .notif-item:not(.unread) {
+        border-left: 3px solid transparent;
     }
 
-    .notif-icon-wrapper {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
+    .notif-item:hover { background: var(--table-row-hover); }
+
+    @keyframes notif-in {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Icon ─────────────────────────────────────────────────── */
+    .notif-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 11px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        font-size: 1.2rem;
+        font-size: 1.05rem;
+        margin-top: 2px;
     }
 
-    .notif-color-purple { background: rgba(168, 85, 247, 0.12); color: var(--purple-400); }
-    .notif-color-red { background: rgba(239, 68, 68, 0.12); color: var(--red-400); }
-    .notif-color-blue { background: rgba(59, 130, 246, 0.12); color: var(--blue-400); }
-    .notif-color-green { background: rgba(34, 197, 94, 0.12); color: var(--green-400); }
-    .notif-color-amber { background: rgba(245, 158, 11, 0.12); color: var(--amber-400); }
+    .notif-color-purple { background: rgba(168,85,247,0.12); color: var(--purple-400); border: 1px solid rgba(168,85,247,0.2); }
+    .notif-color-red    { background: rgba(239,68,68,0.10);  color: var(--red-400);    border: 1px solid rgba(239,68,68,0.2); }
+    .notif-color-blue   { background: rgba(59,130,246,0.10); color: var(--blue-400);   border: 1px solid rgba(59,130,246,0.2); }
+    .notif-color-green  { background: rgba(34,197,94,0.10);  color: var(--green-400);  border: 1px solid rgba(34,197,94,0.2); }
+    .notif-color-amber  { background: rgba(245,158,11,0.10); color: var(--amber-400);  border: 1px solid rgba(245,158,11,0.2); }
 
-    .notif-content {
-        flex: 1;
-        min-width: 0;
-    }
+    /* ── Content ──────────────────────────────────────────────── */
+    .notif-body { flex: 1; min-width: 0; }
 
     .notif-top {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 0.3rem;
         flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-bottom: 0.5rem;
     }
 
-    .notif-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--text-primary);
+    .notif-title-row {
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        flex: 1;
     }
 
     .unread-dot {
-        width: 8px;
-        height: 8px;
+        width: 7px;
+        height: 7px;
         background: var(--blue-500);
         border-radius: 50%;
-        display: inline-block;
+        flex-shrink: 0;
     }
 
     .notif-time {
-        font-size: 0.75rem;
+        font-size: 0.73rem;
         color: var(--text-muted);
         display: flex;
         align-items: center;
         gap: 0.3rem;
+        white-space: nowrap;
     }
 
     .notif-message {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: var(--text-secondary);
-        line-height: 1.5;
-        margin-bottom: 1rem;
+        line-height: 1.55;
+        margin-bottom: 0.75rem;
     }
 
-    .notif-actions {
+    .notif-footer {
         display: flex;
         align-items: center;
         gap: 1rem;
+        flex-wrap: wrap;
     }
 
     .notif-link {
-        font-size: 0.8rem;
-        font-weight: 500;
+        font-size: 0.78rem;
+        font-weight: 600;
         color: var(--blue-400);
         text-decoration: none;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         gap: 0.3rem;
-        transition: var(--transition);
+        transition: color 0.15s;
     }
 
-    .notif-link:hover {
-        color: var(--blue-500);
-        text-decoration: underline;
-    }
+    .notif-link:hover { color: var(--blue-500); }
 
-    .notif-mark-read {
-        font-size: 0.8rem;
+    .notif-mark-btn {
+        font-size: 0.75rem;
         font-weight: 500;
         color: var(--text-muted);
-        background: transparent;
+        background: none;
         border: none;
         cursor: pointer;
         padding: 0;
-        transition: var(--transition);
+        transition: color 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
     }
 
-    .notif-mark-read:hover {
-        color: var(--text-primary);
-        text-decoration: underline;
+    .notif-mark-btn:hover { color: var(--text-primary); }
+
+    /* Fade read items slightly */
+    .notif-item:not(.unread) .notif-title-row { color: var(--text-secondary); }
+
+    /* ── Date group header ────────────────────────────────────── */
+    .notif-group-header {
+        padding: 0.55rem 1.5rem;
+        background: rgba(255,255,255,0.02);
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
     }
 
-    .empty-state {
+    /* ── Empty state ──────────────────────────────────────────── */
+    .notif-empty {
         padding: 5rem 2rem;
         text-align: center;
         display: flex;
         flex-direction: column;
         align-items: center;
+        gap: 1rem;
     }
 
-    .empty-state-icon {
-        width: 64px;
-        height: 64px;
-        background: var(--bg-secondary);
+    .notif-empty-icon {
+        width: 70px;
+        height: 70px;
         border-radius: 50%;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2rem;
+        font-size: 1.8rem;
         color: var(--text-muted);
-        margin-bottom: 1.5rem;
-        border: 1px solid var(--border-color);
     }
 
-    .empty-state h3 {
-        font-size: 1.25rem;
+    .notif-empty h3 {
+        font-size: 1.1rem;
         font-weight: 600;
-        margin-bottom: 0.5rem;
         color: var(--text-primary);
+        margin: 0;
     }
 
-    .empty-state p {
+    .notif-empty p {
         color: var(--text-secondary);
-        max-width: 400px;
-        margin: 0 auto;
-        line-height: 1.5;
+        font-size: 0.88rem;
+        max-width: 360px;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* ── Summary bar ──────────────────────────────────────────── */
+    .notif-summary {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.5rem;
+        background: rgba(147, 51, 234, 0.04);
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.78rem;
+        color: var(--text-muted);
+    }
+
+    .notif-summary span { color: var(--purple-400); font-weight: 600; }
+
+    /* ── Responsive tweaks ────────────────────────────────────── */
+    @media (max-width: 600px) {
+        .notif-item { padding: 1rem; gap: 0.75rem; }
+        .notif-icon { width: 38px; height: 38px; font-size: 0.9rem; }
+        .notif-toolbar { flex-direction: column; align-items: flex-start; }
+        .btn-mark-all { align-self: flex-end; }
     }
 </style>
 
-<div class="notif-container">
-    {% if notifications and unread_notifications_count > 0 %}
-    <div class="notif-header-actions">
-        <button id="mark-all-btn" class="btn-outline-primary">
+<div class="notif-wrapper">
+
+    <!-- Toolbar: tabs + mark all -->
+    <div class="notif-toolbar">
+        <div class="notif-tabs" role="tablist" aria-label="Filter notifications">
+            <button class="notif-tab active" data-filter="all" role="tab" aria-selected="true">
+                All
+                <span class="tab-badge" id="badge-all">{{ notifications|length }}</span>
+            </button>
+            <button class="notif-tab" data-filter="unread" role="tab" aria-selected="false">
+                Unread
+                <span class="tab-badge" id="badge-unread">{{ unread_notifications_count }}</span>
+            </button>
+        </div>
+
+        {% if unread_notifications_count > 0 %}
+        <button id="mark-all-btn" class="btn-mark-all" title="Mark all notifications as read">
             <i class="fa-solid fa-check-double"></i> Mark All as Read
         </button>
+        {% endif %}
     </div>
-    {% endif %}
 
-    <div class="card">
+    <!-- Card -->
+    <div class="notif-card">
         {% if notifications %}
-            <div class="notif-list">
+            <!-- Summary bar -->
+            <div class="notif-summary">
+                <i class="fa-solid fa-circle-info" style="color:var(--purple-400);font-size:0.8rem;"></i>
+                {% if unread_notifications_count > 0 %}
+                    You have <span>{{ unread_notifications_count }}</span>&nbsp;unread notification{{ unread_notifications_count|pluralize }}
+                {% else %}
+                    You're all caught up!
+                {% endif %}
+            </div>
+
+            <div class="notif-list" id="notif-list">
                 {% for notif in notifications %}
-                <div class="notif-item {% if not notif.is_read %}unread{% endif %}" data-id="{{ notif.pk }}">
-                    <div class="notif-icon-wrapper notif-color-{{ notif.color }}">
+                <div class="notif-item {% if not notif.is_read %}unread{% endif %}"
+                     data-id="{{ notif.pk }}"
+                     data-read="{{ notif.is_read|lower }}">
+
+                    <!-- Icon -->
+                    <div class="notif-icon notif-color-{{ notif.color }}">
                         <i class="fa-solid {{ notif.icon_class }}"></i>
                     </div>
 
-                    <div class="notif-content">
+                    <!-- Body -->
+                    <div class="notif-body">
                         <div class="notif-top">
-                            <div class="notif-title">
+                            <div class="notif-title-row">
+                                {% if not notif.is_read %}<span class="unread-dot"></span>{% endif %}
                                 {{ notif.title }}
-                                {% if not notif.is_read %}
-                                <span class="unread-dot"></span>
-                                {% endif %}
                             </div>
                             <div class="notif-time">
-                                <i class="fa-regular fa-clock"></i> {{ notif.time_ago }}
+                                <i class="fa-regular fa-clock"></i>
+                                {{ notif.time_ago }}
                             </div>
                         </div>
-                        
-                        <div class="notif-message">
-                            {{ notif.message }}
-                        </div>
-                        
-                        <div class="notif-actions">
+
+                        <div class="notif-message">{{ notif.message }}</div>
+
+                        <div class="notif-footer">
                             {% if notif.link %}
                             <a href="{{ notif.link }}" class="notif-link">
-                                View Details <i class="fa-solid fa-arrow-right"></i>
+                                View Details <i class="fa-solid fa-arrow-right" style="font-size:0.7rem;"></i>
                             </a>
                             {% endif %}
-                            
+
                             {% if not notif.is_read %}
-                            <button class="notif-mark-read mark-read-btn" data-id="{{ notif.pk }}">
-                                Mark as read
+                            <button class="notif-mark-btn mark-read-btn" data-id="{{ notif.pk }}">
+                                <i class="fa-solid fa-check" style="font-size:0.65rem;"></i> Mark as read
                             </button>
                             {% endif %}
                         </div>
@@ -256,72 +388,117 @@
                 </div>
                 {% endfor %}
             </div>
+
+            <!-- Hidden "no results" for filter -->
+            <div id="notif-empty-filter" class="notif-empty" style="display:none;">
+                <div class="notif-empty-icon"><i class="fa-solid fa-check-circle" style="color:var(--green-400);"></i></div>
+                <h3>No unread notifications</h3>
+                <p>You've read all your notifications. Switch to "All" to see the full history.</p>
+            </div>
+
         {% else %}
-            <div class="empty-state">
-                <div class="empty-state-icon">
-                    <i class="fa-solid fa-bell-slash"></i>
-                </div>
+            <!-- Truly empty -->
+            <div class="notif-empty">
+                <div class="notif-empty-icon"><i class="fa-solid fa-bell-slash"></i></div>
                 <h3>No notifications yet</h3>
                 <p>You're all caught up! When something happens in the system requiring your attention, it will appear here.</p>
             </div>
         {% endif %}
     </div>
+
 </div>
 
-<!-- CSRF Token for JavaScript -->
+<!-- CSRF Token for JS -->
 <form id="csrf-form" style="display:none;">{% csrf_token %}</form>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const csrfToken = document.querySelector('#csrf-form input[name="csrfmiddlewaretoken"]').value;
+    const list      = document.getElementById('notif-list');
+    const emptyFilter = document.getElementById('notif-empty-filter');
 
-    // Mark single notification as read
-    document.querySelectorAll('.mark-read-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const notifId = this.dataset.id;
-            const notifItem = this.closest('.notif-item');
-            
-            fetch(`/portal/notifications/${notifId}/mark-read/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'Content-Type': 'application/json'
-                }
-            }).then(response => response.json())
-              .then(data => {
-                  if (data.success) {
-                      // Update UI smoothly
-                      notifItem.classList.remove('unread');
-                      
-                      const dot = notifItem.querySelector('.unread-dot');
-                      if (dot) dot.remove();
-                      
-                      this.remove(); // Remove the button
-                  }
-              })
-              .catch(error => console.error('Error marking as read:', error));
+    // ── Filter tabs ──────────────────────────────────────────
+    document.querySelectorAll('.notif-tab').forEach(tab => {
+        tab.addEventListener('click', function () {
+            document.querySelectorAll('.notif-tab').forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            this.classList.add('active');
+            this.setAttribute('aria-selected', 'true');
+
+            const filter = this.dataset.filter;
+            const items  = document.querySelectorAll('.notif-item');
+            let visible  = 0;
+
+            items.forEach(item => {
+                const isRead = item.dataset.read === 'true';
+                const show   = filter === 'all' || (filter === 'unread' && !isRead);
+                item.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+
+            if (list) list.style.display = visible === 0 ? 'none' : '';
+            if (emptyFilter) emptyFilter.style.display = visible === 0 ? 'flex' : 'none';
         });
     });
 
-    // Mark all as read
+    // ── Mark single as read ──────────────────────────────────
+    document.querySelectorAll('.mark-read-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id   = this.dataset.id;
+            const item = this.closest('.notif-item');
+
+            fetch(`/portal/notifications/${id}/mark-read/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) return;
+
+                // Update item appearance
+                item.classList.remove('unread');
+                item.dataset.read = 'true';
+
+                const dot = item.querySelector('.unread-dot');
+                if (dot) dot.remove();
+                this.remove();
+
+                // Decrement unread badge
+                const badge = document.getElementById('badge-unread');
+                if (badge) {
+                    const n = Math.max(0, parseInt(badge.textContent, 10) - 1);
+                    badge.textContent = n;
+                }
+
+                // If currently filtering "unread", hide this item
+                const activeFilter = document.querySelector('.notif-tab.active')?.dataset.filter;
+                if (activeFilter === 'unread') item.style.display = 'none';
+
+                // Check if any visible items remain
+                const visibleCount = [...document.querySelectorAll('.notif-item')]
+                    .filter(el => el.style.display !== 'none').length;
+                if (list) list.style.display = visibleCount === 0 ? 'none' : '';
+                if (emptyFilter && activeFilter === 'unread')
+                    emptyFilter.style.display = visibleCount === 0 ? 'flex' : 'none';
+            })
+            .catch(err => console.error('mark-read error:', err));
+        });
+    });
+
+    // ── Mark all as read ─────────────────────────────────────
     const markAllBtn = document.getElementById('mark-all-btn');
     if (markAllBtn) {
-        markAllBtn.addEventListener('click', function() {
-            fetch(`/portal/notifications/`, {
+        markAllBtn.addEventListener('click', function () {
+            fetch('/portal/notifications/', {
                 method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
+                headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'action=mark_all_read'
-            }).then(response => response.json())
-              .then(data => {
-                  if (data.success) {
-                      window.location.reload();
-                  }
-              })
-              .catch(error => console.error('Error marking all as read:', error));
+            })
+            .then(r => r.json())
+            .then(data => { if (data.success) window.location.reload(); })
+            .catch(err => console.error('mark-all error:', err));
         });
     }
 });

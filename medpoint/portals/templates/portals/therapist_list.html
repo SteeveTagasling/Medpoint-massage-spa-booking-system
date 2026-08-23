@@ -64,6 +64,15 @@
         background: rgba(239, 68, 68, 0.12);
         border-color: rgba(239, 68, 68, 0.35);
     }
+    .btn-sm-success {
+        border-color: rgba(34, 197, 94, 0.2);
+        color: var(--green-400);
+        background: rgba(34, 197, 94, 0.05);
+    }
+    .btn-sm-success:hover {
+        background: rgba(34, 197, 94, 0.12);
+        border-color: rgba(34, 197, 94, 0.35);
+    }
     .btn-outline {
         display: inline-flex;
         align-items: center;
@@ -144,10 +153,12 @@
                 <a href="{% url 'portals:therapist_edit' therapist.pk %}" class="btn-sm">
                     <i class="fas fa-pen"></i> Edit
                 </a>
-                <form method="post" action="{% url 'portals:therapist_delete' therapist.pk %}" style="display:inline;" onsubmit="return confirm('Remove &quot;{{ therapist.name }}&quot;?');">
+                <form method="post" action="{% url 'portals:therapist_delete' therapist.pk %}" style="display:inline;"
+                    onsubmit="return confirm('{% if therapist.is_active %}Deactivate{% else %}Reactivate{% endif %} &quot;{{ therapist.name }}&quot;?');">
                     {% csrf_token %}
-                    <button type="submit" class="btn-sm btn-sm-danger">
-                        <i class="fas fa-trash-alt"></i> Remove
+                    <button type="submit" class="btn-sm {% if therapist.is_active %}btn-sm-danger{% else %}btn-sm-success{% endif %}">
+                        <i class="fas {% if therapist.is_active %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                        {% if therapist.is_active %}Deactivate{% else %}Reactivate{% endif %}
                     </button>
                 </form>
             </div>

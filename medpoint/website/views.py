@@ -106,11 +106,12 @@ def _create_booking_notifications(booking_obj):
     """Create customer and staff notifications for a new booking."""
     from django.urls import reverse
 
+    services_str = ", ".join(s.name for s in booking_obj.services.all())
     BookingNotification.objects.create(
         booking=booking_obj,
         notification_type='confirmed',
         message=(
-            f"Your booking for {booking_obj.service.name} on "
+            f"Your booking for {services_str} on "
             f"{booking_obj.date.strftime('%B %d, %Y')} at "
             f"{booking_obj.get_time_display()} has been received. "
             f"We will confirm your appointment shortly."
@@ -136,7 +137,11 @@ def booking(request):
         else:
             return _handle_single_booking(request)
     else:
-        form = BookingForm()
+        initial = {}
+        service_id = request.GET.get('service')
+        if service_id:
+            initial['services'] = [service_id]
+        form = BookingForm(initial=initial)
 
     services_list = Service.objects.filter(is_active=True)
     context = {
@@ -167,14 +172,9 @@ def _handle_single_booking(request):
         request.session.modified = True
         request.session['last_booking_id'] = booking_obj.pk
         request.session['last_booking_ids'] = [booking_obj.pk]
-
-        messages.success(
-            request,
-            f'Your appointment has been booked successfully! '
-            f'Booking reference: #{booking_obj.pk:04d}. '
-            f'We will confirm your appointment shortly.'
-        )
-        return redirect('website:booking_success')
+        
+        _send_booking_otp(request, [booking_obj], booking_obj.client_email)
+        return redirect('website:verify_booking')
     else:
         messages.error(request, 'Please correct the errors below.')
         services_list = Service.objects.filter(is_active=True)
@@ -236,7 +236,7 @@ def _handle_family_booking(request):
         mf = FamilyMemberForm({
             'name': POST.get(f'member_{i}_name', ''),
             'gender': POST.get(f'member_{i}_gender', ''),
-            'service': POST.get(f'member_{i}_service', ''),
+            'services': POST.getlist(f'member_{i}_services'),
             'therapist_preference': POST.get(f'member_{i}_therapist_preference', ''),
             'therapist': POST.get(f'member_{i}_therapist', '') or None,
         })
@@ -257,9 +257,10 @@ def _handle_family_booking(request):
             for mf in member_forms:
                 cd = mf.cleaned_data
                 therapist = cd.get('therapist')
-                service = cd.get('service')
-                if therapist and service:
-                    duration = datetime.timedelta(minutes=service.duration_minutes)
+                services = cd.get('services')
+                if therapist and services:
+                    total_duration = sum(s.duration_minutes for s in services)
+                    duration = datetime.timedelta(minutes=total_duration)
                     req_start_dt = datetime.datetime.combine(booking_date, req_start_time)
                     req_end_dt = req_start_dt + duration
                     if therapist.pk not in group_therapist_services:
@@ -310,7 +311,7 @@ def _handle_family_booking(request):
                 existing_bookings = Booking.objects.filter(
                     date=booking_date,
                     status__in=['pending', 'confirmed']
-                ).select_related('service')
+                ).prefetch_related('services')
 
                 for t_id, slots in group_therapist_services.items():
                     for req_s, req_e, t_name in slots:
@@ -319,7 +320,8 @@ def _handle_family_booking(request):
                                 continue
                             b_start = datetime.datetime.combine(booking_date,
                                 datetime.datetime.strptime(b.time, '%H:%M').time())
-                            b_end = b_start + datetime.timedelta(minutes=b.service.duration_minutes)
+                            b_total_dur = sum(s.duration_minutes for s in b.services.all())
+                            b_end = b_start + datetime.timedelta(minutes=b_total_dur)
                             if max(req_s, b_start) < min(req_e, b_end):
                                 errors.append(
                                     f'Therapist {t_name} is already booked during this timeframe. '
@@ -353,13 +355,13 @@ def _handle_family_booking(request):
             client_phone=client_phone,
             client_gender=cd['gender'],
             therapist_preference=cd['therapist_preference'],
-            service=cd['service'],
             therapist=cd.get('therapist'),
             date=booking_date,
             time=time_val,
             notes=notes,
             status='pending',
         )
+        booking_obj.services.set(cd['services'])
         _auto_assign_therapist(booking_obj)
         _create_booking_notifications(booking_obj)
         created_bookings.append(booking_obj)
@@ -372,16 +374,9 @@ def _handle_family_booking(request):
     request.session.modified = True
     request.session['last_booking_id'] = created_bookings[0].pk
     request.session['last_booking_ids'] = booking_ids
-
-    names = ', '.join(b.client_name for b in created_bookings)
-    refs = ', '.join(f'#{b.pk:04d}' for b in created_bookings)
-    messages.success(
-        request,
-        f'Family booking confirmed for {names}! '
-        f'References: {refs}. '
-        f'We will confirm your appointments shortly.'
-    )
-    return redirect('website:booking_success')
+    
+    _send_booking_otp(request, created_bookings, client_email)
+    return redirect('website:verify_booking')
 
 
 def booking_success(request):
@@ -391,7 +386,8 @@ def booking_success(request):
     if booking_ids:
         bookings = list(
             Booking.objects.filter(pk__in=booking_ids)
-            .select_related('service', 'therapist')
+            .select_related('therapist')
+            .prefetch_related('services')
             .order_by('pk')
         )
 
@@ -400,7 +396,7 @@ def booking_success(request):
         last_booking_id = request.session.get('last_booking_id')
         if last_booking_id:
             try:
-                bookings = [Booking.objects.select_related('service', 'therapist').get(pk=last_booking_id)]
+                bookings = [Booking.objects.select_related('therapist').prefetch_related('services').get(pk=last_booking_id)]
             except Booking.DoesNotExist:
                 pass
 
@@ -421,11 +417,14 @@ def my_bookings(request):
     email = request.GET.get('email', '').strip()
     searched = False
 
+    has_completed_booking = False
     if email:
         searched = True
         bookings = Booking.objects.filter(
             client_email__iexact=email
-        ).select_related('service', 'therapist').order_by('-date', '-time')
+        ).select_related('therapist').prefetch_related('services').order_by('-created_at')
+        has_completed_booking = bookings.filter(status='completed').exists()
+
     services = Service.objects.filter(is_active=True)
 
     context = {
@@ -434,13 +433,14 @@ def my_bookings(request):
         'email': email,
         'searched': searched,
         'services': services,
+        'has_completed_booking': has_completed_booking,
     }
     return render(request, 'website/my_bookings.html', context)
 
 
 
 def cancel_booking(request, pk):
-    """Customer: Cancel a booking with system rule (only pending/confirmed)."""
+    """Customer: Initiate cancellation - sends OTP for authentication."""
     booking_obj = get_object_or_404(Booking, pk=pk)
 
     # System rule: can only cancel pending or confirmed bookings
@@ -453,37 +453,76 @@ def cancel_booking(request, pk):
         return redirect('website:my_bookings')
 
     if request.method == 'POST':
-        booking_obj.status = 'cancelled'
-        booking_obj.save()
-
-        # Create cancellation notification
-        BookingNotification.objects.create(
-            booking=booking_obj,
-            notification_type='cancelled',
-            message=(
-                f"Your booking #{booking_obj.pk:04d} for {booking_obj.service.name} on "
-                f"{booking_obj.date.strftime('%B %d, %Y')} has been cancelled."
-            ),
-        )
-        from portals.models import StaffNotification
-        from django.urls import reverse
-        StaffNotification.objects.create(
-            notification_type='booking_cancelled',
-            title='Booking Cancelled',
-            message=f"Booking #{booking_obj.pk:04d} was cancelled by the customer.",
-            target_role='all',
-            target_therapist=booking_obj.therapist,
-            link=reverse('portals:booking_list')
-        )
-
-        messages.success(
-            request,
-            f'Booking #{booking_obj.pk:04d} has been cancelled successfully.'
-        )
-        return redirect('website:my_bookings')
+        # Send OTP to the client's email for cancellation authentication
+        otp_sent = _send_booking_otp(request, [booking_obj], booking_obj.client_email, is_creation=False)
+        if otp_sent:
+            request.session['cancel_booking_pk'] = booking_obj.pk
+            messages.info(
+                request,
+                f'A verification code has been sent to {booking_obj.client_email}. '
+                'Please enter it below to confirm your cancellation.'
+            )
+            return redirect('website:cancel_booking_verify')
+        else:
+            # _send_booking_otp already added a warning message
+            return redirect('website:my_bookings')
 
     context = {'booking': booking_obj}
     return render(request, 'website/cancel_booking.html', context)
+
+
+def cancel_booking_verify(request):
+    """Customer: Verify OTP to complete booking cancellation."""
+    pk = request.session.get('cancel_booking_pk')
+    if not pk:
+        return redirect('website:my_bookings')
+
+    booking_obj = get_object_or_404(Booking, pk=pk)
+
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp', '').strip()
+
+        if booking_obj.verification_otp and booking_obj.verification_otp == entered_otp:
+            # OTP is correct — perform the cancellation
+            booking_obj.verification_otp = None
+            booking_obj.status = 'cancelled'
+            booking_obj.save()
+
+            # Clear session
+            del request.session['cancel_booking_pk']
+
+            # Create client notification
+            services_str = ", ".join(s.name for s in booking_obj.services.all())
+            BookingNotification.objects.create(
+                booking=booking_obj,
+                notification_type='cancelled',
+                message=(
+                    f"Your booking #{booking_obj.pk:04d} for {services_str} on "
+                    f"{booking_obj.date.strftime('%B %d, %Y')} has been cancelled."
+                ),
+            )
+
+            # Notify admin/staff
+            from portals.models import StaffNotification
+            from django.urls import reverse
+            StaffNotification.objects.create(
+                notification_type='booking_cancelled',
+                title='Booking Cancelled',
+                message=f"Booking #{booking_obj.pk:04d} was cancelled by the customer.",
+                target_role='all',
+                target_therapist=booking_obj.therapist,
+                link=reverse('portals:booking_list')
+            )
+
+            messages.success(
+                request,
+                f'Booking #{booking_obj.pk:04d} has been cancelled successfully.'
+            )
+            return redirect('website:my_bookings')
+        else:
+            messages.error(request, 'Invalid OTP. Please try again.')
+
+    return render(request, 'website/cancel_booking_verify.html', {'booking': booking_obj})
 
 
 def mark_notification_read(request, pk):
@@ -494,6 +533,253 @@ def mark_notification_read(request, pk):
         notif.save()
         return JsonResponse({'success': True})
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+import random
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
+
+def _send_booking_otp(request, bookings, email, is_creation=True):
+    otp = str(random.randint(100000, 999999))
+
+    for b in bookings:
+        b.verification_otp = otp
+        if is_creation:
+            b.is_verified = False
+            b.save(update_fields=['verification_otp', 'is_verified'])
+        else:
+            b.save(update_fields=['verification_otp'])
+
+    subject = "Verify Your Medpoint Spa Booking"
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Medpoint Massage & Spa <noreply@medpoint.com>')
+
+    # ── Plain-text fallback (for clients that don't support HTML) ──────────────
+    plain_message = (
+        f"Hello,\n\n"
+        f"Your OTP verification code for your Medpoint Massage & Spa appointment is:\n\n"
+        f"  {otp}\n\n"
+        f"Enter this code on the verification page to confirm your booking.\n"
+        f"This code is valid for your current session only.\n\n"
+        f"Thank you,\n"
+        f"Medpoint Massage & Spa\n"
+        f"medpointmassage.spa@gmail.com\n\n"
+        f"This is an automated message. Please do not reply directly to this email."
+    )
+
+    # ── HTML email ─────────────────────────────────────────────────────────────
+    html_message = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Verify Your Medpoint Spa Booking</title>
+</head>
+<body style="margin:0;padding:0;background-color:#1a1025;font-family:'Inter',Arial,sans-serif;">
+
+  <!-- Wrapper -->
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+         style="background-color:#1a1025;padding:40px 16px;">
+    <tr>
+      <td align="center">
+
+        <!-- Card -->
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+               style="max-width:560px;background-color:#1f1330;border-radius:16px;
+                      overflow:hidden;border:1px solid rgba(168,85,247,0.2);
+                      box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+
+          <!-- Header -->
+          <tr>
+            <td align="center"
+                style="background:linear-gradient(135deg,#4a1a7a 0%,#2d1060 50%,#1a0845 100%);
+                       padding:40px 32px 32px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td align="center">
+                    <span style="font-size:26px;font-weight:700;letter-spacing:4px;
+                                 color:#ffffff;font-family:Georgia,serif;">MEDPOINT</span>
+                    <br/>
+                    <span style="font-size:12px;letter-spacing:2px;color:#c084fc;
+                                 text-transform:uppercase;margin-top:4px;display:block;">
+                      Massage &amp; Spa
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 40px 32px;">
+
+              <h1 style="margin:0 0 8px;font-size:20px;font-weight:600;
+                         color:#f3e8ff;font-family:Georgia,serif;">
+                Booking Verification
+              </h1>
+              <p style="margin:0 0 24px;font-size:14px;color:#a78bfa;line-height:1.5;">
+                Your appointment request has been received. Use the code below to confirm your booking.
+              </p>
+
+              <!-- OTP Box -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td align="center" style="padding:8px 0 32px;">
+                    <div style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(168,85,247,0.1));
+                                border:2px solid rgba(168,85,247,0.4);border-radius:12px;
+                                padding:28px 40px;display:inline-block;">
+                      <p style="margin:0 0 8px;font-size:11px;letter-spacing:3px;
+                                color:#a78bfa;text-transform:uppercase;font-weight:600;">
+                        One-Time Password
+                      </p>
+                      <p style="margin:0;font-size:42px;font-weight:700;letter-spacing:12px;
+                                color:#d4a843;font-family:Georgia,'Courier New',monospace;">
+                        {otp}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Instructions -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+                     style="background:rgba(139,92,246,0.08);border-radius:10px;
+                            border-left:3px solid #8b5cf6;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#c4b5fd;">
+                      How to use this code:
+                    </p>
+                    <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.7;">
+                      1. Return to the Medpoint booking page in your browser.<br/>
+                      2. Enter the 6-digit code above in the verification field.<br/>
+                      3. Your appointment will be confirmed immediately.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Warning -->
+              <p style="margin:0 0 8px;font-size:12px;color:#6b7280;line-height:1.6;">
+                ⚠️ This code is valid for your <strong style="color:#9ca3af;">current session only</strong>
+                and will expire once you close or refresh the page.
+                If you did not make this booking request, please disregard this email.
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 40px;">
+              <hr style="border:none;border-top:1px solid rgba(168,85,247,0.15);margin:0;"/>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 40px 32px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td>
+                    <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#c084fc;">
+                      Medpoint Massage &amp; Spa
+                    </p>
+                    <p style="margin:0 0 12px;font-size:12px;color:#6b7280;">
+                      medpointmassage.spa@gmail.com
+                    </p>
+                    <p style="margin:0;font-size:11px;color:#4b5563;line-height:1.6;">
+                      This is an automated message — please do not reply directly to this email.
+                      If you need assistance, contact us at medpointmassage.spa@gmail.com
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Card -->
+
+        <!-- Bottom note -->
+        <p style="margin:20px 0 0;font-size:11px;color:#4b5563;text-align:center;">
+          © 2025 Medpoint Massage &amp; Spa. All rights reserved.
+        </p>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>"""
+
+    try:
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=plain_message,
+            from_email=from_email,
+            to=[email],
+        )
+        msg.attach_alternative(html_message, "text/html")
+        msg.send(fail_silently=False)
+        return True
+    except Exception as e:
+        # Log the error so it shows in the server console
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to send OTP email to {email}: {e}")
+        if request:
+            messages.warning(
+                request,
+                f'We could not send the OTP to <strong>{email}</strong>. '
+                'Please check that your email address is correct, or contact the spa directly.'
+            )
+        return False
+
+def verify_booking(request):
+    """Verify email with OTP."""
+    booking_ids = request.session.get('last_booking_ids', [])
+    if not booking_ids:
+        return redirect('website:booking')
+        
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp', '').strip()
+        bookings = Booking.objects.filter(pk__in=booking_ids)
+        
+        first_booking = bookings.first()
+        if first_booking and first_booking.verification_otp == entered_otp:
+            bookings.update(is_verified=True, verification_otp=None)
+            
+            is_family = len(booking_ids) > 1
+            if is_family:
+                messages.success(request, f'Family appointment verified successfully for {len(booking_ids)} members! We will confirm your appointments shortly.')
+            else:
+                messages.success(request, f'Your appointment has been verified successfully! Booking reference: #{first_booking.pk:04d}. We will confirm your appointment shortly.')
+                
+            return redirect('website:booking_success')
+        else:
+            messages.error(request, 'Invalid OTP. Please try again.')
+            
+    return render(request, 'website/booking_verify.html', {'booking_ids': booking_ids})
+
+
+def resend_otp(request):
+    """Resend OTP to the client's email."""
+    booking_ids = request.session.get('last_booking_ids', [])
+    if not booking_ids:
+        return redirect('website:booking')
+        
+    bookings = Booking.objects.filter(pk__in=booking_ids)
+    first_booking = bookings.first()
+    
+    if first_booking and not first_booking.is_verified:
+        # Resend the OTP
+        _send_booking_otp(request, bookings, first_booking.client_email)
+        messages.success(request, f'A new verification code has been sent to {first_booking.client_email}.')
+    else:
+        messages.info(request, 'This booking is already verified or no longer exists.')
+        
+    return redirect('website:verify_booking')
 
 
 def get_therapists_by_preference(request):
@@ -560,8 +846,10 @@ def get_therapists_by_preference(request):
         from .models import Service, Booking
         try:
             req_start_time = datetime.datetime.strptime(time_str, '%H:%M').time()
-            svc = Service.objects.get(pk=service_id)
-            duration = datetime.timedelta(minutes=svc.duration_minutes)
+            svc_ids = [int(x) for x in service_id.split(',') if x]
+            services = Service.objects.filter(pk__in=svc_ids)
+            total_duration = sum(s.duration_minutes for s in services)
+            duration = datetime.timedelta(minutes=total_duration)
             req_start_dt = datetime.datetime.combine(target_date, req_start_time)
             req_end_dt = req_start_dt + duration
             req_end_time = req_end_dt.time()
@@ -579,7 +867,7 @@ def get_therapists_by_preference(request):
             existing_bookings = Booking.objects.filter(
                 date=target_date,
                 status__in=['pending', 'confirmed']
-            ).select_related('service')
+            ).prefetch_related('services')
 
             therapist_bookings = {}
             for b in existing_bookings:
@@ -589,7 +877,8 @@ def get_therapists_by_preference(request):
                     therapist_bookings[b.therapist_id] = []
                 b_start_time = datetime.datetime.strptime(b.time, '%H:%M').time()
                 b_start_dt = datetime.datetime.combine(target_date, b_start_time)
-                b_dur = datetime.timedelta(minutes=b.service.duration_minutes)
+                b_total_dur = sum(s.duration_minutes for s in b.services.all())
+                b_dur = datetime.timedelta(minutes=b_total_dur)
                 b_end_dt = b_start_dt + b_dur
                 therapist_bookings[b.therapist_id].append((b_start_dt, b_end_dt))
             

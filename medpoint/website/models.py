@@ -122,10 +122,20 @@ class StaffSchedule(models.Model):
 
 class StaffLeave(models.Model):
     """Leave assignments for therapists/staff."""
+    STATUS_PENDING = 'pending'
+    STATUS_APPROVED = 'approved'
+    STATUS_REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_APPROVED, 'Approved'),
+        (STATUS_REJECTED, 'Rejected'),
+    ]
+
     therapist = models.ForeignKey(Therapist, on_delete=models.CASCADE, related_name='leaves')
     start_date = models.DateField()
     end_date = models.DateField()
     reason = models.CharField(max_length=200, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)
     is_active = models.BooleanField(default=True, help_text="If false, this leave has been cancelled or ended")
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -134,6 +144,7 @@ class StaffLeave(models.Model):
 
     def __str__(self):
         return f"{self.therapist.name} on leave {self.start_date} to {self.end_date}"
+
 
 
 class Testimonial(models.Model):
@@ -185,7 +196,6 @@ class Booking(models.Model):
     ]
 
     TIME_CHOICES = [
-        ('09:00', '9:00 AM'),
         ('10:00', '10:00 AM'),
         ('11:00', '11:00 AM'),
         ('12:00', '12:00 PM'),
@@ -197,6 +207,10 @@ class Booking(models.Model):
         ('18:00', '6:00 PM'),
         ('19:00', '7:00 PM'),
         ('20:00', '8:00 PM'),
+        ('21:00', '9:00 PM'),
+        ('22:00', '10:00 PM'),
+        ('23:00', '11:00 PM'),
+        ('00:00', '12:00 MN'),
     ]
 
     GENDER_CHOICES = [
@@ -222,12 +236,14 @@ class Booking(models.Model):
         max_length=10, choices=THERAPIST_PREF_CHOICES, default='random',
         help_text="Preferred therapist gender. Female clients can only select Female."
     )
-    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='bookings')
+    services = models.ManyToManyField(Service, related_name='bookings', help_text="Select one or more services")
     therapist = models.ForeignKey(Therapist, on_delete=models.SET_NULL, null=True, blank=True)
     date = models.DateField()
     time = models.CharField(max_length=5, choices=TIME_CHOICES)
     notes = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    is_verified = models.BooleanField(default=False, help_text="True if client verified their email OTP")
+    verification_otp = models.CharField(max_length=6, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -235,7 +251,20 @@ class Booking(models.Model):
         ordering = ['-date', '-time']
 
     def __str__(self):
-        return f"{self.client_name} - {self.service.name} on {self.date}"
+        services_names = ", ".join([s.name for s in self.services.all()]) if self.pk else "New Booking"
+        return f"{self.client_name} - {services_names} on {self.date}"
+
+    @property
+    def service_names(self):
+        return ", ".join(s.name for s in self.services.all())
+        
+    @property
+    def total_discounted_price(self):
+        return sum(s.discounted_price for s in self.services.all())
+        
+    @property
+    def total_duration_minutes(self):
+        return sum(s.duration_minutes for s in self.services.all())
 
 
 class BookingNotification(models.Model):
@@ -266,6 +295,8 @@ class ContactMessage(models.Model):
     subject = models.CharField(max_length=300)
     message = models.TextField()
     is_read = models.BooleanField(default=False)
+    reply_text = models.TextField(blank=True, null=True)
+    replied_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -247,6 +247,7 @@
         border-radius: 9999px;
         font-size: 0.65rem;
         font-weight: 600;
+        white-space: nowrap;
     }
     .booking-type-online {
         background: rgba(96, 165, 250, 0.12);
@@ -274,6 +275,94 @@
             margin: 0.2rem auto 0;
         }
     }
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    .modal-container {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+    }
+    .modal-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-header h3 { margin: 0; font-size: 1.1rem; color: #fff; }
+    .modal-close {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 1.2rem;
+        transition: var(--transition);
+    }
+    .modal-close:hover { color: #fff; }
+    .modal-body {
+        padding: 1rem 1.5rem;
+        overflow-y: auto;
+    }
+    .modal-booking-item {
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        background: rgba(255,255,255,0.02);
+    }
+    .modal-booking-item:last-child { margin-bottom: 0; }
+    .modal-booking-time { font-size: 0.8rem; font-weight: 600; color: var(--purple-400); margin-bottom: 0.25rem; }
+    .modal-booking-client { font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 0.2rem; }
+    .modal-booking-service { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+    .modal-booking-status { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+    /* Action Buttons */
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: opacity 0.15s, transform 0.1s;
+        white-space: nowrap;
+        font-family: inherit;
+    }
+    .action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .action-btn:active { transform: translateY(0); }
+    .btn-confirm {
+        background: rgba(96, 165, 250, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(96, 165, 250, 0.35);
+    }
+    .btn-complete {
+        background: rgba(52, 211, 153, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(52, 211, 153, 0.35);
+    }
+    .btn-cancel {
+        background: rgba(248, 113, 113, 0.12);
+        color: #f87171;
+        border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+    .action-cell { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; }
 </style>
 {% endblock %}
 
@@ -300,6 +389,14 @@
 </div>
 
 {% if view_mode == 'calendar' %}
+<!-- Calendar Legend -->
+<div style="display: flex; gap: 1.25rem; margin-bottom: 1rem; flex-wrap: wrap; font-size: 0.75rem; font-weight: 600; background: var(--bg-card); padding: 0.75rem 1.25rem; border: 1px solid var(--border-color); border-radius: 10px;">
+    <span style="display: inline-flex; align-items: center; gap: 0.3rem; color: var(--amber-400);"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> Pending <span id="legend-count-pending" style="opacity: 0.7; font-weight: 500; font-size: 0.7rem; margin-left: 0.15rem;"></span></span>
+    <span style="display: inline-flex; align-items: center; gap: 0.3rem; color: var(--blue-400);"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> Confirmed <span id="legend-count-confirmed" style="opacity: 0.7; font-weight: 500; font-size: 0.7rem; margin-left: 0.15rem;"></span></span>
+    <span style="display: inline-flex; align-items: center; gap: 0.3rem; color: var(--green-400);"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> Completed <span id="legend-count-completed" style="opacity: 0.7; font-weight: 500; font-size: 0.7rem; margin-left: 0.15rem;"></span></span>
+    <span style="display: inline-flex; align-items: center; gap: 0.3rem; color: var(--red-400);"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> Cancelled <span id="legend-count-cancelled" style="opacity: 0.7; font-weight: 500; font-size: 0.7rem; margin-left: 0.15rem;"></span></span>
+</div>
+
 <!-- Calendar View -->
 <div class="calendar-grid">
     <!-- Day Headers -->
@@ -358,36 +455,61 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Date</th>
-                    <th>Time</th>
+                    <th>#</th>
                     <th>Client</th>
+                    <th>Email</th>
                     <th>Service</th>
                     <th>Therapist</th>
                     <th>Type</th>
+                    <th>Date</th>
+                    <th>Time</th>
                     <th>Status</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for booking in list_bookings %}
-                <tr>
-                    <td style="font-weight: 500; color: var(--text-primary);">{{ booking.date|date:"M d, Y" }}</td>
-                    <td>{{ booking.get_time_display }}</td>
-                    <td style="font-weight: 500;">{{ booking.client_name }}</td>
-                    <td>{{ booking.service.name }}</td>
+                <tr id="booking-row-{{ booking.pk }}">
+                    <td style="color: var(--text-muted);">{{ booking.pk }}</td>
+                    <td style="color: var(--text-primary); font-weight: 500;">{{ booking.client_name }}</td>
+                    <td>{{ booking.client_email }}</td>
+                    <td>{{ booking.service_names }}</td>
                     <td>{{ booking.therapist.name|default:"—" }}</td>
                     <td>
                         <span class="booking-type-badge booking-type-{{ booking.booking_type }}">
-                            <i class="fas {% if booking.booking_type == 'online' %}fa-globe{% else %}fa-walking{% endif %}" style="font-size: 0.55rem;"></i>
                             {{ booking.get_booking_type_display }}
                         </span>
                     </td>
+                    <td>{{ booking.date|date:"M d, Y" }}</td>
+                    <td>{{ booking.get_time_display }}</td>
                     <td>
-                        <span class="status status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+                        <span class="status status-{{ booking.status }}" id="status-badge-{{ booking.pk }}">{{ booking.get_status_display }}</span>
+                    </td>
+                    <td>
+                        <div class="action-cell" id="action-cell-{{ booking.pk }}" data-status="{{ booking.status }}">
+                            {% if booking.status == 'pending' %}
+                                <button class="action-btn btn-confirm"
+                                    onclick="updateBookingStatus({{ booking.pk }}, 'confirmed')">
+                                    <i class="fas fa-check"></i> Confirm
+                                </button>
+                            {% elif booking.status == 'confirmed' %}
+                                <button class="action-btn btn-complete"
+                                    onclick="updateBookingStatus({{ booking.pk }}, 'completed')">
+                                    <i class="fas fa-check-double"></i> Complete
+                                </button>
+                                <button class="action-btn btn-cancel"
+                                    onclick="updateBookingStatus({{ booking.pk }}, 'cancelled')">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            {% else %}
+                                <span style="color: var(--text-muted); font-size: 0.8rem;">&#8212;</span>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7">
+                    <td colspan="10">
                         <div class="empty-state">
                             <i class="fas fa-calendar-times"></i>
                             <p>No bookings for {{ month_name }} {{ year }}</p>
@@ -401,10 +523,67 @@
 </div>
 {% endif %}
 
+<!-- Day Summary Modal -->
+<div id="daySummaryModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3 id="modalDateLabel">Bookings Summary</h3>
+            <button class="modal-close" onclick="closeDaySummaryModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body" id="modalBookingsList">
+            <!-- Bookings will be dynamically inserted here -->
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    function openDaySummaryModal(day, dayBookings) {
+        document.getElementById('modalDateLabel').innerText = `Bookings for ${day} {{ month_name }} {{ year }}`;
+        const listEl = document.getElementById('modalBookingsList');
+        listEl.innerHTML = '';
+        
+        if (dayBookings.length === 0) {
+            listEl.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem 0;">No bookings for this day.</div>';
+        } else {
+            dayBookings.forEach(b => {
+                let statusColor = 'var(--text-muted)';
+                let statusBg = 'rgba(255,255,255,0.1)';
+                if (b.status === 'pending') { statusColor = 'var(--amber-400)'; statusBg = 'rgba(251, 191, 36, 0.15)'; }
+                if (b.status === 'confirmed') { statusColor = 'var(--blue-400)'; statusBg = 'rgba(96, 165, 250, 0.15)'; }
+                if (b.status === 'completed') { statusColor = 'var(--green-400)'; statusBg = 'rgba(34, 197, 94, 0.15)'; }
+                if (b.status === 'cancelled') { statusColor = 'var(--red-400)'; statusBg = 'rgba(239, 68, 68, 0.1)'; }
+
+                const itemHTML = `
+                    <div class="modal-booking-item">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.25rem;">
+                            <div class="modal-booking-client">${b.client}</div>
+                            <div class="modal-booking-status" style="color: ${statusColor}; background: ${statusBg};">${b.status.toUpperCase()}</div>
+                        </div>
+                        <div class="modal-booking-time"><i class="far fa-clock" style="margin-right: 0.3rem;"></i>${b.time}</div>
+                        <div class="modal-booking-service"><i class="fas fa-spa" style="margin-right: 0.3rem; color: var(--text-muted);"></i>${b.service}</div>
+                    </div>
+                `;
+                listEl.insertAdjacentHTML('beforeend', itemHTML);
+            });
+        }
+        
+        document.getElementById('daySummaryModal').style.display = 'flex';
+    }
+
+    function closeDaySummaryModal() {
+        document.getElementById('daySummaryModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside of it
+    document.getElementById('daySummaryModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDaySummaryModal();
+        }
+    });
+
     // Populate calendar bookings from context
     (function() {
         const bookingsByDate = JSON.parse('{{ bookings_by_date_json|default:"{}" | escapejs }}' || '{}');
@@ -418,7 +597,7 @@
                 day: {{ day }},
                 time: '{{ b.get_time_display }}',
                 client: '{{ b.client_name|escapejs }}',
-                service: '{{ b.service.name|escapejs }}',
+                service: '{{ b.service_names|escapejs }}',
                 status: '{{ b.status }}',
             });
             {% endfor %}
@@ -431,6 +610,15 @@
 
             if (dayBookings.length > 0 && dotEl) {
                 dotEl.style.display = '';
+                
+                // Make the entire cell clickable for the summary if there are bookings
+                container.parentElement.style.cursor = 'pointer';
+                container.parentElement.addEventListener('click', function(e) {
+                    // Don't trigger if they clicked a holiday button
+                    if (!e.target.closest('.holiday-btn')) {
+                        openDaySummaryModal(day, dayBookings);
+                    }
+                });
             }
 
             const maxShow = 3;
@@ -446,7 +634,23 @@
                 const more = document.createElement('div');
                 more.className = 'more-bookings';
                 more.textContent = `+${dayBookings.length - maxShow} more`;
+                // The parent cell click will handle it, but we can also add it here just in case
                 container.appendChild(more);
+            }
+        });
+
+        // Update Legend Counts
+        const counts = { pending: 0, confirmed: 0, completed: 0, cancelled: 0 };
+        allBookings.forEach(b => {
+            if (counts[b.status] !== undefined) {
+                counts[b.status]++;
+            }
+        });
+        
+        ['pending', 'confirmed', 'completed', 'cancelled'].forEach(status => {
+            const el = document.getElementById(`legend-count-${status}`);
+            if (el) {
+                el.textContent = `[ ${counts[status]} ]`;
             }
         });
     })();
@@ -502,6 +706,50 @@
             console.error('Error updating holiday:', err);
             alert('An error occurred while updating the holiday.');
         });
+    }
+    function renderActionButtons(cell, newStatus) {
+        const bookingId = cell.id.replace('action-cell-', '');
+        cell.setAttribute('data-status', newStatus);
+        if (newStatus === 'pending') {
+            cell.innerHTML =
+                `<button class="action-btn btn-confirm" onclick="updateBookingStatus(${bookingId}, 'confirmed')">`+
+                `<i class="fas fa-check"></i> Confirm</button>`;
+        } else if (newStatus === 'confirmed') {
+            cell.innerHTML =
+                `<button class="action-btn btn-complete" onclick="updateBookingStatus(${bookingId}, 'completed')">`+
+                `<i class="fas fa-check-double"></i> Complete</button>`+
+                `<button class="action-btn btn-cancel" onclick="updateBookingStatus(${bookingId}, 'cancelled')">`+
+                `<i class="fas fa-times"></i> Cancel</button>`;
+        } else {
+            cell.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem;">&#8212;</span>`;
+        }
+    }
+
+    function updateBookingStatus(bookingId, newStatus) {
+        fetch(`/portal/bookings/${bookingId}/update-status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: `status=${newStatus}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Update status badge
+                const badge = document.getElementById(`status-badge-${bookingId}`);
+                if (badge) {
+                    badge.className = `status status-${newStatus}`;
+                    const labels = { pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled' };
+                    badge.textContent = labels[newStatus] || newStatus;
+                }
+                // Update action buttons
+                const cell = document.getElementById(`action-cell-${bookingId}`);
+                if (cell) { renderActionButtons(cell, newStatus); }
+            }
+        })
+        .catch(err => console.error('Error:', err));
     }
 </script>
 {% endblock %}
