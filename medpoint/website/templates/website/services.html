@@ -50,8 +50,8 @@
         {% if services %}
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {% for service in services %}
-            <div class="group relative bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl hover:shadow-purple-500/10 scroll-reveal {% if forloop.counter > 3 %}delay-{{ forloop.counter|add:"-3" }}00{% endif %}">
-                <div class="h-56 overflow-hidden relative">
+            <div class="group relative bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-xl hover:shadow-purple-500/10 scroll-reveal flex flex-col h-full {% if forloop.counter > 3 %}delay-{{ forloop.counter|add:"-3" }}00{% endif %}">
+                <div class="h-56 overflow-hidden relative shrink-0">
                     {% if service.image %}
                     <img src="{{ service.image.url }}" alt="{{ service.name }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                     {% else %}
@@ -62,19 +62,19 @@
                     <div class="absolute top-4 right-4 bg-purple-600/90 backdrop-blur-sm text-white text-sm font-semibold px-3 py-1 rounded-full">₱{{ service.price }}</div>
                     <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-dark-50/80 to-transparent"></div>
                 </div>
-                <div class="p-6">
+                <div class="p-6 flex flex-col flex-grow">
                     <div class="flex items-center gap-2 mb-2">
                         <span class="text-[11px] tracking-wider uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">{{ service.get_category_display }}</span>
                         <span class="text-gray-500 text-xs"><i class="far fa-clock mr-1"></i>{{ service.duration_minutes }} min</span>
                     </div>
                     <h3 class="font-display text-xl font-semibold text-white mb-2 group-hover:text-purple-300 transition-colors">{{ service.name }}</h3>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-4">{{ service.short_description|default:service.description|truncatewords:20 }}</p>
-                    <div class="flex items-center justify-between">
+                    <p class="text-gray-400 text-sm leading-relaxed mb-6">{{ service.short_description|default:service.description|truncatewords:20 }}</p>
+                    <div class="flex items-center justify-between mt-auto">
                         <a href="{% url 'website:service_detail' service.slug %}" class="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors">
                             Learn More <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
                         </a>
-                        <a href="{% url 'website:booking' %}?service={{ service.pk }}" class="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-purple-400 transition-colors">
-                            <i class="fas fa-calendar-check"></i> Book
+                        <a href="{% url 'website:booking' %}?service={{ service.pk }}" class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white text-sm font-medium rounded-lg transition-all duration-300 shadow-md shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5">
+                            <i class="fas fa-calendar-check"></i> Book Now
                         </a>
                     </div>
                 </div>
