@@ -176,7 +176,7 @@ def revenue_chart_data(request):
     if not request.user.is_staff:
         return JsonResponse({'error': 'Unauthorized'}, status=403)
 
-    period = request.GET.get('period', 'week')  # day, week, month, year
+    period = request.GET.get('period', 'week')  # day, week, month, year, custom
     today = timezone.now().date()
 
     if period == 'day':
@@ -194,6 +194,32 @@ def revenue_chart_data(request):
         labels = [(today - timedelta(days=i)) for i in range(29, -1, -1)]
         date_range = labels
         label_strs = [d.strftime('%b %d') for d in labels]
+    elif period == 'custom':
+        import datetime as _dt
+        date_from_str = request.GET.get('date_from', None)
+        date_to_str = request.GET.get('date_to', None)
+        try:
+            date_from = _dt.date.fromisoformat(date_from_str)
+            date_to = _dt.date.fromisoformat(date_to_str)
+        except (TypeError, ValueError):
+            date_from = today
+            date_to = today
+        # Clamp to avoid absurdly long ranges (max 366 days)
+        delta = (date_to - date_from).days
+        if delta < 0:
+            date_from, date_to = date_to, date_from
+            delta = -delta
+        if delta > 365:
+            date_from = date_to - timedelta(days=365)
+        num_days = (date_to - date_from).days + 1
+        labels = [date_from + timedelta(days=i) for i in range(num_days)]
+        date_range = labels
+        if num_days <= 31:
+            label_strs = [d.strftime('%b %d') for d in labels]
+        elif num_days <= 366:
+            label_strs = [d.strftime('%b %d') for d in labels]
+        else:
+            label_strs = [d.strftime('%b %d') for d in labels]
     else:  # year
         # Last 12 months
         from datetime import date as dt_date
@@ -248,7 +274,7 @@ def revenue_chart_data(request):
                 rev = sum(s.discounted_price for s in b.services.all())
                 revenue_map[lbl_key] = revenue_map.get(lbl_key, Decimal('0')) + rev
             data = [float(revenue_map.get(lbl, 0)) for lbl in label_strs]
-        elif period in ('week', 'month'):
+        elif period in ('week', 'month', 'custom'):
             qs = qs.filter(date__in=date_range)
             revenue_map = {}
             for b in qs:

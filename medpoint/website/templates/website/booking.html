@@ -374,6 +374,32 @@
     #service-total-display {
         transition: all 0.3s ease;
     }
+
+    /* Disabled chip — would exceed closing time */
+    .service-chip.chip-disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+        border-color: rgba(239, 68, 68, 0.2);
+        background: rgba(239, 68, 68, 0.04);
+        pointer-events: none;
+    }
+    .service-chip.chip-disabled .service-chip-name {
+        color: #9ca3af;
+    }
+    .service-chip.chip-disabled .service-chip-meta {
+        color: #6b7280;
+    }
+    .service-chip.chip-disabled::before {
+        content: '\f023';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        top: 7px;
+        right: 8px;
+        font-size: 0.6rem;
+        color: #ef4444;
+        opacity: 0.7;
+    }
 </style>
 {% endblock %}
 
@@ -564,6 +590,10 @@
                                                 class="font-bold text-purple-300 text-sm"></span>
                                         </div>
                                         <div id="service-total-duration" class="text-gray-500 text-xs mt-1"></div>
+                                        <div id="service-est-time" class="text-xs mt-1 flex items-center gap-1.5" style="display:none!important;">
+                                            <i class="fas fa-clock text-purple-400/70"></i>
+                                            <span id="service-est-time-text" class="text-purple-300 font-medium"></span>
+                                        </div>
                                         <div id="service-selected-names"
                                             class="text-purple-300/70 text-xs mt-1 leading-relaxed"></div>
                                     </div>
@@ -684,8 +714,6 @@
                                             <option value="20:00">8:00 PM</option>
                                             <option value="21:00">9:00 PM</option>
                                             <option value="22:00">10:00 PM</option>
-                                            <option value="23:00">11:00 PM</option>
-                                            <option value="00:00">12:00 MN</option>
                                         </select>
                                     </div>
                                 </div>
@@ -762,6 +790,10 @@
                                                             class="member-total-price font-bold text-purple-300 text-sm"></span>
                                                     </div>
                                                     <div class="member-total-duration text-gray-500 text-xs mt-1"></div>
+                                                    <div class="member-est-time text-xs mt-1 flex items-center gap-1.5" style="display:none;">
+                                                        <i class="fas fa-clock text-purple-400/70"></i>
+                                                        <span class="text-purple-300 font-medium"></span>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div>
@@ -1179,6 +1211,7 @@
             const totalEl = document.getElementById(`member-${index}-total`);
             const priceEl = totalEl ? totalEl.querySelector('.member-total-price') : null;
             const durEl = totalEl ? totalEl.querySelector('.member-total-duration') : null;
+            const estEl = totalEl ? totalEl.querySelector('.member-est-time') : null;
             if (!totalEl) return;
 
             let totalPrice = 0, totalDur = 0, names = [];
@@ -1194,6 +1227,20 @@
                 totalEl.classList.remove('hidden');
                 if (priceEl) priceEl.textContent = `\u20B1${totalPrice.toFixed(2)}`;
                 if (durEl) durEl.textContent = `${totalDur} min total \u00B7 ${names.join(', ')}`;
+
+                // Estimated start → end time for this member
+                const familyTimeInput = document.getElementById('family-time');
+                if (estEl && familyTimeInput && familyTimeInput.value && totalDur > 0) {
+                    const [sH, sM] = familyTimeInput.value.split(':').map(Number);
+                    const endMins = sH * 60 + sM + totalDur;
+                    const eH = Math.floor(endMins / 60) % 24;
+                    const eM = endMins % 60;
+                    const fmt = (h, m) => { const p = h>=12?'PM':'AM'; const h12 = h%12||12; return `${h12}:${String(m).padStart(2,'0')} ${p}`; };
+                    estEl.style.display = 'flex';
+                    estEl.querySelector('span').textContent = `${fmt(sH,sM)} \u2192 ${fmt(eH,eM)} (est.)`;
+                } else if (estEl) {
+                    estEl.style.display = 'none';
+                }
             }
         }
 
@@ -1206,6 +1253,7 @@
                     const label = cb.closest('label');
                     if (label) label.classList.toggle('active', cb.checked);
                     updateMemberServiceTotal(index);
+                    updateFamilyChipAvailability(index);
                     loadFamilyTherapists(index);
                 });
             });
@@ -1240,8 +1288,9 @@
 
             const dateQuery = rawDate ? `&date=${rawDate}` : '';
             const timeQuery = rawTime ? `&time=${rawTime}` : '';
-            // Pass first selected service for availability check (or none)
-            const svcQuery = checkedServices.length ? `&service_id=${checkedServices[0]}` : '';
+            // Pass all selected services for availability check (or none)
+            const rawSvc = checkedServices.join(',');
+            const svcQuery = rawSvc ? `&service_id=${rawSvc}` : '';
 
             section.classList.remove('therapist-section-hidden');
             container.innerHTML = '<div class="loading-spinner"></div>';
@@ -1705,7 +1754,7 @@
         const serviceTotalPrice = document.getElementById('service-total-price');
         const serviceTotalDuration = document.getElementById('service-total-duration');
         const serviceSelectedNames = document.getElementById('service-selected-names');
-        const serviceChips = document.querySelectorAll('.service-chip');
+        const serviceChips = document.querySelectorAll('#service-chips-container .service-chip');
         let serviceDataMap = {};
 
         if (priceMapEl) {
@@ -1723,12 +1772,22 @@
             });
         }
 
+        function formatTime12h(h, m) {
+            const period = h >= 12 ? 'PM' : 'AM';
+            const hour12 = h % 12 === 0 ? 12 : h % 12;
+            return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
+        }
+
         function updateServiceSummary() {
             const ids = getSelectedChipIds();
             syncHiddenSelect(ids);
 
+            const estTimeEl = document.getElementById('service-est-time');
+            const estTimeTextEl = document.getElementById('service-est-time-text');
+
             if (ids.length === 0) {
                 if (serviceTotalDisplay) serviceTotalDisplay.classList.add('hidden');
+                if (estTimeEl) estTimeEl.style.setProperty('display', 'none', 'important');
             } else {
                 let total = 0, totalDur = 0, names = [];
                 ids.forEach(id => {
@@ -1743,12 +1802,107 @@
                 if (serviceTotalDuration) serviceTotalDuration.textContent = 'Total duration: ~' + totalDur + ' min';
                 if (serviceSelectedNames) serviceSelectedNames.textContent = names.join(' + ');
                 if (serviceTotalDisplay) serviceTotalDisplay.classList.remove('hidden');
+
+                // Compute estimated start → end time
+                const timeInput = document.getElementById('booking-time');
+                if (estTimeEl && estTimeTextEl && timeInput && timeInput.value && totalDur > 0) {
+                    const [startH, startM] = timeInput.value.split(':').map(Number);
+                    const startTotal = startH * 60 + startM;
+                    const endTotal = startTotal + totalDur;
+                    const endH = Math.floor(endTotal / 60) % 24;
+                    const endM = endTotal % 60;
+                    estTimeTextEl.textContent = `${formatTime12h(startH, startM)} → ${formatTime12h(endH, endM)} (est.)`;
+                    estTimeEl.style.removeProperty('display');
+                    estTimeEl.style.display = 'flex';
+                } else if (estTimeEl) {
+                    estTimeEl.style.setProperty('display', 'none', 'important');
+                }
             }
+
+            // Update chip availability after every summary update
+            updateChipAvailability();
 
             // Reload therapists whenever services change
             selectedTherapistId = null;
             if (therapistHidden) therapistHidden.value = '';
             loadTherapists();
+        }
+
+        const CLOSING_HOUR = 24; // midnight = end of day (24:00)
+
+        function updateChipAvailability() {
+            const timeInput = document.getElementById('booking-time');
+            if (!timeInput || !timeInput.value) {
+                // No time selected — enable all
+                document.querySelectorAll('#service-chips-container .service-chip').forEach(chip => {
+                    chip.classList.remove('chip-disabled');
+                    const inp = chip.querySelector('.service-chip-input');
+                    if (inp) inp.disabled = false;
+                });
+                return;
+            }
+            const [startH, startM] = timeInput.value.split(':').map(Number);
+            const startMins = startH * 60 + startM;
+            const closingMins = CLOSING_HOUR * 60; // 1440
+            const availableMins = closingMins - startMins;
+
+            // Sum of currently-selected service durations
+            const selectedDur = Array.from(document.querySelectorAll('#service-chips-container .service-chip-input:checked'))
+                .reduce((sum, cb) => {
+                    const id = cb.value;
+                    return sum + (serviceDataMap[id] ? parseInt(serviceDataMap[id].duration) : 0);
+                }, 0);
+
+            document.querySelectorAll('#service-chips-container .service-chip').forEach(chip => {
+                const inp = chip.querySelector('.service-chip-input');
+                if (!inp) return;
+                if (inp.checked) {
+                    // Already selected — always keep enabled so user can deselect
+                    chip.classList.remove('chip-disabled');
+                    inp.disabled = false;
+                    return;
+                }
+                const svcDur = serviceDataMap[inp.value] ? parseInt(serviceDataMap[inp.value].duration) : 0;
+                const wouldExceed = (selectedDur + svcDur) > availableMins;
+                chip.classList.toggle('chip-disabled', wouldExceed);
+                inp.disabled = wouldExceed;
+            });
+        }
+
+        function updateFamilyChipAvailability(index) {
+            const familyTimeInput = document.getElementById('family-time');
+            const card = document.getElementById(`member-card-${index}`);
+            if (!card) return;
+
+            const allChips = card.querySelectorAll('.service-chip');
+            if (!familyTimeInput || !familyTimeInput.value) {
+                allChips.forEach(chip => {
+                    chip.classList.remove('chip-disabled');
+                    const inp = chip.querySelector('.family-service-chip');
+                    if (inp) inp.disabled = false;
+                });
+                return;
+            }
+            const [startH, startM] = familyTimeInput.value.split(':').map(Number);
+            const startMins = startH * 60 + startM;
+            const availableMins = CLOSING_HOUR * 60 - startMins;
+
+            const selectedDur = Array.from(card.querySelectorAll('.family-service-chip:checked'))
+                .reduce((sum, cb) => sum + parseInt(cb.dataset.duration || 0), 0);
+
+            allChips.forEach(chip => {
+                const inp = chip.querySelector('.family-service-chip');
+                if (!inp) return;
+                if (inp.checked) {
+                    chip.classList.remove('chip-disabled');
+                    inp.disabled = false;
+                    return;
+                }
+                const svcDur = parseInt(inp.dataset.duration || 0);
+                const wouldExceed = (selectedDur + svcDur) > availableMins;
+                chip.classList.toggle('chip-disabled', wouldExceed);
+                inp.disabled = wouldExceed;
+            });
         }
 
         function activateChip(id, active) {
@@ -1797,6 +1951,90 @@
                 }
             }
         })();
+
+        // ─────────────────────────────────────────────────────
+        // Auto-deselect services that now exceed midnight when
+        // the preferred time is changed (single booking)
+        // ─────────────────────────────────────────────────────
+        function enforceTimeLimitOnSelected() {
+            const timeInput = document.getElementById('booking-time');
+            if (!timeInput || !timeInput.value) return;
+            const [h, m] = timeInput.value.split(':').map(Number);
+            const availableMins = CLOSING_HOUR * 60 - (h * 60 + m);
+
+            // Collect selected chips ordered by duration desc (remove longest first to be fair)
+            const selected = Array.from(
+                document.querySelectorAll('#service-chips-container .service-chip-input:checked')
+            ).map(inp => ({
+                inp,
+                chip: inp.closest('.service-chip') || document.getElementById(`chip-label-${inp.value}`),
+                dur: serviceDataMap[inp.value] ? parseInt(serviceDataMap[inp.value].duration) : 0
+            })).sort((a, b) => b.dur - a.dur); // longest first
+
+            let total = selected.reduce((s, x) => s + x.dur, 0);
+
+            for (const item of selected) {
+                if (total <= availableMins) break;
+                // Deselect this chip
+                item.inp.checked = false;
+                if (item.chip) item.chip.classList.remove('active');
+                total -= item.dur;
+            }
+
+            // Sync hidden select so loadTherapists() uses the updated service list
+            syncHiddenSelect(getSelectedChipIds());
+        }
+
+        // Same for family booking members
+        function enforceFamilyTimeLimitOnSelected(index) {
+            const familyTimeInput = document.getElementById('family-time');
+            const card = document.getElementById(`member-card-${index}`);
+            if (!familyTimeInput || !familyTimeInput.value || !card) return;
+            const [h, m] = familyTimeInput.value.split(':').map(Number);
+            const availableMins = CLOSING_HOUR * 60 - (h * 60 + m);
+
+            const selected = Array.from(card.querySelectorAll('.family-service-chip:checked'))
+                .map(inp => ({
+                    inp,
+                    chip: inp.closest('label'),
+                    dur: parseInt(inp.dataset.duration || 0)
+                })).sort((a, b) => b.dur - a.dur);
+
+            let total = selected.reduce((s, x) => s + x.dur, 0);
+
+            for (const item of selected) {
+                if (total <= availableMins) break;
+                item.inp.checked = false;
+                if (item.chip) item.chip.classList.remove('active');
+                total -= item.dur;
+            }
+        }
+
+        // Re-compute estimated time whenever the time dropdown changes (single booking)
+        const bookingTimeSelect = document.getElementById('booking-time');
+        if (bookingTimeSelect) {
+            bookingTimeSelect.addEventListener('change', () => {
+                enforceTimeLimitOnSelected();   // ← auto-deselect overflowing chips first
+                updateServiceSummary();
+                updateChipAvailability();
+            });
+        }
+
+        // Re-compute estimated time whenever family-time changes
+        const familyTimeSelectForEst = document.getElementById('family-time');
+        if (familyTimeSelectForEst) {
+            familyTimeSelectForEst.addEventListener('change', () => {
+                const memberCards = document.querySelectorAll('[id^="member-card-"]');
+                memberCards.forEach(card => {
+                    const idx = parseInt(card.id.replace('member-card-', ''), 10);
+                    if (!isNaN(idx)) {
+                        enforceFamilyTimeLimitOnSelected(idx); // ← auto-deselect overflowing chips first
+                        updateMemberServiceTotal(idx);
+                        updateFamilyChipAvailability(idx);
+                    }
+                });
+            });
+        }
 
         // Run initial summary if chips already active
         updateServiceSummary();

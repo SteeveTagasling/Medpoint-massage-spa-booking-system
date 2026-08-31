@@ -83,19 +83,36 @@
 <h3 class="section-heading" id="revenue-section-heading"><i class="fas fa-chart-line" style="color:var(--purple-400);font-size:0.8rem;"></i> Revenue Overview</h3>
 <div class="card" style="margin-bottom: 1.5rem;">
     <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
-        <div style="display:flex; align-items:center; gap:0.75rem; flex:1; min-width:0;">
+        <div style="display:flex; align-items:center; gap:0.75rem; flex:1; min-width:0; flex-wrap:wrap;">
             <span class="card-header-title"><i class="fas fa-coins" style="margin-right:0.5rem; color:var(--amber-400); font-size:0.85rem;"></i>Therapist Revenue</span>
             <div id="total-revenue-badge" style="padding: 0.2rem 0.75rem; background: rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.25); border-radius: 9999px; font-size: 0.78rem; font-weight: 700; color: var(--purple-400);">
                 Total: ₱<span id="total-revenue-value">0.00</span>
             </div>
+            <!-- Filtered Date Label -->
+            <div id="revenue-date-label" style="display:flex; align-items:center; gap:0.35rem; padding: 0.2rem 0.75rem; background: rgba(96,165,250,0.08); border:1px solid rgba(96,165,250,0.2); border-radius: 9999px; font-size: 0.72rem; font-weight: 600; color: var(--blue-400);">
+                <i class="fas fa-calendar-day" style="font-size:0.65rem;"></i>
+                <span id="revenue-date-label-text">—</span>
+            </div>
         </div>
         <!-- Period Filter Tabs -->
-        <div class="revenue-period-tabs">
-            <button class="rev-tab active" data-period="day">Day</button>
-            <button class="rev-tab" data-period="week">Week</button>
-            <button class="rev-tab" data-period="month">Month</button>
-            <button class="rev-tab" data-period="year">Year</button>
+        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+            <div class="revenue-period-tabs">
+                <button class="rev-tab active" data-period="day">Day</button>
+                <button class="rev-tab" data-period="week">Week</button>
+                <button class="rev-tab" data-period="month">Month</button>
+                <button class="rev-tab" data-period="year">Year</button>
+                <button class="rev-tab" data-period="custom">Custom</button>
+            </div>
         </div>
+    </div>
+    <!-- Custom Date Range Row -->
+    <div id="revenue-custom-range" style="display:none; padding: 0.6rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border-color); align-items:center; gap:0.75rem; flex-wrap:wrap;">
+        <i class="fas fa-sliders-h" style="color:var(--purple-400); font-size:0.8rem;"></i>
+        <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted); white-space:nowrap;">From</label>
+        <input type="date" id="rev-date-from" style="background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; padding:0.3rem 0.6rem; font-size:0.78rem; font-family:inherit; cursor:pointer;">
+        <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted); white-space:nowrap;">To</label>
+        <input type="date" id="rev-date-to" style="background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; padding:0.3rem 0.6rem; font-size:0.78rem; font-family:inherit; cursor:pointer;">
+        <button id="rev-apply-custom" style="background:linear-gradient(135deg,var(--purple-600),var(--violet-600)); color:#fff; border:none; border-radius:6px; padding:0.35rem 1rem; font-size:0.75rem; font-weight:600; cursor:pointer; font-family:inherit; transition:opacity 0.2s;" onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'"><i class="fas fa-check" style="margin-right:0.35rem;"></i>Apply</button>
     </div>
     <div style="padding: 1.25rem 1.5rem 1rem; position: relative; min-height: 300px;">
         <div id="revenue-chart-loading" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background: var(--bg-card); border-radius: 8px; z-index:5; opacity:0; pointer-events:none; transition: opacity 0.2s;">
@@ -319,6 +336,12 @@
         background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
         color: #fff;
     }
+    /* Date input dark mode */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(0.6) sepia(1) saturate(3) hue-rotate(220deg);
+        cursor: pointer;
+    }
+    #revenue-custom-range { transition: all 0.25s; }
 
     /* Legend pill */
     .legend-pill {
@@ -364,6 +387,8 @@
     // ── Revenue Chart ──
     let revenueChart = null;
     let currentPeriod = 'day';
+    let customDateFrom = null;
+    let customDateTo = null;
 
     // Determine if dark mode
     function isDark() {
@@ -376,6 +401,47 @@
             tick: isDark() ? '#6b7280' : '#9ca3af',
             border: isDark() ? 'rgba(168,85,247,0.1)' : 'rgba(147,51,234,0.1)',
         };
+    }
+
+    // ── Date label helpers ──
+    function formatLocalDate(d) {
+        return d.toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+    function formatShortDate(d) {
+        return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+    }
+    function updateDateLabel(period, fromDate, toDate) {
+        const label = document.getElementById('revenue-date-label-text');
+        const icon = document.querySelector('#revenue-date-label i');
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        if (period === 'day') {
+            label.textContent = formatLocalDate(today);
+            icon.className = 'fas fa-calendar-day'; icon.style.fontSize='0.65rem';
+        } else if (period === 'week') {
+            const from = new Date(today); from.setDate(today.getDate() - 6);
+            label.textContent = `${formatShortDate(from)} – ${formatShortDate(today)}`;
+            icon.className = 'fas fa-calendar-week'; icon.style.fontSize='0.65rem';
+        } else if (period === 'month') {
+            const from = new Date(today); from.setDate(today.getDate() - 29);
+            label.textContent = `${formatShortDate(from)} – ${formatShortDate(today)}`;
+            icon.className = 'fas fa-calendar-alt'; icon.style.fontSize='0.65rem';
+        } else if (period === 'year') {
+            const from = new Date(today); from.setFullYear(today.getFullYear() - 1); from.setDate(from.getDate() + 1);
+            label.textContent = `${from.toLocaleDateString('en-PH',{month:'short',year:'numeric'})} – ${today.toLocaleDateString('en-PH',{month:'short',year:'numeric'})}`;
+            icon.className = 'fas fa-calendar'; icon.style.fontSize='0.65rem';
+        } else if (period === 'custom' && fromDate && toDate) {
+            const f = new Date(fromDate + 'T00:00:00');
+            const t = new Date(toDate + 'T00:00:00');
+            if (fromDate === toDate) {
+                label.textContent = formatLocalDate(f);
+            } else {
+                label.textContent = `${formatShortDate(f)} – ${formatShortDate(t)}`;
+            }
+            icon.className = 'fas fa-calendar-check'; icon.style.fontSize='0.65rem';
+        } else {
+            label.textContent = '—';
+        }
     }
 
     function buildChart(labels, datasets) {
@@ -470,12 +536,17 @@
         });
     }
 
-    function loadRevenueChart(period) {
+    function loadRevenueChart(period, dateFrom, dateTo) {
         const loading = document.getElementById('revenue-chart-loading');
         loading.style.opacity = '1';
         loading.style.pointerEvents = 'auto';
 
-        fetch(`{% url 'portals:revenue_chart_data' %}?period=${period}`)
+        let url = `{% url 'portals:revenue_chart_data' %}?period=${period}`;
+        if (period === 'custom' && dateFrom && dateTo) {
+            url += `&date_from=${dateFrom}&date_to=${dateTo}`;
+        }
+
+        fetch(url)
             .then(r => r.json())
             .then(data => {
                 loading.style.opacity = '0';
@@ -484,6 +555,9 @@
                 // Update total badge
                 const total = data.total_revenue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 document.getElementById('total-revenue-value').textContent = total;
+
+                // Update date label
+                updateDateLabel(period, dateFrom, dateTo);
 
                 buildChart(data.labels, data.datasets);
                 buildLegend(data.datasets);
@@ -495,13 +569,45 @@
             });
     }
 
+    // Custom date range panel
+    const customRangePanel = document.getElementById('revenue-custom-range');
+    const revDateFrom = document.getElementById('rev-date-from');
+    const revDateTo = document.getElementById('rev-date-to');
+    const revApply = document.getElementById('rev-apply-custom');
+
+    // Set default date range to current month for the picker
+    (function initDatePicker() {
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        revDateFrom.value = monthStart;
+        revDateTo.value = todayStr;
+        revDateTo.max = todayStr;
+        revDateFrom.max = todayStr;
+    })();
+
+    revApply.addEventListener('click', function() {
+        const f = revDateFrom.value;
+        const t = revDateTo.value;
+        if (!f || !t) { alert('Please select both From and To dates.'); return; }
+        if (f > t) { alert('"From" date must be before "To" date.'); return; }
+        customDateFrom = f;
+        customDateTo = t;
+        loadRevenueChart('custom', customDateFrom, customDateTo);
+    });
+
     // Period tab switching
     document.querySelectorAll('.rev-tab').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.rev-tab').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             currentPeriod = this.dataset.period;
-            loadRevenueChart(currentPeriod);
+            if (currentPeriod === 'custom') {
+                customRangePanel.style.display = 'flex';
+            } else {
+                customRangePanel.style.display = 'none';
+                loadRevenueChart(currentPeriod);
+            }
         });
     });
 

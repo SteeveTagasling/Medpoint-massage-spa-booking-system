@@ -855,13 +855,23 @@ def get_therapists_by_preference(request):
             req_end_time = req_end_dt.time()
 
             # Check if requested time is outside therapist's schedule hours
+            # Compare as total minutes-from-midnight to avoid the midnight rollover bug
+            # (e.g. start=22:00 + 120 min → end=00:00 next day, time() wraps to 0)
+            req_start_mins = req_start_time.hour * 60 + req_start_time.minute
+            req_end_mins = req_start_mins + total_duration  # may exceed 1440 if past midnight
+
             for t in therapists:
                 sched = schedule_hours_map.get(t.pk)
                 if sched:
                     sched_start = sched['start_time']
                     sched_end = sched['end_time']
+                    sched_start_mins = sched_start.hour * 60 + sched_start.minute
+                    sched_end_mins = sched_end.hour * 60 + sched_end.minute
+                    # Midnight (00:00) means end-of-day = 1440 mins, not 0
+                    if sched_end_mins == 0:
+                        sched_end_mins = 1440
                     # Booking must start at or after schedule start AND end at or before schedule end
-                    if req_start_time < sched_start or req_end_time > sched_end:
+                    if req_start_mins < sched_start_mins or req_end_mins > sched_end_mins:
                         outside_schedule_map[t.pk] = True
             
             existing_bookings = Booking.objects.filter(
@@ -895,14 +905,17 @@ def get_therapists_by_preference(request):
                     sched = schedule_hours_map.get(t.pk)
                     max_hour = 21
                     if sched:
-                        max_hour = sched['end_time'].hour
+                        # If shift ends at midnight (00:00), treat as hour 24 for the loop
+                        end_h = sched['end_time'].hour
+                        max_hour = 24 if end_h == 0 else end_h
                     for hour in range(req_start_dt.hour + 1, max_hour):
-                        test_start = datetime.datetime.combine(target_date, datetime.time(hour, 0))
+                        test_start = datetime.datetime.combine(target_date, datetime.time(hour % 24, 0))
                         test_end = test_start + duration
                         # Also ensure next available is within schedule
                         if sched and test_start.time() < sched['start_time']:
                             continue
-                        if sched and test_end.time() > sched['end_time']:
+                        # For midnight end, any time up to 23:59 is within schedule
+                        if sched and sched['end_time'].hour != 0 and test_end.time() > sched['end_time']:
                             continue
                         overlap = False
                         for b_s, b_e in t_bookings:
