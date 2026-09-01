@@ -495,10 +495,12 @@
                                     onclick="updateBookingStatus({{ booking.pk }}, 'completed')">
                                     <i class="fas fa-check-double"></i> Complete
                                 </button>
+                                {% if request.user.is_superuser %}
                                 <button class="action-btn btn-cancel"
                                     onclick="updateBookingStatus({{ booking.pk }}, 'cancelled')">
                                     <i class="fas fa-times"></i> Cancel
                                 </button>
+                                {% endif %}
                             {% else %}
                                 <span style="color: var(--text-muted); font-size: 0.8rem;">&#8212;</span>
                             {% endif %}
@@ -748,9 +750,12 @@
         })
         .catch(err => {
             console.error('Error updating holiday:', err);
-            alert('An error occurred while updating the holiday.');
+            alert('Failed to delete holiday.');
         });
     }
+
+    var IS_SUPERUSER = {{ request.user.is_superuser|yesno:"true,false" }};
+
     function renderActionButtons(cell, newStatus) {
         const bookingId = cell.id.replace('action-cell-', '');
         cell.setAttribute('data-status', newStatus);
@@ -759,11 +764,12 @@
                 `<button class="action-btn btn-confirm" onclick="updateBookingStatus(${bookingId}, 'confirmed')">`+
                 `<i class="fas fa-check"></i> Confirm</button>`;
         } else if (newStatus === 'confirmed') {
-            cell.innerHTML =
-                `<button class="action-btn btn-complete" onclick="updateBookingStatus(${bookingId}, 'completed')">`+
-                `<i class="fas fa-check-double"></i> Complete</button>`+
+            var completeBtn = `<button class="action-btn btn-complete" onclick="updateBookingStatus(${bookingId}, 'completed')">`+
+                `<i class="fas fa-check-double"></i> Complete</button>`;
+            var cancelBtn = IS_SUPERUSER ? 
                 `<button class="action-btn btn-cancel" onclick="updateBookingStatus(${bookingId}, 'cancelled')">`+
-                `<i class="fas fa-times"></i> Cancel</button>`;
+                `<i class="fas fa-times"></i> Cancel</button>` : '';
+            cell.innerHTML = completeBtn + cancelBtn;
         } else {
             cell.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem;">&#8212;</span>`;
         }

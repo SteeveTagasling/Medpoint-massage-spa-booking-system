@@ -427,6 +427,8 @@ def booking_update_status(request, pk):
         booking = get_object_or_404(Booking, pk=pk)
         old_status = booking.status
         new_status = request.POST.get('status')
+        if new_status == 'cancelled' and not request.user.is_superuser:
+            return JsonResponse({'error': 'Only admins can cancel bookings.'}, status=403)
         if new_status in dict(Booking.STATUS_CHOICES):
             booking.status = new_status
             booking.save()
