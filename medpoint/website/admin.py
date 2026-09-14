@@ -1,6 +1,13 @@
 from django.contrib import admin
 # pyrefly: ignore [missing-import]
-from .models import Service, Therapist, Testimonial, Booking, ContactMessage, StaffSchedule
+from .models import Service, Therapist, Testimonial, Booking, ContactMessage, StaffSchedule, ServicePriceHistory
+
+
+@admin.register(ServicePriceHistory)
+class ServicePriceHistoryAdmin(admin.ModelAdmin):
+    list_display = ['service', 'base_price', 'discount_percentage', 'effective_from', 'effective_to', 'notes', 'created_at']
+    list_filter = ['service', 'effective_from']
+    search_fields = ['service__name', 'notes']
 
 
 @admin.register(Service)

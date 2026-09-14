@@ -149,7 +149,8 @@ class BookingForm(forms.ModelForm):
                 existing_bookings = Booking.objects.filter(
                     date=date,
                     therapist=therapist,
-                    status__in=['pending', 'confirmed']
+                    status__in=['pending', 'confirmed'],
+                    is_verified=True,
                 ).prefetch_related('services')
 
                 for b in existing_bookings:

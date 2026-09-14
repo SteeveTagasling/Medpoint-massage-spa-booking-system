@@ -11,8 +11,30 @@ from .forms import BookingForm, ContactForm, FamilyMemberForm
 from portals.models import StaffNotification
 
 
+def _get_site_stats():
+    """Calculate dynamic site statistics for homepage and about page."""
+    current_year = timezone.now().year
+    # Starting at 3 years in 2026, automatically increments each passing year
+    years_experience = max(3, current_year - 2023)
+    # Starting at 5,000, automatically adds every completed booking
+    completed_bookings = Booking.objects.filter(status='completed').count()
+    happy_clients_count = 5000 + completed_bookings
+    happy_clients_display = f"{happy_clients_count:,}"
+    active_therapists_count = Therapist.objects.filter(is_active=True).count()
+    active_services_count = Service.objects.filter(is_active=True).count()
+
+    return {
+        'happy_clients_count': happy_clients_count,
+        'happy_clients_display': happy_clients_display,
+        'years_experience': years_experience,
+        'active_therapists_count': active_therapists_count,
+        'active_services_count': active_services_count,
+    }
+
+
 def home(request):
     """Homepage view with featured services, testimonials, and gallery."""
+    Service.sync_all_for_today()
     featured_services = Service.objects.filter(is_featured=True, is_active=True)[:6]
     all_services = Service.objects.filter(is_active=True)[:8]
     testimonials = Testimonial.objects.filter(is_featured=True, is_approved=True)[:6]
@@ -27,12 +49,14 @@ def home(request):
         'gallery_images': gallery_images,
         'therapists': therapists,
         'booking_form': BookingForm(),
+        **_get_site_stats(),
     }
     return render(request, 'website/home.html', context)
 
 
 def services(request):
     """Services listing page."""
+    Service.sync_all_for_today()
     category = request.GET.get('category', '')
     all_services = Service.objects.filter(is_active=True)
 
@@ -51,6 +75,7 @@ def services(request):
 
 def service_detail(request, slug):
     """Individual service detail page."""
+    Service.sync_all_for_today()
     service = get_object_or_404(Service, slug=slug, is_active=True)
     cats = service.category.split(',')
     first_cat = cats[0].strip() if cats else ''
@@ -74,6 +99,7 @@ def about(request):
     context = {
         'therapists': therapists,
         'testimonials': testimonials,
+        **_get_site_stats(),
     }
     return render(request, 'website/about.html', context)
 
@@ -129,6 +155,7 @@ def _create_booking_notifications(booking_obj):
 
 def booking(request):
     """Booking page with form — supports single and family/group bookings."""
+    Service.sync_all_for_today()
     if request.method == 'POST':
         is_family_mode = request.POST.get('booking_mode') == 'family'
 
@@ -310,7 +337,8 @@ def _handle_family_booking(request):
             if not errors:
                 existing_bookings = Booking.objects.filter(
                     date=booking_date,
-                    status__in=['pending', 'confirmed']
+                    status__in=['pending', 'confirmed'],
+                    is_verified=True,
                 ).prefetch_related('services')
 
                 for t_id, slots in group_therapist_services.items():
@@ -359,9 +387,23 @@ def _handle_family_booking(request):
             date=booking_date,
             time=time_val,
             notes=notes,
-            status='pending',
+            status='awaiting_verification',
         )
         booking_obj.services.set(cd['services'])
+        snapshots = []
+        total_lock = Decimal('0')
+        for svc in cd['services']:
+            snapshots.append({
+                'service_id': svc.id,
+                'name': svc.name,
+                'base_price': float(svc.price),
+                'discount_percentage': float(svc.discount_percentage),
+                'discounted_price': float(svc.discounted_price),
+            })
+            total_lock += svc.discounted_price
+        booking_obj.locked_price = total_lock
+        booking_obj.service_prices_snapshot = snapshots
+        booking_obj.save(update_fields=['locked_price', 'service_prices_snapshot'])
         _auto_assign_therapist(booking_obj)
         _create_booking_notifications(booking_obj)
         created_bookings.append(booking_obj)
@@ -422,7 +464,7 @@ def my_bookings(request):
         searched = True
         bookings = Booking.objects.filter(
             client_email__iexact=email
-        ).select_related('therapist').prefetch_related('services').order_by('-created_at')
+        ).exclude(status='awaiting_verification').select_related('therapist').prefetch_related('services').order_by('-created_at')
         has_completed_booking = bookings.filter(status='completed').exists()
 
     services = Service.objects.filter(is_active=True)
@@ -748,7 +790,7 @@ def verify_booking(request):
         
         first_booking = bookings.first()
         if first_booking and first_booking.verification_otp == entered_otp:
-            bookings.update(is_verified=True, verification_otp=None)
+            bookings.update(is_verified=True, verification_otp=None, status='pending')
             
             is_family = len(booking_ids) > 1
             if is_family:
@@ -876,7 +918,8 @@ def get_therapists_by_preference(request):
             
             existing_bookings = Booking.objects.filter(
                 date=target_date,
-                status__in=['pending', 'confirmed']
+                status__in=['pending', 'confirmed'],
+                is_verified=True,
             ).prefetch_related('services')
 
             therapist_bookings = {}

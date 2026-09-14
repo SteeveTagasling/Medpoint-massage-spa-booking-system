@@ -1,0 +1,2142 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Price Checker &amp; Audit{% endblock %}
+{% block page_title %}Price Checker &amp; Rate Audit{% endblock %}
+{% block page_subtitle %}{{ period_label }} — Service Pricing Intelligence &amp; Booking Integrity Audit{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===================================================================
+       PRICE CHECKER — MODERN LUXURY SPA AUDIT UI
+       =================================================================== */
+
+    /* Quick KPI Cards */
+    .pc-metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.15rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .pc-metric-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 1.25rem 1.35rem;
+        display: flex;
+        align-items: center;
+        gap: 1.15rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pc-metric-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--border-hover);
+        box-shadow: 0 8px 24px rgba(147, 51, 234, 0.12);
+    }
+
+    .pc-metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--accent-gradient, linear-gradient(180deg, var(--purple-500), var(--violet-600)));
+    }
+
+    .pc-metric-card.purple::before {
+        background: linear-gradient(180deg, var(--purple-500), var(--violet-600));
+    }
+
+    .pc-metric-card.green::before {
+        background: linear-gradient(180deg, var(--green-400), #10b981);
+    }
+
+    .pc-metric-card.blue::before {
+        background: linear-gradient(180deg, var(--blue-400), #6366f1);
+    }
+
+    .pc-metric-card.amber::before {
+        background: linear-gradient(180deg, var(--amber-400), #f59e0b);
+    }
+
+    .pc-metric-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .pc-metric-icon.purple {
+        background: rgba(168, 85, 247, 0.14);
+        color: var(--purple-400);
+    }
+
+    .pc-metric-icon.green {
+        background: rgba(52, 211, 153, 0.14);
+        color: var(--green-400);
+    }
+
+    .pc-metric-icon.blue {
+        background: rgba(96, 165, 250, 0.14);
+        color: var(--blue-400);
+    }
+
+    .pc-metric-icon.amber {
+        background: rgba(251, 191, 36, 0.14);
+        color: var(--amber-400);
+    }
+
+    .pc-metric-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pc-metric-value {
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+    }
+
+    .pc-metric-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-top: 0.15rem;
+    }
+
+    .pc-metric-sub {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-top: 0.1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Filter & Action Toolbar */
+    .pc-toolbar-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 1.1rem 1.35rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+    }
+
+    .pc-toolbar-top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .pc-toolbar-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.65rem;
+    }
+
+    .pc-presets {
+        display: inline-flex;
+        align-items: center;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0.2rem;
+        gap: 0.2rem;
+    }
+
+    .pc-preset-btn {
+        padding: 0.35rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-decoration: none;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: inherit;
+    }
+
+    .pc-preset-btn:hover {
+        color: var(--purple-400);
+        background: rgba(168, 85, 247, 0.08);
+    }
+
+    .pc-preset-btn.active {
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(147, 51, 234, 0.3);
+    }
+
+    .pc-filter-form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.65rem;
+        margin-top: 0.85rem;
+        padding-top: 0.85rem;
+        border-top: 1px dashed var(--border-color);
+    }
+
+    .pc-input,
+    .pc-select {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.45rem 0.75rem;
+        color: var(--text-primary);
+        font-size: 0.82rem;
+        font-family: inherit;
+        outline: none;
+        transition: var(--transition);
+    }
+
+    .pc-input:focus,
+    .pc-select:focus {
+        border-color: var(--purple-400);
+        background: var(--bg-card);
+        box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+    }
+
+    .btn-pc-primary {
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.48rem 1.15rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        transition: var(--transition);
+        font-family: inherit;
+        text-decoration: none;
+    }
+
+    .btn-pc-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(168, 85, 247, 0.4);
+    }
+
+    .btn-pc-secondary {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.48rem 0.95rem;
+        font-size: 0.82rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        transition: var(--transition);
+        text-decoration: none;
+        font-family: inherit;
+    }
+
+    .btn-pc-secondary:hover {
+        border-color: var(--purple-400);
+        color: var(--purple-400);
+        background: rgba(168, 85, 247, 0.06);
+    }
+
+    .btn-pc-accent {
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(124, 58, 237, 0.12));
+        color: var(--purple-400);
+        border: 1px solid rgba(168, 85, 247, 0.3);
+        border-radius: 8px;
+        padding: 0.48rem 1rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        transition: var(--transition);
+    }
+
+    .btn-pc-accent:hover {
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+    }
+
+
+    /* Tabs Navigation */
+    .pc-tabs-nav {
+        display: flex;
+        gap: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 1.35rem;
+        overflow-x: auto;
+    }
+
+    .pc-tab-link {
+        padding: 0.75rem 1.35rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        transition: var(--transition);
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .pc-tab-link:hover {
+        color: var(--purple-400);
+    }
+
+    .pc-tab-link.active {
+        color: var(--purple-400);
+        border-bottom-color: var(--purple-400);
+        background: rgba(168, 85, 247, 0.04);
+        border-radius: 8px 8px 0 0;
+    }
+
+    .pc-tab-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.12rem 0.5rem;
+        border-radius: 9999px;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+    }
+
+    .pc-tab-link.active .pc-tab-badge {
+        background: rgba(168, 85, 247, 0.18);
+        color: var(--purple-400);
+    }
+
+    .pc-tab-pane {
+        display: none;
+    }
+
+    .pc-tab-pane.active {
+        display: block;
+        animation: fadeIn 0.2s ease-in-out;
+    }
+
+    /* Table Toolbar inside Card */
+    .pc-table-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.85rem 1.25rem;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        border-radius: 14px 14px 0 0;
+    }
+
+    .pc-search-box {
+        position: relative;
+        flex: 1;
+        max-width: 320px;
+    }
+
+    .pc-search-box i {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.8rem;
+    }
+
+    .pc-search-input {
+        width: 100%;
+        padding: 0.4rem 0.75rem 0.4rem 2rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        outline: none;
+        transition: var(--transition);
+    }
+
+    .pc-search-input:focus {
+        border-color: var(--purple-400);
+    }
+
+    /* Badges & Tags */
+    .pc-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.22rem 0.65rem;
+        border-radius: 9999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .pc-badge-increased {
+        background: rgba(251, 191, 36, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(251, 191, 36, 0.25);
+    }
+
+    .pc-badge-decreased {
+        background: rgba(52, 211, 153, 0.12);
+        color: var(--green-400);
+        border: 1px solid rgba(52, 211, 153, 0.25);
+    }
+
+    .pc-badge-unchanged {
+        background: rgba(148, 163, 184, 0.12);
+        color: var(--text-muted);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .pc-badge-matched {
+        background: rgba(52, 211, 153, 0.14);
+        color: var(--green-400);
+        border: 1px solid rgba(52, 211, 153, 0.25);
+    }
+
+    .pc-badge-protected {
+        background: rgba(168, 85, 247, 0.15);
+        color: var(--purple-400);
+        border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .pc-badge-active {
+        background: rgba(52, 211, 153, 0.14);
+        color: var(--green-400);
+        border: 1px solid rgba(52, 211, 153, 0.25);
+    }
+
+    .pc-badge-upcoming {
+        background: rgba(96, 165, 250, 0.14);
+        color: var(--blue-400);
+        border: 1px solid rgba(96, 165, 250, 0.25);
+    }
+
+    .pc-badge-archived {
+        background: rgba(148, 163, 184, 0.12);
+        color: var(--text-muted);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .pc-type-online {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.15rem 0.45rem;
+        border-radius: 4px;
+        background: rgba(96, 165, 250, 0.12);
+        color: var(--blue-400);
+        font-size: 0.68rem;
+        font-weight: 600;
+    }
+
+    .pc-type-walkin {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.15rem 0.45rem;
+        border-radius: 4px;
+        background: rgba(251, 191, 36, 0.12);
+        color: var(--amber-400);
+        font-size: 0.68rem;
+        font-weight: 600;
+    }
+
+
+    /* Modal System */
+    .pc-modal-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1050;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(8px);
+        padding: 1rem;
+    }
+
+    .pc-modal-backdrop.open {
+        display: flex;
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    .pc-modal-box {
+        background: var(--bg-card);
+        border: 1px solid rgba(168, 85, 247, 0.2);
+        border-radius: 20px;
+        width: 100%;
+        max-width: 640px;
+        max-height: 92vh;
+        overflow-y: auto;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(168, 85, 247, 0.08);
+        position: relative;
+        scrollbar-width: thin;
+    }
+
+    /* Premium gradient header banner */
+    .pc-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.35rem 1.65rem 1.2rem;
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.18) 0%, rgba(168, 85, 247, 0.08) 60%, transparent 100%);
+        border-bottom: 1px solid rgba(168, 85, 247, 0.18);
+        border-radius: 20px 20px 0 0;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        backdrop-filter: blur(12px);
+    }
+
+    .pc-modal-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+
+    .pc-modal-header-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+        flex-shrink: 0;
+    }
+
+    .pc-modal-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+
+    .pc-modal-subtitle {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-top: 0.1rem;
+        font-weight: 400;
+    }
+
+    .pc-modal-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--border-color);
+        color: var(--text-muted);
+        font-size: 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition);
+        line-height: 1;
+    }
+
+    .pc-modal-close:hover {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.35);
+        color: #f87171;
+    }
+
+    /* Modal body padding */
+    .pc-modal-body {
+        padding: 1.5rem 1.65rem 1.65rem;
+    }
+
+    /* Section label with icon */
+    .pc-modal-section-label {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        margin-bottom: 0.6rem;
+    }
+
+    .pc-modal-section-label i {
+        font-size: 0.75rem;
+        color: var(--purple-400);
+    }
+
+    /* Section divider */
+    .pc-modal-divider {
+        height: 1px;
+        background: var(--border-color);
+        margin: 1.25rem 0;
+        opacity: 0.6;
+    }
+
+    /* Enhanced rate preview card */
+    .pc-rate-preview-card {
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(168, 85, 247, 0.06));
+        border: 1px solid rgba(168, 85, 247, 0.35);
+        border-radius: 14px;
+        padding: 1.1rem 1.25rem;
+        margin: 1rem 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pc-rate-preview-card::before {
+        content: '';
+        position: absolute;
+        top: -30px;
+        right: -20px;
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(168, 85, 247, 0.08);
+        pointer-events: none;
+    }
+
+    .pc-rate-preview-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--purple-400);
+        margin-bottom: 0.3rem;
+    }
+
+    .pc-rate-calc-breakdown {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    .pc-rate-calc-price {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--green-400);
+        letter-spacing: -0.03em;
+        text-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
+        white-space: nowrap;
+    }
+
+    /* Discount chip pills */
+    .pc-discount-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.65rem;
+    }
+
+    .pc-discount-chip {
+        background: var(--bg-secondary);
+        border: 1.5px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.28rem 0.7rem;
+        font-size: 0.73rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: inherit;
+    }
+
+    .pc-discount-chip:hover {
+        border-color: var(--purple-400);
+        color: var(--purple-400);
+        background: rgba(168, 85, 247, 0.08);
+    }
+
+    .pc-discount-chip.active {
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        border-color: transparent;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+    }
+
+    /* Live update toggle row */
+    .pc-toggle-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        background: rgba(168, 85, 247, 0.05);
+        border: 1px solid rgba(168, 85, 247, 0.15);
+        border-radius: 12px;
+        padding: 0.9rem 1rem;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .pc-toggle-row:hover {
+        background: rgba(168, 85, 247, 0.09);
+        border-color: rgba(168, 85, 247, 0.3);
+    }
+
+    .pc-toggle-checkbox {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--purple-500);
+        flex-shrink: 0;
+        margin-top: 1px;
+        cursor: pointer;
+    }
+
+    /* Modal footer */
+    .pc-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 1.25rem 1.75rem 1.65rem;
+        border-top: 1px solid var(--border-color);
+        background: rgba(255, 255, 255, 0.015);
+        border-radius: 0 0 20px 20px;
+    }
+
+    .btn-modal-cancel {
+        padding: 0.65rem 1.35rem;
+        font-size: 0.84rem;
+        font-weight: 600;
+        font-family: inherit;
+        border-radius: 10px;
+        border: 1.5px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .btn-modal-cancel:hover {
+        border-color: var(--text-secondary);
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .btn-modal-save {
+        padding: 0.65rem 1.5rem;
+        font-size: 0.85rem;
+        font-weight: 700;
+        font-family: inherit;
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #fff;
+        cursor: pointer;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
+    }
+
+    .btn-modal-save:hover {
+        background: linear-gradient(135deg, var(--purple-500), var(--violet-500));
+        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.55);
+        transform: translateY(-1px);
+    }
+
+    .btn-modal-save:active {
+        transform: translateY(0);
+    }
+
+    /* Vertical Timeline inside Modal */
+    .pc-timeline {
+        position: relative;
+        padding-left: 2rem;
+        margin: 1.25rem 0;
+    }
+
+    .pc-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.65rem;
+        top: 0.5rem;
+        bottom: 0.5rem;
+        width: 2px;
+        background: rgba(168, 85, 247, 0.25);
+    }
+
+    .pc-timeline-item {
+        position: relative;
+        margin-bottom: 1.25rem;
+    }
+
+    .pc-timeline-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .pc-timeline-dot {
+        position: absolute;
+        left: -2rem;
+        top: 0.2rem;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--bg-card);
+        border: 2px solid var(--purple-400);
+    }
+
+    .pc-timeline-dot.active {
+        background: var(--green-400);
+        border-color: var(--green-400);
+        box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.25);
+    }
+
+    .pc-timeline-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+    }
+
+    /* Receipt Slip for Booking Breakdown */
+    .pc-receipt {
+        background: var(--bg-secondary);
+        border: 1px dashed var(--border-color);
+        border-radius: 12px;
+        padding: 1.25rem;
+        position: relative;
+    }
+
+    .pc-receipt-header {
+        text-align: center;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 1rem;
+    }
+
+    .pc-receipt-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: var(--text-primary);
+    }
+
+    .pc-receipt-subtitle {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--purple-400);
+        margin-top: 0.2rem;
+    }
+
+    .pc-receipt-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        padding: 0.35rem 0;
+        color: var(--text-secondary);
+    }
+
+    .pc-receipt-row.total {
+        border-top: 1px dashed var(--border-color);
+        margin-top: 0.65rem;
+        padding-top: 0.65rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Printable styles */
+    @media print {
+
+        .sidebar,
+        .topbar,
+        .pc-toolbar-card,
+        .pc-inspector-card,
+        .pc-table-controls,
+        .btn-pc-primary,
+        .btn-pc-secondary {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- 2. Main Filter & Action Toolbar -->
+<div class="pc-toolbar-card">
+    <div class="pc-toolbar-top">
+        <div>
+            <div
+                style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
+                <i class="fas fa-calendar-alt" style="color: var(--purple-400);"></i>
+                Period Audit: <span style="color: var(--purple-400);">{{ period_label }}</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem;">
+                Quickly jump between audit periods or filter down to a specific treatment
+            </div>
+        </div>
+
+        <div class="pc-toolbar-actions">
+            <!-- Quick Preset Chips -->
+            <div class="pc-presets">
+                {% for m in available_months|slice:":4" %}
+                <a href="?month={{ m.value }}&tab={{ active_tab }}"
+                    class="pc-preset-btn {% if selected_month == m.value %}active{% endif %}">
+                    {{ m.label }}
+                </a>
+                {% endfor %}
+            </div>
+
+
+            <!-- Schedule Price Range Action -->
+            <button type="button" class="btn-pc-primary" onclick="openAddPriceModal()">
+                <i class="fas fa-calendar-plus"></i>
+                <span>Schedule Price Range</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <form method="get" class="pc-filter-form" id="mainFilterForm">
+        <input type="hidden" name="tab" value="{{ active_tab }}" id="activeTabParam">
+
+        <label
+            style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem;">
+            Month:
+        </label>
+        <select name="month" class="pc-select" id="monthDropdown" onchange="clearCustomDatesOnMonthChange();">
+            <option value="">Choose Month...</option>
+            {% for m in available_months %}
+            <option value="{{ m.value }}" {% if selected_month == m.value %}selected{% endif %}>{{ m.label }}</option>
+            {% endfor %}
+        </select>
+
+        <span style="color: var(--text-muted); font-size: 0.75rem;">or custom range:</span>
+
+        <input type="date" name="start_date" id="startDateField" class="pc-input" title="Start Date"
+            oninput="clearMonthOnDateChange();" {% if request.GET.start_date %}value="{{ request.GET.start_date }}"{% endif %}>
+        <span style="color: var(--text-muted); font-size: 0.75rem;">➔</span>
+        <input type="date" name="end_date" id="endDateField" class="pc-input" title="End Date"
+            oninput="clearMonthOnDateChange();" {% if request.GET.end_date %}value="{{ request.GET.end_date }}"{% endif %}>
+
+        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-left: 0.35rem;">
+            Service:
+        </label>
+        <select name="service_id" class="pc-select" style="max-width: 200px;">
+            <option value="">All Services</option>
+            {% for s in all_services %}
+            <option value="{{ s.id }}" {% if selected_service_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn-pc-primary" style="padding: 0.42rem 0.95rem;">
+            <i class="fas fa-filter"></i> Apply Filter
+        </button>
+
+        {% if selected_service_id or request.GET.start_date or request.GET.end_date or request.GET.month %}
+        <a href="?tab={{ active_tab }}" class="btn-pc-secondary" style="padding: 0.42rem 0.75rem; font-size: 0.75rem;"
+            title="Reset filters">
+            <i class="fas fa-times"></i> Reset
+        </a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- 4. Zero-Latency Tabs Navigation -->
+<div class="pc-tabs-nav">
+    <div class="pc-tab-link {% if active_tab == 'services' %}active{% endif %}" onclick="switchTab('services')"
+        id="tabNav-services">
+        <i class="fas fa-tags"></i>
+        <span>Services Price Comparison</span>
+        <span class="pc-tab-badge" id="tabBadge-services">{{ service_price_rows|length }}</span>
+    </div>
+
+
+    <div class="pc-tab-link {% if active_tab == 'history' %}active{% endif %}" onclick="switchTab('history')"
+        id="tabNav-history">
+        <i class="fas fa-history"></i>
+        <span>Price Change History &amp; Promos</span>
+        <span class="pc-tab-badge" id="tabBadge-history">{{ history_logs|length }}</span>
+    </div>
+</div>
+
+<!-- ═══════════ TAB 1 PANE: SERVICES PRICE COMPARISON ═══════════ -->
+<div class="pc-tab-pane {% if active_tab == 'services' %}active{% endif %}" id="tabPane-services">
+    <div class="card">
+        <div class="pc-table-controls">
+            <div class="pc-search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="serviceSearchInput" class="pc-search-input"
+                    placeholder="Search service name or category..." onkeyup="filterServicesTable()">
+            </div>
+
+            <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
+                <span>Audit Period: <strong>{{ period_label }}</strong> vs <strong>Today's Live Catalog</strong></span>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="data-table" id="servicesTable">
+                <thead>
+                    <tr>
+                        <th style="width: 28%;">Service &amp; Category</th>
+                        <th style="width: 15%;">Price in {{ period_label }}</th>
+                        <th style="width: 15%;">Current Price Today</th>
+                        <th style="width: 16%;">Price Variance</th>
+                        <th style="width: 16%;">Effective Span</th>
+                        <th style="width: 10%; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in service_price_rows %}
+                    <tr class="service-table-row" data-name="{{ r.service.name|lower }}"
+                        data-cat="{{ r.service.get_category_display|lower }}">
+                        <td>
+                            <div style="font-weight: 600; color: var(--text-primary);">{{ r.service.name }}</div>
+                            <div
+                                style="font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; margin-top: 0.15rem;">
+                                <span
+                                    style="background: var(--bg-secondary); padding: 0.1rem 0.4rem; border-radius: 4px;">{{ r.service.get_category_display }}</span>
+                                <span>#{{ r.service.id }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; font-size: 0.92rem; color: var(--text-primary);">
+                                ₱{{ r.hist_final|floatformat:2 }}
+                            </div>
+                            {% if r.hist_discount > 0 %}
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.1rem;">
+                                <span style="text-decoration: line-through;">₱{{ r.hist_base|floatformat:2 }}</span>
+                                <span style="color: var(--green-400); font-weight: 600; margin-left: 0.2rem;">{{ r.hist_discount|floatformat:0 }}% off</span>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; font-size: 0.92rem; color: var(--green-400);">
+                                ₱{{ r.current_final|floatformat:2 }}
+                            </div>
+                            {% if r.current_discount > 0 %}
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.1rem;">
+                                <span style="text-decoration: line-through;">₱{{ r.current_base|floatformat:2 }}</span>
+                                <span style="color: var(--green-400); font-weight: 600; margin-left: 0.2rem;">{{ r.current_discount|floatformat:0 }}% off</span>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.change_type == 'increased' %}
+                            <span class="pc-badge pc-badge-increased">
+                                <i class="fas fa-arrow-up"></i> +₱{{ r.price_diff|floatformat:2 }} (Higher Today)
+                            </span>
+                            {% elif r.change_type == 'decreased' %}
+                            <span class="pc-badge pc-badge-decreased">
+                                <i class="fas fa-arrow-down"></i> -₱{{ r.price_diff|floatformat:2|slice:"1:" }} (Lower
+                                Today)
+                            </span>
+                            {% else %}
+                            <span class="pc-badge pc-badge-unchanged">
+                                <i class="fas fa-check"></i> ₱0.00 (Unchanged)
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div
+                                style="font-size: 0.68rem; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap;">
+                                <span>{{ r.hist_effective_from|date:"M d, Y" }}</span>
+                                <span style="opacity: 0.4; font-size: 0.6rem;">➔</span>
+                                <span>{% if r.hist_effective_to %}{{ r.hist_effective_to|date:"M d, Y" }}{% else %}<strong style="color:var(--green-400); font-weight: 600;">Present</strong>{% endif %}</span>
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <button type="button" class="btn-pc-secondary"
+                                style="padding: 0.22rem 0.52rem; font-size: 0.67rem; border-radius: 6px; gap: 0.3rem;"
+                                onclick='openServiceTimelineModal("{{ r.service.name|escapejs }}", {{ r.timeline_json|safe }})'>
+                                <i class="fas fa-clock-rotate-left"
+                                    style="font-size: 0.62rem; color: var(--purple-400);"></i>
+                                <span>Timeline ({{ r.timeline|length }})</span>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                            <i class="fas fa-info-circle"
+                                style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block; color: var(--purple-400);"></i>
+                            No services found matching the criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- ═══════════ TAB 3 PANE: PRICE CHANGE HISTORY LOG ═══════════ -->
+<div class="pc-tab-pane {% if active_tab == 'history' %}active{% endif %}" id="tabPane-history">
+    <div class="card">
+        <div class="pc-table-controls">
+            <div class="pc-search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="historySearchInput" class="pc-search-input"
+                    placeholder="Search service, promo, notes..." onkeyup="filterHistoryTable()">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <select id="historyStatusFilter" class="pc-select" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;"
+                    onchange="filterHistoryTable()">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active Now</option>
+                    <option value="upcoming">Scheduled</option>
+                    <option value="archived">Archived</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="data-table" id="historyTable">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">Service Name</th>
+                        <th style="width: 11%;">Status</th>
+                        <th style="width: 11%;">Base Price</th>
+                        <th style="width: 9%;">Discount</th>
+                        <th style="width: 13%;">Effective Rate</th>
+                        <th style="width: 16%;">Effective Span</th>
+                        <th style="width: 13%;">Adjustment Reason</th>
+                        <th style="width: 7%; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in history_logs %}
+                    <tr class="history-table-row" data-service="{{ log.service.name|lower }}"
+                        data-notes="{{ log.notes|lower }}" data-status="{{ log.status_badge }}">
+                        <td>
+                            <div style="font-weight: 600; color: var(--text-primary);">{{ log.service.name }}</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">{{ log.service.get_category_display }}</div>
+                        </td>
+                        <td>
+                            {% if log.status_badge == 'active' %}
+                            <span class="pc-badge pc-badge-active"><i class="fas fa-check-circle"></i> Active</span>
+                            {% elif log.status_badge == 'upcoming' %}
+                            <span class="pc-badge pc-badge-upcoming"><i class="fas fa-calendar-plus"></i>
+                                Scheduled</span>
+                            {% else %}
+                            <span class="pc-badge pc-badge-archived"><i class="fas fa-archive"></i> Archived</span>
+                            {% endif %}
+                        </td>
+                        <td style="color: var(--text-secondary);">
+                            ₱{{ log.base_price|floatformat:2 }}
+                        </td>
+                        <td>
+                            {% if log.discount_percentage > 0 %}
+                            <span class="pc-badge pc-badge-decreased">{{ log.discount_percentage|floatformat:0 }}%
+                                OFF</span>
+                            {% else %}
+                            <span style="color: var(--text-muted);">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; font-size: 0.92rem; color: var(--green-400);">
+                                ₱{{ log.discounted_price|floatformat:2 }}
+                            </div>
+                        </td>
+                        <td>
+                            <div
+                                style="font-size: 0.68rem; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap;">
+                                <span>{{ log.effective_from|date:"M d, Y" }}</span>
+                                <span style="opacity: 0.4; font-size: 0.6rem;">➔</span>
+                                <span>{% if log.effective_to %}{{ log.effective_to|date:"M d, Y" }}{% else %}<strong style="color:var(--green-400); font-weight: 600;">Present</strong>{% endif %}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-size: 0.78rem; color: var(--text-primary);">
+                                {{ log.notes|default:"Standard catalog rate adjustment" }}
+                            </div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 0.1rem;">
+                                Recorded: {{ log.created_at|date:"M d, Y H:i" }}
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            {% if log.status_badge == 'upcoming' %}
+                            <div style="display: flex; gap: 0.35rem; justify-content: center; flex-wrap: wrap;">
+                                <button type="button"
+                                    onclick="openEditScheduleModal({{ log.id }}, '{{ log.service.name|escapejs }}', '{{ log.base_price }}', '{{ log.discount_percentage }}', '{{ log.effective_from|date:'Y-m-d' }}', '{{ log.effective_to|date:'Y-m-d' }}', '{{ log.notes|escapejs }}')"
+                                    class="btn-pc-secondary"
+                                    style="padding: 0.2rem 0.52rem; font-size: 0.67rem; border-radius: 6px; gap: 0.25rem;">
+                                    <i class="fas fa-edit" style="font-size: 0.6rem;"></i> Update
+                                </button>
+                                <button type="button"
+                                    onclick="openDeleteConfirm({{ log.id }}, '{{ log.service.name|escapejs }}', '{{ log.effective_from|date:'M d, Y' }}', '{{ log.effective_to|date:'M d, Y' }}')"
+                                    class="btn-pc-secondary"
+                                    style="padding: 0.2rem 0.52rem; font-size: 0.67rem; border-radius: 6px; gap: 0.25rem; color: #f87171; border-color: rgba(248,113,113,0.35);">
+                                    <i class="fas fa-trash-alt" style="font-size: 0.6rem;"></i> Remove
+                                </button>
+                            </div>
+                            {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.7rem;">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                            <i class="fas fa-history"
+                                style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block; color: var(--purple-400);"></i>
+                            No historical price records found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ MODAL 1: RECORD / SCHEDULE PRICE CHANGE ═══════════ -->
+<div class="pc-modal-backdrop" id="addPriceModal">
+    <div class="pc-modal-box">
+
+        <!-- Modal Header -->
+        <div class="pc-modal-header">
+            <div class="pc-modal-header-left">
+                <div class="pc-modal-header-icon">
+                    <i class="fas fa-tags"></i>
+                </div>
+                <div>
+                    <div class="pc-modal-title">Schedule Price Range</div>
+                    <div class="pc-modal-subtitle">Set a scheduled rate and effective date range for any service.</div>
+                </div>
+            </div>
+            <button type="button" class="pc-modal-close" onclick="closeAddPriceModal()" title="Close">
+                <i class="fas fa-times" style="font-size:0.8rem;"></i>
+            </button>
+        </div>
+
+        <form method="post" action="{% url 'portals:price_checker_add_record' %}" id="addPriceRecordForm">
+            {% csrf_token %}
+            <div class="pc-modal-body">
+
+                <!-- ① Service Selector -->
+                <div class="pc-modal-section-label">
+                    <i class="fas fa-spa"></i> Target Service
+                </div>
+                <select name="service_id" class="pc-select" required id="modalServiceSelect"
+                    style="width:100%; margin-bottom: 1.35rem;" onchange="populateModalServiceData()">
+                    <option value="">Choose a service...</option>
+                    {% for s in all_services %}
+                    <option value="{{ s.id }}" data-price="{{ s.price }}" data-discount="{{ s.discount_percentage }}">
+                        {{ s.name }} — ₱{{ s.discounted_price|floatformat:2 }} live
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <div class="pc-modal-divider"></div>
+
+                <!-- ② Pricing -->
+                <div class="pc-modal-section-label">
+                    <i class="fas fa-peso-sign"></i> Pricing
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.85rem; margin-bottom:0.9rem;">
+                    <div>
+                        <label
+                            style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Base
+                            Catalog Price (₱) *</label>
+                        <input type="number" step="0.01" min="0" name="base_price" id="modalBasePrice" class="pc-input"
+                            style="width:100%;" required placeholder="0.00" oninput="updateModalLiveCalc()">
+                    </div>
+                    <div>
+                        <label
+                            style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Promo
+                            Discount (%)</label>
+                        <input type="number" step="0.01" min="0" max="100" name="discount_percentage" id="modalDiscount"
+                            class="pc-input" style="width:100%;" value="0" placeholder="0"
+                            oninput="updateModalLiveCalc()">
+                    </div>
+                </div>
+
+                <!-- Quick Discount Pills -->
+                <div
+                    style="margin-bottom: 0.5rem; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;">
+                    Quick Discount</div>
+                <div class="pc-discount-chips" id="discountChipsGroup">
+                    <button type="button" class="pc-discount-chip" onclick="setModalDiscount(0)">0%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setModalDiscount(5)">5%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setModalDiscount(10)">10%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setModalDiscount(15)">15%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setModalDiscount(20)">20%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setModalDiscount(25)">25%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setModalDiscount(30)">30%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setModalDiscount(50)">50%</button>
+                </div>
+
+                <!-- Live Rate Preview -->
+                <div class="pc-rate-preview-card" id="modalRatePreview">
+                    <div>
+                        <div class="pc-rate-preview-label">Effective Customer Rate Preview</div>
+                        <div class="pc-rate-calc-breakdown" id="modalCalcBreakdown">
+                            Base: ₱0.00 &nbsp;·&nbsp; No discount applied
+                        </div>
+                    </div>
+                    <div class="pc-rate-calc-price" id="modalCalculatedFinalPrice">₱0.00</div>
+                </div>
+
+                <div class="pc-modal-divider"></div>
+
+                <!-- ③ Effectivity Dates -->
+                <div class="pc-modal-section-label">
+                    <i class="fas fa-calendar-alt"></i> Effectivity Period
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.85rem; margin-bottom:1.35rem;">
+                    <div>
+                        <label
+                            style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Effective
+                            From *</label>
+                        <input type="date" name="effective_from" class="pc-input" style="width:100%;" required
+                            value="{{ today|date:'Y-m-d' }}">
+                    </div>
+                    <div>
+                        <label
+                            style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Effective
+                            Until <span style="font-weight:400; opacity:0.6;">(optional)</span></label>
+                        <input type="date" name="effective_to" class="pc-input" style="width:100%;">
+                    </div>
+                </div>
+
+                <!-- ④ Notes -->
+                <div class="pc-modal-section-label">
+                    <i class="fas fa-comment-alt"></i> Notes
+                </div>
+                <input type="text" name="notes" class="pc-input" style="width:100%; margin-bottom:1.25rem;"
+                    placeholder="e.g., Summer Promo 2026, Annual Rate Increase…">
+
+                <!-- ⑤ Live Update Toggle -->
+                <label class="pc-toggle-row" for="updateCurrentService">
+                    <input type="checkbox" name="update_current_service" id="updateCurrentService" value="1" checked
+                        class="pc-toggle-checkbox">
+                    <div>
+                        <div
+                            style="font-size:0.82rem; font-weight:600; color:var(--text-primary); margin-bottom:0.15rem;">
+                            <i class="fas fa-bolt"
+                                style="color:var(--amber-400); font-size:0.78rem; margin-right:0.25rem;"></i>
+                            Push to live catalog immediately
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--text-muted); line-height:1.45;">
+                            The main spa booking page will reflect this new rate right away.
+                        </div>
+                    </div>
+                </label>
+
+            </div><!-- /.pc-modal-body -->
+
+            <!-- Modal Footer -->
+            <div class="pc-modal-footer">
+                <button type="button" class="btn-modal-cancel" onclick="closeAddPriceModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-modal-save">
+                    <i class="fas fa-check-circle"></i>
+                    Save Scheduled Price
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<!-- ═══════════ MODAL 2: IN-PAGE SERVICE TIMELINE MODAL ═══════════ -->
+<div class="pc-modal-backdrop" id="serviceTimelineModal">
+    <div class="pc-modal-box">
+        <div class="pc-modal-header">
+            <div class="pc-modal-title">
+                <i class="fas fa-clock-rotate-left" style="color: var(--purple-400);"></i>
+                <span id="timelineModalServiceName">Service Timeline</span>
+            </div>
+            <button type="button" class="pc-modal-close" onclick="closeServiceTimelineModal()">&times;</button>
+        </div>
+
+        <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
+            Complete chronological record of all rates, promotional discounts, and scheduled pricing tiers for this
+            service:
+        </div>
+
+        <div id="serviceTimelineContent" class="pc-timeline">
+            <!-- Populated via JS -->
+        </div>
+
+        <div class="pc-modal-footer">
+            <button type="button" class="btn-modal-cancel" onclick="closeServiceTimelineModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ MODAL 3: BOOKING AUDIT RECEIPT MODAL ═══════════ -->
+<div class="pc-modal-backdrop" id="bookingBreakdownModal">
+    <div class="pc-modal-box">
+        <div class="pc-modal-header">
+            <div class="pc-modal-title">
+                <i class="fas fa-receipt" style="color: var(--purple-400);"></i>
+                <span>Booking Price Audit Slip</span>
+            </div>
+            <button type="button" class="pc-modal-close" onclick="closeBookingBreakdownModal()">&times;</button>
+        </div>
+
+        <div id="bookingBreakdownContent">
+            <!-- Populated dynamically via JS -->
+        </div>
+
+        <div class="pc-modal-footer" style="justify-content: space-between;">
+            <button type="button" class="btn-modal-cancel" onclick="window.print()">
+                <i class="fas fa-print"></i> Print Slip
+            </button>
+            <button type="button" class="btn-modal-save" onclick="closeBookingBreakdownModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ MODAL 4: DELETE CONFIRMATION ═══════════ -->
+<div class="pc-modal-backdrop" id="deleteConfirmModal">
+    <div class="pc-modal-box" style="max-width: 440px;">
+        <div class="pc-modal-header" style="border-bottom-color: rgba(248,113,113,0.25);">
+            <div class="pc-modal-header-left">
+                <div class="pc-modal-header-icon" style="background: rgba(248,113,113,0.12); color: #f87171;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <div class="pc-modal-title">Remove Scheduled Price</div>
+                    <div class="pc-modal-subtitle">This action cannot be undone.</div>
+                </div>
+            </div>
+            <button type="button" class="pc-modal-close" onclick="closeDeleteConfirm()">
+                <i class="fas fa-times" style="font-size:0.8rem;"></i>
+            </button>
+        </div>
+
+        <div class="pc-modal-body">
+            <div
+                style="background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); border-radius: 10px; padding: 1rem 1.1rem; margin-bottom: 1.15rem;">
+                <div style="font-size: 0.78rem; color: #f87171; font-weight: 700; margin-bottom: 0.5rem;">
+                    <i class="fas fa-calendar-times" style="margin-right: 0.35rem;"></i>Scheduled Record to be Removed
+                </div>
+                <div style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary);"
+                    id="deleteConfirmServiceName"></div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;"
+                    id="deleteConfirmDateSpan"></div>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.55; margin: 0;">
+                Are you sure you want to permanently remove this scheduled price record?
+                The live catalog status for all services will be re-synced automatically.
+            </p>
+        </div>
+
+        <div class="pc-modal-footer">
+            <button type="button" class="btn-modal-cancel" onclick="closeDeleteConfirm()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <form id="deleteConfirmForm" method="post" action="" style="display:inline; margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="btn-modal-save"
+                    style="background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 4px 14px rgba(220,38,38,0.4);">
+                    <i class="fas fa-trash-alt"></i> Yes, Remove
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ MODAL 5: EDIT SCHEDULED PRICE RECORD ═══════════ -->
+<div class="pc-modal-backdrop" id="editScheduleModal">
+    <div class="pc-modal-box">
+        <div class="pc-modal-header">
+            <div class="pc-modal-header-left">
+                <div class="pc-modal-header-icon">
+                    <i class="fas fa-pen"></i>
+                </div>
+                <div>
+                    <div class="pc-modal-title">Edit Scheduled Price</div>
+                    <div class="pc-modal-subtitle" id="editScheduleSubtitle">Modify the scheduled rate and dates.</div>
+                </div>
+            </div>
+            <button type="button" class="pc-modal-close" onclick="closeEditScheduleModal()">
+                <i class="fas fa-times" style="font-size:0.8rem;"></i>
+            </button>
+        </div>
+
+        <form id="editScheduleForm" method="post" action="">
+            {% csrf_token %}
+            <div class="pc-modal-body">
+
+                <!-- Pricing -->
+                <div class="pc-modal-section-label">
+                    <i class="fas fa-peso-sign"></i> Pricing
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.85rem; margin-bottom:0.9rem;">
+                    <div>
+                        <label
+                            style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Base
+                            Catalog Price (₱) *</label>
+                        <input type="number" step="0.01" min="0" name="base_price" id="editBasePrice" class="pc-input"
+                            style="width:100%;" required placeholder="0.00" oninput="updateEditLiveCalc()">
+                    </div>
+                    <div>
+                        <label
+                            style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Promo
+                            Discount (%)</label>
+                        <input type="number" step="0.01" min="0" max="100" name="discount_percentage" id="editDiscount"
+                            class="pc-input" style="width:100%;" value="0" placeholder="0"
+                            oninput="updateEditLiveCalc()">
+                    </div>
+                </div>
+
+                <!-- Quick Discount Pills -->
+                <div
+                    style="margin-bottom: 0.5rem; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;">
+                    Quick Discount</div>
+                <div class="pc-discount-chips" id="editDiscountChipsGroup">
+                    <button type="button" class="pc-discount-chip" onclick="setEditDiscount(0)">0%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setEditDiscount(5)">5%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setEditDiscount(10)">10%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setEditDiscount(15)">15%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setEditDiscount(20)">20%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setEditDiscount(25)">25%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setEditDiscount(30)">30%</button>
+                    <button type="button" class="pc-discount-chip" onclick="setEditDiscount(50)">50%</button>
+                </div>
+
+                <!-- Live Rate Preview -->
+                <div class="pc-rate-preview-card" id="editRatePreview"
+                    style="margin-top: 0.9rem; margin-bottom: 1.1rem;">
+                    <div>
+                        <div class="pc-rate-preview-label">Effective Customer Rate Preview</div>
+                        <div class="pc-rate-calc-breakdown" id="editCalcBreakdown">Base: ₱0.00 &nbsp;·&nbsp; No discount
+                            applied</div>
+                    </div>
+                    <div class="pc-rate-calc-price" id="editCalculatedFinalPrice">₱0.00</div>
+                </div>
+
+                <div class="pc-modal-divider"></div>
+
+                <!-- Effectivity Dates -->
+                <div class="pc-modal-section-label">
+                    <i class="fas fa-calendar-alt"></i> Effectivity Period
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.85rem; margin-bottom:1.35rem;">
+                    <div>
+                        <label
+                            style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Effective
+                            From *</label>
+                        <input type="date" name="effective_from" id="editEffectiveFrom" class="pc-input"
+                            style="width:100%;" required>
+                    </div>
+                    <div>
+                        <label
+                            style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Effective
+                            Until <span style="font-weight:400; opacity:0.6;">(optional)</span></label>
+                        <input type="date" name="effective_to" id="editEffectiveTo" class="pc-input"
+                            style="width:100%;">
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="pc-modal-section-label">
+                    <i class="fas fa-comment-alt"></i> Notes
+                </div>
+                <input type="text" name="notes" id="editNotes" class="pc-input"
+                    style="width:100%; margin-bottom:0.5rem;" placeholder="e.g., Updated Promo Rate…">
+            </div>
+
+            <div class="pc-modal-footer">
+                <button type="button" class="btn-modal-cancel" onclick="closeEditScheduleModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="btn-modal-save">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Pre-serialized JSON payload for instant client-side lookups -->
+{{ service_pricing_json|json_script:"servicePricingData" }}
+
+<script>
+    /* ===================================================================
+       PRICE CHECKER — REACTIVE JAVASCRIPT CONTROLLER
+       =================================================================== */
+
+    // Parse preloaded service pricing matrix
+    var servicePricingMap = [];
+    try {
+        var rawData = document.getElementById('servicePricingData');
+        if (rawData && rawData.textContent) {
+            servicePricingMap = JSON.parse(rawData.textContent);
+        }
+    } catch (e) {
+        console.warn("Could not parse service pricing data:", e);
+    }
+
+    // Initialize on DOM load
+    document.addEventListener('DOMContentLoaded', function () {
+        runInstantPriceInspection();
+        updateModalLiveCalc();
+
+        // Check URL parameters for tab
+        var urlParams = new URLSearchParams(window.location.search);
+        var tabParam = urlParams.get('tab');
+        if (tabParam && ['services', 'bookings', 'history'].includes(tabParam)) {
+            switchTab(tabParam, false);
+        }
+    });
+
+    /* ─── Zero-Latency Tab Switcher ─── */
+    function switchTab(tabKey, updateUrl = true) {
+        // Hide all panes
+        document.querySelectorAll('.pc-tab-pane').forEach(function (p) {
+            p.classList.remove('active');
+        });
+        // Remove active from all nav links
+        document.querySelectorAll('.pc-tab-link').forEach(function (l) {
+            l.classList.remove('active');
+        });
+
+        // Activate selected pane and link
+        var targetPane = document.getElementById('tabPane-' + tabKey);
+        var targetLink = document.getElementById('tabNav-' + tabKey);
+        if (targetPane && targetLink) {
+            targetPane.classList.add('active');
+            targetLink.classList.add('active');
+        }
+
+        // Keep active tab param in form synced
+        var paramInput = document.getElementById('activeTabParam');
+        if (paramInput) paramInput.value = tabKey;
+
+        if (updateUrl && window.history.replaceState) {
+            var url = new URL(window.location.href);
+            url.searchParams.set('tab', tabKey);
+            window.history.replaceState({}, '', url);
+        }
+    }
+
+    /* ─── Filter Form Helpers ─── */
+    // When month dropdown changes → clear the custom date inputs (don't auto-submit)
+    function clearCustomDatesOnMonthChange() {
+        document.getElementById('startDateField').value = '';
+        document.getElementById('endDateField').value = '';
+    }
+    // When custom dates are typed → deselect the month dropdown
+    function clearMonthOnDateChange() {
+        document.getElementById('monthDropdown').value = '';
+    }
+
+    /* ─── Inspector Expand / Collapse ─── */
+    function toggleInspector() {
+        var body = document.getElementById('inspectorBody');
+        var text = document.getElementById('inspectorToggleText');
+        var icon = document.getElementById('inspectorToggleIcon');
+        if (body.style.display === 'none') {
+            body.style.display = 'block';
+            text.innerText = 'Click to collapse';
+            icon.className = 'fas fa-chevron-up';
+        } else {
+            body.style.display = 'none';
+            text.innerText = 'Click to expand';
+            icon.className = 'fas fa-chevron-down';
+        }
+    }
+
+    /* ─── Inspector Quick Date Chips ─── */
+    function setInspectorDate(type) {
+        var today = new Date();
+        var d = new Date(today);
+
+        if (type === 'today') {
+            // d is today
+        } else if (type === 'yesterday') {
+            d.setDate(today.getDate() - 1);
+        } else if (type === 'month_start') {
+            d.setDate(1);
+        } else if (type === 'month_ago') {
+            d.setDate(today.getDate() - 30);
+        } else if (type === 'six_months_ago') {
+            d.setMonth(today.getMonth() - 6);
+        }
+
+        var yyyy = d.getFullYear();
+        var mm = String(d.getMonth() + 1).padStart(2, '0');
+        var dd = String(d.getDate()).padStart(2, '0');
+        document.getElementById('inspectorDateInput').value = yyyy + '-' + mm + '-' + dd;
+        runInstantPriceInspection();
+    }
+
+    /* ─── Instant Client-Side Price Inspection ─── */
+    function runInstantPriceInspection() {
+        var serviceSelect = document.getElementById('inspectorServiceSelect');
+        var dateInput = document.getElementById('inspectorDateInput');
+        var resultBox = document.getElementById('inspectorResultBox');
+        if (!serviceSelect || !dateInput || !resultBox) return;
+
+        var serviceId = parseInt(serviceSelect.value);
+        var targetDateStr = dateInput.value;
+        if (!serviceId || !targetDateStr) return;
+
+        // Find service in matrix
+        var svc = servicePricingMap.find(function (s) { return s.id === serviceId; });
+        if (!svc) return;
+
+        // Find applicable rate for targetDateStr
+        var applicableRecord = null;
+        if (svc.histories && svc.histories.length > 0) {
+            for (var i = 0; i < svc.histories.length; i++) {
+                var h = svc.histories[i];
+                var fromMatch = !h.effective_from || h.effective_from <= targetDateStr;
+                var toMatch = !h.effective_to || h.effective_to >= targetDateStr;
+                if (fromMatch && toMatch) {
+                    applicableRecord = h;
+                    break;
+                }
+            }
+        }
+
+        var basePrice = applicableRecord ? applicableRecord.base_price : svc.current_price;
+        var discount = applicableRecord ? applicableRecord.discount_percentage : svc.current_discount;
+        var finalPrice = applicableRecord ? applicableRecord.discounted_price : svc.current_final;
+        var effectiveFrom = applicableRecord ? applicableRecord.effective_from : '';
+        var effectiveTo = applicableRecord ? (applicableRecord.effective_to || 'Present') : 'Present';
+        var notes = applicableRecord && applicableRecord.notes ? applicableRecord.notes : 'Established Standard Rate';
+
+        var currentFinal = svc.current_final;
+        var diff = currentFinal - finalPrice;
+        var isDiff = Math.abs(diff) > 0.009;
+
+        var formattedDate = new Date(targetDateStr + 'T00:00:00').toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric'
+        });
+
+        var html = '' +
+            '<div>' +
+            '<div style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">' +
+            '<span>' + svc.name + '</span>' +
+            '<span class="pc-badge pc-badge-matched" style="font-size: 0.68rem;">' + svc.category + '</span>' +
+            '</div>' +
+            '<div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.4rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;">' +
+            '<span>Rate on <strong>' + formattedDate + '</strong>:</span>' +
+            '<span style="font-size: 1.15rem; font-weight: 800; color: var(--green-400);">₱' + Number(finalPrice).toFixed(2) + '</span>' +
+            (discount > 0 ? ('<span style="font-size: 0.75rem; color: var(--text-muted); text-decoration: line-through;">₱' + Number(basePrice).toFixed(2) + '</span>' +
+                '<span class="pc-badge pc-badge-decreased" style="font-size: 0.68rem;">' + Math.round(discount) + '% OFF</span>') : '') +
+            '</div>' +
+            '<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.35rem;">' +
+            '<i class="fas fa-tag" style="color: var(--purple-400); margin-right: 0.25rem;"></i>' +
+            '<span>' + notes + '</span> &bull; <span>Span: ' + (effectiveFrom || 'Genesis') + ' to ' + effectiveTo + '</span>' +
+            '</div>' +
+            '</div>' +
+            '<div style="text-align: right; border-left: 1px dashed var(--border-color); padding-left: 1.25rem;">' +
+            '<div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Current Live Rate Today</div>' +
+            '<div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-top: 0.15rem;">₱' + Number(currentFinal).toFixed(2) + '</div>' +
+            (isDiff ?
+                (diff > 0 ?
+                    '<span class="pc-badge pc-badge-increased" style="margin-top: 0.35rem;"><i class="fas fa-arrow-up"></i> +₱' + Number(diff).toFixed(2) + ' higher today</span>' :
+                    '<span class="pc-badge pc-badge-decreased" style="margin-top: 0.35rem;"><i class="fas fa-arrow-down"></i> -₱' + Number(Math.abs(diff)).toFixed(2) + ' lower today</span>') :
+                '<span class="pc-badge pc-badge-unchanged" style="margin-top: 0.35rem;"><i class="fas fa-check"></i> Same as today</span>') +
+            '</div>';
+
+        resultBox.innerHTML = html;
+    }
+
+    /* ─── Client-side Instant Table Search ─── */
+    function filterServicesTable() {
+        var q = document.getElementById('serviceSearchInput').value.toLowerCase().trim();
+        document.querySelectorAll('.service-table-row').forEach(function (tr) {
+            var name = tr.dataset.name || '';
+            var cat = tr.dataset.cat || '';
+            if (!q || name.includes(q) || cat.includes(q)) {
+                tr.style.display = '';
+            } else {
+                tr.style.display = 'none';
+            }
+        });
+    }
+
+    function filterBookingsTable() {
+        var q = document.getElementById('bookingSearchInput').value.toLowerCase().trim();
+        var status = document.getElementById('bookingStatusFilter').value;
+        document.querySelectorAll('.booking-table-row').forEach(function (tr) {
+            var client = tr.dataset.client || '';
+            var ref = tr.dataset.ref || '';
+            var services = tr.dataset.services || '';
+            var trStatus = tr.dataset.status || '';
+
+            var matchQ = !q || client.includes(q) || ref.includes(q) || services.includes(q);
+            var matchStatus = !status || trStatus === status;
+
+            if (matchQ && matchStatus) {
+                tr.style.display = '';
+            } else {
+                tr.style.display = 'none';
+            }
+        });
+    }
+
+    function filterHistoryTable() {
+        var q = document.getElementById('historySearchInput').value.toLowerCase().trim();
+        var status = document.getElementById('historyStatusFilter').value;
+        document.querySelectorAll('.history-table-row').forEach(function (tr) {
+            var svc = tr.dataset.service || '';
+            var notes = tr.dataset.notes || '';
+            var trStatus = tr.dataset.status || '';
+
+            var matchQ = !q || svc.includes(q) || notes.includes(q);
+            var matchStatus = !status || trStatus === status;
+
+            if (matchQ && matchStatus) {
+                tr.style.display = '';
+            } else {
+                tr.style.display = 'none';
+            }
+        });
+    }
+
+    /* ─── Add Price Modal Controller & Live Math ─── */
+    function openAddPriceModal() {
+        document.getElementById('addPriceModal').classList.add('open');
+        populateModalServiceData();
+    }
+    function closeAddPriceModal() {
+        document.getElementById('addPriceModal').classList.remove('open');
+    }
+
+    function populateModalServiceData() {
+        var select = document.getElementById('modalServiceSelect');
+        var opt = select.options[select.selectedIndex];
+        if (opt && opt.dataset.price) {
+            document.getElementById('modalBasePrice').value = parseFloat(opt.dataset.price).toFixed(2);
+            document.getElementById('modalDiscount').value = parseFloat(opt.dataset.discount || '0').toFixed(0);
+        }
+        updateModalLiveCalc();
+    }
+
+    function setModalDiscount(pct) {
+        document.getElementById('modalDiscount').value = pct;
+        // Highlight active chip
+        document.querySelectorAll('#discountChipsGroup .pc-discount-chip').forEach(function (btn) {
+            var chipVal = parseFloat(btn.textContent);
+            btn.classList.toggle('active', chipVal === pct);
+        });
+        updateModalLiveCalc();
+    }
+
+    function updateModalLiveCalc() {
+        var base = parseFloat(document.getElementById('modalBasePrice').value) || 0;
+        var discountPct = parseFloat(document.getElementById('modalDiscount').value) || 0;
+        discountPct = Math.max(0, Math.min(100, discountPct));
+
+        var discountAmount = base * (discountPct / 100);
+        var finalPrice = Math.max(0, base - discountAmount);
+
+        var breakdown = document.getElementById('modalCalcBreakdown');
+        var finalPriceElem = document.getElementById('modalCalculatedFinalPrice');
+
+        if (breakdown) {
+            if (discountPct > 0) {
+                breakdown.innerHTML = 'Base: <strong>₱' + base.toFixed(2) + '</strong> &nbsp;·&nbsp; <strong>' + discountPct.toFixed(0) + '% off</strong> <span style="color:var(--green-400);">(-₱' + discountAmount.toFixed(2) + ')</span>';
+            } else {
+                breakdown.innerHTML = 'Base: <strong>₱' + base.toFixed(2) + '</strong> &nbsp;·&nbsp; No discount applied';
+            }
+        }
+        if (finalPriceElem) {
+            finalPriceElem.innerText = '₱' + finalPrice.toFixed(2);
+        }
+    }
+
+    /* ─── In-Page Service Timeline Modal ─── */
+    function openServiceTimelineModal(serviceName, timelineData) {
+        document.getElementById('timelineModalServiceName').innerText = serviceName;
+        var container = document.getElementById('serviceTimelineContent');
+        var html = '';
+
+        if (timelineData && timelineData.length > 0) {
+            timelineData.forEach(function (t, idx) {
+                var isActive = t.status === 'active';
+                var isUpcoming = t.status === 'upcoming';
+                var statusBadge = isActive ?
+                    '<span class="pc-badge pc-badge-active"><i class="fas fa-check-circle"></i> Active</span>' :
+                    (isUpcoming ? '<span class="pc-badge pc-badge-upcoming">Scheduled</span>' : '<span class="pc-badge pc-badge-archived">Past Rate</span>');
+
+                html += '' +
+                    '<div class="pc-timeline-item">' +
+                    '<div class="pc-timeline-dot ' + (isActive ? 'active' : '') + '"></div>' +
+                    '<div class="pc-timeline-card">' +
+                    '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">' +
+                    '<span style="font-weight:700; font-size:0.95rem; color:var(--text-primary);">' +
+                    '₱' + Number(t.final_price).toFixed(2) +
+                    (t.discount > 0 ? ' <span style="font-size:0.75rem; text-decoration:line-through; color:var(--text-muted);">₱' + Number(t.base_price).toFixed(2) + '</span> <span class="pc-badge pc-badge-decreased" style="font-size:0.65rem;">' + Math.round(t.discount) + '% OFF</span>' : '') +
+                    '</span>' +
+                    statusBadge +
+                    '</div>' +
+                    '<div style="font-size:0.75rem; color:var(--text-secondary);">' +
+                    '<i class="far fa-calendar-alt" style="color:var(--purple-400); margin-right:0.3rem;"></i>' +
+                    'Effective: <strong>' + t.from_str + '</strong> ➔ <strong>' + t.to_str + '</strong>' +
+                    '</div>' +
+                    '<div style="font-size:0.72rem; color:var(--text-muted); margin-top:0.25rem;">' +
+                    'Reason / Promo: <em>' + (t.notes || 'Catalog pricing established') + '</em>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+            });
+        } else {
+            html = '<div style="color:var(--text-muted); font-size:0.82rem;">No historical price changes recorded for this service yet.</div>';
+        }
+
+        container.innerHTML = html;
+        document.getElementById('serviceTimelineModal').classList.add('open');
+    }
+    function closeServiceTimelineModal() {
+        document.getElementById('serviceTimelineModal').classList.remove('open');
+    }
+
+    /* ─── Luxury Booking Breakdown Modal ─── */
+    function showBookingBreakdownModal(bookingId, clientName, dateStr, timeStr, bookingType, chargedPrice, todayValue, rawSnapshots) {
+        var container = document.getElementById('bookingBreakdownContent');
+        var snapshots = [];
+        try {
+            if (rawSnapshots) {
+                snapshots = typeof rawSnapshots === 'string' ? JSON.parse(rawSnapshots.replace(/&quot;/g, '"')) : rawSnapshots;
+            }
+        } catch (e) {
+            console.error("Failed to parse snapshots", e);
+        }
+
+        var channelBadge = bookingType === 'online' ?
+            '<span class="pc-type-online"><i class="fas fa-globe"></i> Online Booking</span>' :
+            '<span class="pc-type-walkin"><i class="fas fa-walking"></i> Walk-in Booking</span>';
+
+        var html = '' +
+            '<div class="pc-receipt">' +
+            '<div class="pc-receipt-header">' +
+            '<div class="pc-receipt-title">MEDPOINT MASSAGE &amp; SPA</div>' +
+            '<div class="pc-receipt-subtitle">Official Price Lock Audit Slip</div>' +
+            '<div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.35rem;">' +
+            'Ref <strong>#' + bookingId + '</strong> &bull; ' + channelBadge +
+            '</div>' +
+            '</div>' +
+
+            '<div style="margin-bottom:0.85rem;">' +
+            '<div class="pc-receipt-row"><span>Client Name:</span> <strong style="color:var(--text-primary);">' + clientName + '</strong></div>' +
+            '<div class="pc-receipt-row"><span>Appointment Date:</span> <span>' + dateStr + '</span></div>' +
+            '<div class="pc-receipt-row"><span>Appointment Time:</span> <span>' + timeStr + '</span></div>' +
+            '</div>' +
+
+            '<div style="border-top:1px solid var(--border-color); padding-top:0.65rem; margin-top:0.65rem;">' +
+            '<div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:var(--purple-400); letter-spacing:0.06em; margin-bottom:0.4rem;">' +
+            'Itemized Pricing at Timestamp of Booking' +
+            '</div>';
+
+        if (snapshots && snapshots.length > 0) {
+            snapshots.forEach(function (item) {
+                var disc = item.discount_percentage > 0 ? (' (' + item.discount_percentage + '% Promo)') : '';
+                html += '' +
+                    '<div class="pc-receipt-row">' +
+                    '<span>' + (item.name || item.service_name || 'Treatment') + disc + '</span>' +
+                    '<strong style="color:var(--text-primary);">₱' + Number(item.discounted_price || item.price || 0).toFixed(2) + '</strong>' +
+                    '</div>';
+            });
+        } else {
+            html += '<div class="pc-receipt-row"><span>Standard Scheduled Session</span><strong>₱' + chargedPrice + '</strong></div>';
+        }
+
+        html += '' +
+            '</div>' +
+
+            '<div class="pc-receipt-row total">' +
+            '<span>TOTAL CHARGED RATE:</span>' +
+            '<span style="color:var(--green-400); font-size:1.15rem;">₱' + chargedPrice + '</span>' +
+            '</div>' +
+
+            '<div class="pc-receipt-row" style="font-size:0.75rem; color:var(--text-muted); margin-top:0.25rem;">' +
+            '<span>Catalog Value Today:</span>' +
+            '<span>₱' + todayValue + '</span>' +
+            '</div>' +
+
+            '<div style="margin-top:1rem; padding:0.65rem; border-radius:8px; background:rgba(168,85,247,0.08); border:1px solid rgba(168,85,247,0.2); font-size:0.72rem; color:var(--text-secondary); text-align:center;">' +
+            '<i class="fas fa-shield-alt" style="color:var(--purple-400); margin-right:0.35rem;"></i>' +
+            'Price Protection Guarantee: This customer locked in their rate at booking creation. No subsequent catalog changes will alter this amount.' +
+            '</div>' +
+            '</div>';
+
+        container.innerHTML = html;
+        document.getElementById('bookingBreakdownModal').classList.add('open');
+    }
+    function closeBookingBreakdownModal() {
+        document.getElementById('bookingBreakdownModal').classList.remove('open');
+    }
+
+    /* ─── Delete Confirmation Modal Controller ─── */
+    function openDeleteConfirm(id, serviceName, effectiveFrom, effectiveTo) {
+        var form = document.getElementById('deleteConfirmForm');
+        form.action = '/portal/price-checker/record/' + id + '/delete/';
+
+        var nameEl = document.getElementById('deleteConfirmServiceName');
+        if (nameEl) nameEl.textContent = serviceName;
+
+        var spanEl = document.getElementById('deleteConfirmDateSpan');
+        if (spanEl) {
+            var spanText = 'Scheduled Span: ' + effectiveFrom + (effectiveTo ? ' ➔ ' + effectiveTo : ' onwards');
+            spanEl.textContent = spanText;
+        }
+
+        var modal = document.getElementById('deleteConfirmModal');
+        if (modal) modal.classList.add('open');
+    }
+
+    function closeDeleteConfirm() {
+        var modal = document.getElementById('deleteConfirmModal');
+        if (modal) modal.classList.remove('open');
+    }
+
+    /* ─── Edit Scheduled Price Modal Controller ─── */
+    function openEditScheduleModal(id, serviceName, basePrice, discountPercentage, effectiveFrom, effectiveTo, notes) {
+        var form = document.getElementById('editScheduleForm');
+        form.action = '/portal/price-checker/record/' + id + '/update/';
+
+        var subtitleEl = document.getElementById('editScheduleSubtitle');
+        if (subtitleEl) subtitleEl.textContent = 'Editing scheduled rate for: ' + serviceName;
+
+        var basePriceInput = document.getElementById('editBasePrice');
+        if (basePriceInput) basePriceInput.value = parseFloat(basePrice || 0).toFixed(2);
+
+        var discInput = document.getElementById('editDiscount');
+        var discVal = parseFloat(discountPercentage || 0);
+        if (discInput) discInput.value = discVal.toFixed(0);
+
+        var fromInput = document.getElementById('editEffectiveFrom');
+        if (fromInput) fromInput.value = effectiveFrom || '';
+
+        var toInput = document.getElementById('editEffectiveTo');
+        if (toInput) toInput.value = effectiveTo || '';
+
+        var notesInput = document.getElementById('editNotes');
+        if (notesInput) notesInput.value = notes || '';
+
+        // Highlight chip if matching
+        document.querySelectorAll('#editDiscountChipsGroup .pc-discount-chip').forEach(function (btn) {
+            var chipVal = parseFloat(btn.textContent);
+            btn.classList.toggle('active', chipVal === discVal);
+        });
+
+        updateEditLiveCalc();
+
+        var modal = document.getElementById('editScheduleModal');
+        if (modal) modal.classList.add('open');
+    }
+
+    function closeEditScheduleModal() {
+        var modal = document.getElementById('editScheduleModal');
+        if (modal) modal.classList.remove('open');
+    }
+
+    function setEditDiscount(pct) {
+        var discInput = document.getElementById('editDiscount');
+        if (discInput) discInput.value = pct;
+
+        document.querySelectorAll('#editDiscountChipsGroup .pc-discount-chip').forEach(function (btn) {
+            var chipVal = parseFloat(btn.textContent);
+            btn.classList.toggle('active', chipVal === pct);
+        });
+
+        updateEditLiveCalc();
+    }
+
+    function updateEditLiveCalc() {
+        var base = parseFloat(document.getElementById('editBasePrice').value) || 0;
+        var discountPct = parseFloat(document.getElementById('editDiscount').value) || 0;
+        discountPct = Math.max(0, Math.min(100, discountPct));
+
+        var discountAmount = base * (discountPct / 100);
+        var finalPrice = Math.max(0, base - discountAmount);
+
+        var breakdown = document.getElementById('editCalcBreakdown');
+        var finalPriceElem = document.getElementById('editCalculatedFinalPrice');
+
+        if (breakdown) {
+            if (discountPct > 0) {
+                breakdown.innerHTML = 'Base: <strong>₱' + base.toFixed(2) + '</strong> &nbsp;·&nbsp; <strong>' + discountPct.toFixed(0) + '% off</strong> <span style="color:var(--green-400);">(-₱' + discountAmount.toFixed(2) + ')</span>';
+            } else {
+                breakdown.innerHTML = 'Base: <strong>₱' + base.toFixed(2) + '</strong> &nbsp;·&nbsp; No discount applied';
+            }
+        }
+        if (finalPriceElem) {
+            finalPriceElem.innerText = '₱' + finalPrice.toFixed(2);
+        }
+    }
+
+    /* ─── Modal Global Event Handlers ─── */
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeAddPriceModal();
+            closeServiceTimelineModal();
+            closeBookingBreakdownModal();
+            closeDeleteConfirm();
+            closeEditScheduleModal();
+        }
+    });
+    document.querySelectorAll('.pc-modal-backdrop').forEach(function (backdrop) {
+        backdrop.addEventListener('click', function (e) {
+            if (e.target === backdrop) {
+                backdrop.classList.remove('open');
+            }
+        });
+    });
+</script>
+
+{% endblock %}

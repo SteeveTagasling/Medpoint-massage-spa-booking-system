@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -13,6 +14,7 @@ from django.utils import timezone
 from website.models import (
     Service, Therapist, Testimonial, GalleryImage,
     Booking, ContactMessage, StaffSchedule, StaffLeave,
+    ServicePriceHistory,
 )
 from .forms import ServiceForm, TherapistForm, WalkInBookingForm, StaffScheduleForm, AdminSettingsForm, AdminUserForm, StaffSettingsForm, BulkStaffScheduleForm, StaffLeaveForm, StaffLeaveRequestForm
 from .models import AdminProfile, StaffNotification
@@ -336,7 +338,7 @@ def _staff_dashboard(request):
         
         my_total_completed = my_completed_bookings.count()
         my_pending = Booking.objects.filter(
-            therapist=therapist, status='pending'
+            therapist=therapist, status='pending', is_verified=True
         ).count()
         
         # Calculate Unique Customers
@@ -412,7 +414,7 @@ def booking_list(request):
         'date_filter': date_filter,
         'service_filter': service_filter,
         'search': search,
-        'status_choices': Booking.STATUS_CHOICES,
+        'status_choices': [c for c in Booking.STATUS_CHOICES if c[0] != 'awaiting_verification'],
         'type_choices': Booking.BOOKING_TYPE_CHOICES,
         'services': services,
     }
@@ -862,6 +864,22 @@ def booking_create_walkin(request):
         if form.is_valid():
             booking_obj = form.save()
 
+            # Snapshot service prices at time of booking
+            snapshots = []
+            total_lock = Decimal('0')
+            for svc in booking_obj.services.all():
+                snapshots.append({
+                    'service_id': svc.id,
+                    'name': svc.name,
+                    'base_price': float(svc.price),
+                    'discount_percentage': float(svc.discount_percentage),
+                    'discounted_price': float(svc.discounted_price),
+                })
+                total_lock += svc.discounted_price
+            booking_obj.locked_price = total_lock
+            booking_obj.service_prices_snapshot = snapshots
+            booking_obj.save(update_fields=['locked_price', 'service_prices_snapshot'])
+
             # Auto-assign therapist if preference is set but no specific therapist chosen
             if not booking_obj.therapist and booking_obj.therapist_preference != 'random':
                 matching = Therapist.objects.filter(
@@ -968,7 +986,15 @@ def service_create(request):
     if request.method == 'POST':
         form = ServiceForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            service = form.save()
+            from website.models import ServicePriceHistory
+            ServicePriceHistory.objects.create(
+                service=service,
+                base_price=service.price,
+                discount_percentage=service.discount_percentage,
+                effective_from=timezone.now().date(),
+                notes="Initial Established Rate"
+            )
             messages.success(request, 'Service created successfully.')
             return redirect('portals:service_list')
         else:
@@ -987,10 +1013,29 @@ def service_edit(request, pk):
     if check:
         return check
     service = get_object_or_404(Service, pk=pk)
+    old_price = service.price
+    old_discount = service.discount_percentage
     if request.method == 'POST':
         form = ServiceForm(request.POST, request.FILES, instance=service)
         if form.is_valid():
-            form.save()
+            service = form.save()
+            if service.price != old_price or service.discount_percentage != old_discount:
+                from website.models import ServicePriceHistory
+                today = timezone.now().date()
+                # Close previous active record
+                ServicePriceHistory.objects.filter(service=service, effective_to__isnull=True).update(effective_to=today)
+                note_parts = []
+                if service.price != old_price:
+                    note_parts.append(f"Price: ₱{old_price} ➔ ₱{service.price}")
+                if service.discount_percentage != old_discount:
+                    note_parts.append(f"Discount: {old_discount}% ➔ {service.discount_percentage}%")
+                ServicePriceHistory.objects.create(
+                    service=service,
+                    base_price=service.price,
+                    discount_percentage=service.discount_percentage,
+                    effective_from=today,
+                    notes=", ".join(note_parts) or "Price Adjusted"
+                )
             messages.success(request, f'"{service.name}" updated successfully.')
             return redirect('portals:service_list')
         else:
@@ -1700,6 +1745,7 @@ def admin_reports(request):
     if check:
         return check
 
+    report_type = request.GET.get('report_type', 'bookings')  # 'bookings' or 'sales'
     period = request.GET.get('period', 'today')
     if request.GET.get('start_date') and request.GET.get('end_date'):
         period = 'custom'
@@ -1721,12 +1767,17 @@ def admin_reports(request):
             total_revenue += svc.discounted_price
 
     total_completed = completed.count()
-    total_bookings_period = Booking.objects.filter(
-        Q(booking_type='walk_in') | Q(is_verified=True),
-        date__gte=start_date, date__lte=end_date,
-    ).count()
 
-    # Per-staff performance
+    # ── Booking Report: all bookings in period ──
+    all_bookings_in_period = Booking.objects.filter(
+        Q(booking_type='walk_in') | Q(is_verified=True),
+        date__gte=start_date,
+        date__lte=end_date,
+    ).select_related('therapist').prefetch_related('services').order_by('-date', '-created_at')
+
+    total_bookings_period = all_bookings_in_period.count()
+
+    # ── Sales Report data ──
     staff_data = []
     therapists = Therapist.objects.filter(is_active=True)
     for t in therapists:
@@ -1744,15 +1795,11 @@ def admin_reports(request):
             'commission_rate': t.commission_percentage,
             'commission_earned': t_commission,
         })
-
-    # Sort by services rendered (desc)
     staff_data.sort(key=lambda x: x['services_rendered'], reverse=True)
 
-    # Booking type breakdown
     online_count = completed.filter(booking_type='online').count()
     walkin_count = completed.filter(booking_type='walk_in').count()
 
-    # Service breakdown
     service_breakdown = []
     for svc in Service.objects.filter(is_active=True):
         svc_bookings = completed.filter(services=svc)
@@ -1767,6 +1814,7 @@ def admin_reports(request):
     service_breakdown.sort(key=lambda x: x['count'], reverse=True)
 
     context = {
+        'report_type': report_type,
         'period': period,
         'period_label': period_label,
         'start_date': start_date,
@@ -1774,12 +1822,490 @@ def admin_reports(request):
         'total_revenue': total_revenue,
         'total_completed': total_completed,
         'total_bookings_period': total_bookings_period,
+        'all_bookings_in_period': all_bookings_in_period,
         'staff_data': staff_data,
         'service_breakdown': service_breakdown,
         'online_count': online_count,
         'walkin_count': walkin_count,
     }
     return render(request, 'portals/admin_reports.html', context)
+
+
+@login_required(login_url='portals:login')
+def price_checker(request):
+    """
+    Price Checker for administrators:
+    View previous and current prices of services for a specific month or date range,
+    and verify that bookings were charged based on the service price at the time of booking.
+    """
+    if not request.user.is_superuser:
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('portals:dashboard')
+
+    from website.models import Service, ServicePriceHistory, Booking
+    import calendar
+    from datetime import datetime, date
+
+    # Ensure backfill for any service missing price history
+    for svc in Service.objects.all():
+        if not svc.price_history.exists():
+            start_d = svc.created_at.date() if svc.created_at else date(2026, 1, 1)
+            ServicePriceHistory.objects.create(
+                service=svc,
+                base_price=svc.price,
+                discount_percentage=svc.discount_percentage,
+                effective_from=start_d,
+                effective_to=None,
+                notes="Initial Established Rate"
+            )
+    today = timezone.now().date()
+    Service.sync_all_for_today()
+
+    selected_service_id = request.GET.get('service_id', '')
+    month_param = request.GET.get('month', '')
+    start_date_str = request.GET.get('start_date', '')
+    end_date_str = request.GET.get('end_date', '')
+    active_tab = request.GET.get('tab', 'services')
+
+    if start_date_str and end_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            period_label = f"{start_date.strftime('%b %d, %Y')} to {end_date.strftime('%b %d, %Y')}"
+            selected_month = None
+        except ValueError:
+            start_date = date(today.year, today.month, 1)
+            _, last_day = calendar.monthrange(today.year, today.month)
+            end_date = date(today.year, today.month, last_day)
+            period_label = start_date.strftime('%B %Y')
+            selected_month = start_date.strftime('%Y-%m')
+    elif month_param:
+        try:
+            year_val, month_val = map(int, month_param.split('-'))
+            start_date = date(year_val, month_val, 1)
+            _, last_day = calendar.monthrange(year_val, month_val)
+            end_date = date(year_val, month_val, last_day)
+            period_label = start_date.strftime('%B %Y')
+            selected_month = month_param
+        except Exception:
+            start_date = date(today.year, today.month, 1)
+            _, last_day = calendar.monthrange(today.year, today.month)
+            end_date = date(today.year, today.month, last_day)
+            period_label = start_date.strftime('%B %Y')
+            selected_month = start_date.strftime('%Y-%m')
+    else:
+        start_date = date(today.year, today.month, 1)
+        _, last_day = calendar.monthrange(today.year, today.month)
+        end_date = date(today.year, today.month, last_day)
+        period_label = start_date.strftime('%B %Y')
+        selected_month = start_date.strftime('%Y-%m')
+
+    # Available months for quick dropdown (past 8 months to next 4 months)
+    available_months = []
+    curr_y, curr_m = today.year, today.month
+    for offset in range(-8, 5):
+        m = curr_m + offset
+        y = curr_y
+        while m < 1:
+            m += 12
+            y -= 1
+        while m > 12:
+            m -= 12
+            y += 1
+        val = f"{y:04d}-{m:02d}"
+        label = date(y, m, 1).strftime('%B %Y')
+        available_months.append({'value': val, 'label': label})
+
+    services_qs = Service.objects.all().order_by('category', 'name')
+    if selected_service_id:
+        try:
+            services_qs = services_qs.filter(pk=int(selected_service_id))
+        except (ValueError, TypeError):
+            pass
+
+    service_price_rows = []
+    total_price_changes_in_period = 0
+
+    for svc in services_qs:
+        current_base = svc.price
+        current_discount = svc.discount_percentage if svc.has_discount else Decimal('0')
+        current_final = svc.discounted_price
+
+        # Find price record effective during the selected period
+        hist = svc.price_history.filter(
+            effective_from__lte=end_date
+        ).filter(
+            Q(effective_to__isnull=True) | Q(effective_to__gte=start_date)
+        ).order_by('-effective_from', '-created_at').first()
+
+        if hist:
+            hist_base = hist.base_price
+            hist_discount = hist.discount_percentage
+            hist_final = hist.discounted_price
+            hist_effective_from = hist.effective_from
+            hist_effective_to = hist.effective_to
+            hist_notes = hist.notes
+        else:
+            # No history record exists for this period — show base price with no discount
+            # (do NOT bleed today's live promo into a past period where it didn't apply)
+            hist_base = current_base
+            hist_discount = Decimal('0')
+            hist_final = current_base
+            hist_effective_from = svc.created_at.date() if svc.created_at else date(2026, 1, 1)
+            hist_effective_to = None
+            hist_notes = "No price record for this period"
+
+        price_diff = current_final - hist_final
+        if price_diff > 0:
+            change_type = 'increased'
+        elif price_diff < 0:
+            change_type = 'decreased'
+        else:
+            change_type = 'unchanged'
+
+        changes_in_range = svc.price_history.filter(
+            effective_from__gte=start_date, effective_from__lte=end_date
+        ).count()
+        if changes_in_range > 0:
+            total_price_changes_in_period += changes_in_range
+
+        full_timeline = list(svc.price_history.all().order_by('-effective_from', '-created_at'))
+
+        service_price_rows.append({
+            'service': svc,
+            'current_base': current_base,
+            'current_discount': current_discount,
+            'current_final': current_final,
+            'hist_base': hist_base,
+            'hist_discount': hist_discount,
+            'hist_final': hist_final,
+            'hist_effective_from': hist_effective_from,
+            'hist_effective_to': hist_effective_to,
+            'hist_notes': hist_notes,
+            'price_diff': price_diff,
+            'change_type': change_type,
+            'changes_in_range': changes_in_range,
+            'timeline': full_timeline,
+        })
+
+    # Bookings Verification
+    bookings_qs = Booking.objects.filter(
+        date__gte=start_date,
+        date__lte=end_date,
+    ).select_related('therapist').prefetch_related('services').order_by('-date', '-created_at')
+
+    if selected_service_id:
+        try:
+            bookings_qs = bookings_qs.filter(services__id=int(selected_service_id)).distinct()
+        except (ValueError, TypeError):
+            pass
+
+    booking_audit_rows = []
+    total_charged_revenue = Decimal('0')
+    total_current_value = Decimal('0')
+    price_protected_bookings_count = 0
+
+    for b in bookings_qs:
+        charged_price = b.total_discounted_price
+        total_charged_revenue += charged_price
+
+        current_today_price = Decimal('0')
+        for s in b.services.all():
+            current_today_price += s.discounted_price
+        total_current_value += current_today_price
+
+        variance = charged_price - current_today_price
+        is_variance = abs(variance) > Decimal('0.009')
+        if is_variance:
+            price_protected_bookings_count += 1
+
+        booking_audit_rows.append({
+            'booking': b,
+            'charged_price': charged_price,
+            'current_today_price': current_today_price,
+            'variance': variance,
+            'is_variance': is_variance,
+            'snapshots': b.service_prices_snapshot or [],
+        })
+
+    # Quick Price Lookup Tool
+    lookup_result = None
+    lookup_service_id = request.GET.get('lookup_service')
+    lookup_date_str = request.GET.get('lookup_date')
+    if lookup_service_id and lookup_date_str:
+        try:
+            lookup_svc = Service.objects.get(pk=int(lookup_service_id))
+            target_lookup_date = datetime.strptime(lookup_date_str, '%Y-%m-%d').date()
+            hist = lookup_svc.price_history.filter(
+                effective_from__lte=target_lookup_date
+            ).filter(
+                Q(effective_to__isnull=True) | Q(effective_to__gte=target_lookup_date)
+            ).order_by('-effective_from', '-created_at').first()
+
+            if hist:
+                lookup_result = {
+                    'service': lookup_svc,
+                    'date': target_lookup_date,
+                    'base_price': hist.base_price,
+                    'discount_percentage': hist.discount_percentage,
+                    'final_price': hist.discounted_price,
+                    'effective_from': hist.effective_from,
+                    'effective_to': hist.effective_to,
+                    'notes': hist.notes,
+                    'current_final': lookup_svc.discounted_price,
+                    'is_different': hist.discounted_price != lookup_svc.discounted_price,
+                }
+            else:
+                lookup_result = {
+                    'service': lookup_svc,
+                    'date': target_lookup_date,
+                    'base_price': lookup_svc.price,
+                    'discount_percentage': lookup_svc.discount_percentage,
+                    'final_price': lookup_svc.discounted_price,
+                    'effective_from': lookup_svc.created_at.date() if lookup_svc.created_at else date(2026, 1, 1),
+                    'effective_to': None,
+                    'notes': 'Base Established Rate',
+                    'current_final': lookup_svc.discounted_price,
+                    'is_different': False,
+                }
+        except Exception:
+            lookup_result = None
+
+    history_logs_qs = ServicePriceHistory.objects.select_related('service').order_by('-effective_from', '-created_at')
+    # Filter history to records that overlap with the selected period
+    history_logs_qs = history_logs_qs.filter(
+        effective_from__lte=end_date
+    ).filter(
+        Q(effective_to__isnull=True) | Q(effective_to__gte=start_date)
+    )
+    if selected_service_id:
+        try:
+            history_logs_qs = history_logs_qs.filter(service_id=int(selected_service_id))
+        except (ValueError, TypeError):
+            pass
+
+    # Enrich history logs with status
+    history_logs_list = list(history_logs_qs)
+    for log in history_logs_list:
+        if log.effective_to and log.effective_to < today:
+            log.status_badge = 'archived'
+            log.status_label = 'Archived'
+        elif log.effective_from > today:
+            log.status_badge = 'upcoming'
+            log.status_label = 'Scheduled'
+        else:
+            log.status_badge = 'active'
+            log.status_label = 'Active'
+
+    # Build client-side JSON for instant interactive Price Inspector
+    import json
+    pricing_data_list = []
+    for s in Service.objects.filter(is_active=True).prefetch_related('price_history').order_by('name'):
+        histories = []
+        for h in s.price_history.all().order_by('-effective_from', '-created_at'):
+            h_status = 'active'
+            if h.effective_to and h.effective_to < today:
+                h_status = 'archived'
+            elif h.effective_from > today:
+                h_status = 'upcoming'
+            histories.append({
+                'base_price': float(h.base_price),
+                'discount_percentage': float(h.discount_percentage),
+                'discounted_price': float(h.discounted_price),
+                'effective_from': h.effective_from.strftime('%Y-%m-%d') if h.effective_from else '',
+                'effective_to': h.effective_to.strftime('%Y-%m-%d') if h.effective_to else None,
+                'notes': h.notes or '',
+                'status': h_status,
+            })
+        pricing_data_list.append({
+            'id': s.id,
+            'name': s.name,
+            'category': str(s.get_category_display or s.category),
+            'current_price': float(s.price),
+            'current_discount': float(s.discount_percentage if s.has_discount else Decimal('0')),
+            'current_final': float(s.discounted_price),
+            'histories': histories,
+        })
+    service_pricing_json = json.dumps(pricing_data_list)
+
+    # Format timeline for each service price row for in-page modal
+    for row in service_price_rows:
+        row_timeline = []
+        for t in row['timeline']:
+            t_status = 'active'
+            if t.effective_to and t.effective_to < today:
+                t_status = 'archived'
+            elif t.effective_from > today:
+                t_status = 'upcoming'
+            row_timeline.append({
+                'base_price': float(t.base_price),
+                'discount': float(t.discount_percentage),
+                'final_price': float(t.discounted_price),
+                'from_str': t.effective_from.strftime('%b %d, %Y') if t.effective_from else 'Genesis',
+                'to_str': t.effective_to.strftime('%b %d, %Y') if t.effective_to else 'Present',
+                'notes': t.notes or 'Established Rate',
+                'status': t_status,
+            })
+        row['timeline_json'] = json.dumps(row_timeline)
+
+    rate_matched_bookings_count = max(0, bookings_qs.count() - price_protected_bookings_count)
+    net_variance = total_charged_revenue - total_current_value
+
+    context = {
+        'period_label': period_label,
+        'selected_month': selected_month,
+        'start_date': start_date,
+        'end_date': end_date,
+        'available_months': available_months,
+        'all_services': Service.objects.filter(is_active=True).order_by('name'),
+        'selected_service_id': selected_service_id,
+        'active_tab': active_tab,
+        'service_price_rows': service_price_rows,
+        'booking_audit_rows': booking_audit_rows,
+        'total_bookings_count': bookings_qs.count(),
+        'total_charged_revenue': total_charged_revenue,
+        'total_current_value': total_current_value,
+        'price_protected_bookings_count': price_protected_bookings_count,
+        'rate_matched_bookings_count': rate_matched_bookings_count,
+        'net_variance': net_variance,
+        'total_price_changes_in_period': total_price_changes_in_period,
+        'history_logs': history_logs_list,
+        'lookup_result': lookup_result,
+        'lookup_service_id': lookup_service_id,
+        'lookup_date_str': lookup_date_str,
+        'service_pricing_json': service_pricing_json,
+        'today': today,
+    }
+    return render(request, 'portals/price_checker.html', context)
+
+
+@login_required(login_url='portals:login')
+def price_checker_add_record(request):
+    """Admin manually adds or schedules a price change record."""
+    if not request.user.is_superuser:
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('portals:dashboard')
+
+    if request.method == 'POST':
+        from website.models import Service, ServicePriceHistory
+        from datetime import datetime
+        service_id = request.POST.get('service_id')
+        base_price_str = request.POST.get('base_price')
+        discount_percentage_str = request.POST.get('discount_percentage', '0')
+        effective_from_str = request.POST.get('effective_from')
+        effective_to_str = request.POST.get('effective_to')
+        notes = request.POST.get('notes', '').strip()
+        update_current_service = request.POST.get('update_current_service') == '1'
+
+        try:
+            service = Service.objects.get(pk=int(service_id))
+            base_price = Decimal(base_price_str)
+            discount_percentage = Decimal(discount_percentage_str or '0')
+            effective_from = datetime.strptime(effective_from_str, '%Y-%m-%d').date()
+            effective_to = datetime.strptime(effective_to_str, '%Y-%m-%d').date() if effective_to_str else None
+
+            today = timezone.now().date()
+            is_effective_today = (effective_from <= today) and (effective_to is None or effective_to >= today)
+
+            ServicePriceHistory.objects.create(
+                service=service,
+                base_price=base_price,
+                discount_percentage=discount_percentage,
+                effective_from=effective_from,
+                effective_to=effective_to,
+                notes=notes or "Manual Price Adjustment"
+            )
+
+            if is_effective_today and update_current_service:
+                service.price = base_price
+                service.discount_percentage = discount_percentage
+                service.save(update_fields=['price', 'discount_percentage'])
+                ServicePriceHistory.objects.filter(
+                    service=service, effective_to__isnull=True
+                ).exclude(effective_from=effective_from).update(effective_to=effective_from)
+            else:
+                # Future or past schedule: do not overwrite current live rate today
+                service.sync_rates_with_today()
+
+            # Ensure all services' rates and statuses are kept in sync
+            Service.sync_all_for_today()
+
+            if effective_from > today:
+                messages.success(request, f'Price schedule for "{service.name}" saved! It will automatically become effective on {effective_from.strftime("%b %d, %Y")}.')
+            else:
+                messages.success(request, f'Price record for "{service.name}" added successfully.')
+        except Exception as e:
+            messages.error(request, f'Failed to add price record: {e}')
+
+    return redirect(f"{reverse('portals:price_checker')}?tab=history")
+
+
+@login_required(login_url='portals:login')
+def price_checker_delete_record(request, pk):
+    """Delete a scheduled (upcoming) price history record and update all statuses."""
+    if not request.user.is_superuser:
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('portals:dashboard')
+
+    if request.method == 'POST':
+        try:
+            record = ServicePriceHistory.objects.get(pk=pk)
+            today = timezone.now().date()
+            # Only allow deleting future / scheduled records
+            if record.effective_from > today:
+                service_name = record.service.name
+                record.delete()
+                # Re-sync all service rates and statuses after deletion
+                Service.sync_all_for_today()
+                messages.success(request, f'Scheduled price for "{service_name}" has been removed and all statuses updated.')
+            else:
+                messages.error(request, 'Only scheduled (future) price records can be removed.')
+        except ServicePriceHistory.DoesNotExist:
+            messages.error(request, 'Price record not found.')
+        except Exception as e:
+            messages.error(request, f'Failed to remove record: {e}')
+
+    return redirect(f"{reverse('portals:price_checker')}?tab=history")
+
+
+@login_required(login_url='portals:login')
+def price_checker_update_record(request, pk):
+    """Update a scheduled (upcoming) price history record and update all statuses."""
+    if not request.user.is_superuser:
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('portals:dashboard')
+
+    if request.method == 'POST':
+        from datetime import datetime as dt
+        try:
+            record = ServicePriceHistory.objects.get(pk=pk)
+            today = timezone.now().date()
+            if record.effective_from <= today:
+                messages.error(request, 'Only scheduled (future) price records can be edited.')
+                return redirect(f"{reverse('portals:price_checker')}?tab=history")
+
+            base_price_str = request.POST.get('base_price')
+            discount_str = request.POST.get('discount_percentage', '0')
+            from_str = request.POST.get('effective_from')
+            to_str = request.POST.get('effective_to', '')
+            notes = request.POST.get('notes', '').strip()
+
+            record.base_price = Decimal(base_price_str)
+            record.discount_percentage = Decimal(discount_str or '0')
+            record.effective_from = dt.strptime(from_str, '%Y-%m-%d').date()
+            record.effective_to = dt.strptime(to_str, '%Y-%m-%d').date() if to_str else None
+            record.notes = notes or 'Scheduled Price Adjustment'
+            record.save()
+
+            # Re-sync all services' live rates and statuses
+            Service.sync_all_for_today()
+            messages.success(request, f'Scheduled price for "{record.service.name}" updated successfully and all statuses refreshed.')
+        except ServicePriceHistory.DoesNotExist:
+            messages.error(request, 'Price record not found.')
+        except Exception as e:
+            messages.error(request, f'Failed to update record: {e}')
+
+    return redirect(f"{reverse('portals:price_checker')}?tab=history")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1808,7 +2334,7 @@ def staff_my_bookings(request):
         'bookings': bookings,
         'therapist': therapist,
         'status_filter': status_filter,
-        'status_choices': Booking.STATUS_CHOICES,
+        'status_choices': [c for c in Booking.STATUS_CHOICES if c[0] != 'awaiting_verification'],
     }
     return render(request, 'portals/staff_my_bookings.html', context)
 
@@ -1918,15 +2444,27 @@ def staff_my_reports(request):
     total_revenue = Decimal('0')
     commission_earned = Decimal('0')
     booking_details = []
+    all_bookings_in_period = []
+    total_bookings_period = 0
+    online_count = 0
+    walkin_count = 0
 
     if therapist:
-        completed = Booking.objects.filter(
+        # All bookings in period for this therapist (for the Bookings section)
+        all_bookings_qs = Booking.objects.filter(
             Q(booking_type='walk_in') | Q(is_verified=True),
             therapist=therapist,
-            status='completed',
             date__gte=start_date,
             date__lte=end_date,
-        ).prefetch_related('services').order_by('-date', '-time')
+        ).prefetch_related('services').order_by('-date', '-created_at')
+
+        all_bookings_in_period = all_bookings_qs
+        total_bookings_period = all_bookings_qs.count()
+        online_count = all_bookings_qs.filter(booking_type='online').count()
+        walkin_count = all_bookings_qs.filter(booking_type='walk_in').count()
+
+        # Completed bookings only (for the Sales section)
+        completed = all_bookings_qs.filter(status='completed')
 
         services_rendered = completed.count()
         for b in completed:
@@ -1936,16 +2474,23 @@ def staff_my_reports(request):
                 'booking': b,
                 'price': price,
             })
-        commission_earned = total_revenue * (therapist.commission_percentage / Decimal('100'))
+        if therapist.commission_percentage:
+            commission_earned = total_revenue * (therapist.commission_percentage / Decimal('100'))
 
     context = {
         'therapist': therapist,
         'period': period,
         'period_label': period_label,
+        'start_date': start_date,
+        'end_date': end_date,
         'services_rendered': services_rendered,
         'total_revenue': total_revenue,
         'commission_earned': commission_earned,
         'booking_details': booking_details,
+        'all_bookings_in_period': all_bookings_in_period,
+        'total_bookings_period': total_bookings_period,
+        'online_count': online_count,
+        'walkin_count': walkin_count,
     }
     return render(request, 'portals/staff_my_reports.html', context)
 
@@ -2311,7 +2856,7 @@ def live_counts(request):
         n['color'] = StaffNotification.COLOR_MAP.get(n['notification_type'], 'purple')
 
     # ── Other counts ──
-    pending_count = Booking.objects.filter(status='pending').count()
+    pending_count = Booking.objects.filter(status='pending', is_verified=True).count()
     messages_count = ContactMessage.objects.filter(is_read=False).count() if role == 'admin' else 0
 
     return JsonResponse({
@@ -2320,4 +2865,3 @@ def live_counts(request):
         'unread_messages': messages_count,
         'latest_notifications': latest_notifs,
     })
-

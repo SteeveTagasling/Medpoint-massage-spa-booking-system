@@ -14,9 +14,14 @@
             <span class="breadcrumb-sep">/</span>
             <span class="text-purple-400">{{ service.name }}</span>
         </div>
-        <div class="flex items-center gap-3 mb-4 animate-fade-in" style="animation-delay:0.1s">
+        <div class="flex items-center gap-3 mb-4 animate-fade-in flex-wrap" style="animation-delay:0.1s">
             <span class="text-[11px] tracking-wider uppercase text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full">{{ service.get_category_display }}</span>
             <span class="text-gray-500 text-sm"><i class="far fa-clock mr-1"></i>{{ service.duration_minutes }} min</span>
+            {% if service.has_discount %}
+            <span class="text-xs font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 rounded-full flex items-center gap-1.5">
+                <i class="fas fa-tag"></i> {{ service.discount_percentage|floatformat:-2 }}% OFF &middot; Applied {{ service.promo_effective_date|date:"M d, Y" }}
+            </span>
+            {% endif %}
         </div>
         <h1 class="font-display text-4xl sm:text-5xl font-bold text-white mb-4 animate-fade-in-up">{{ service.name }}</h1>
     </div>
@@ -34,6 +39,11 @@
                     {% else %}
                     <div class="w-full h-[400px] bg-gradient-to-br from-purple-900/50 to-violet-900/50 flex items-center justify-center">
                         <i class="fas fa-spa text-6xl text-purple-400/30"></i>
+                    </div>
+                    {% endif %}
+                    {% if service.has_discount %}
+                    <div class="absolute top-4 left-4 z-10 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg shadow-emerald-500/30 flex items-center gap-1.5 backdrop-blur-sm">
+                        <i class="fas fa-tag text-[10px]"></i> {{ service.discount_percentage|floatformat:-2 }}% OFF
                     </div>
                     {% endif %}
                     <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-dark-50 to-transparent"></div>
@@ -92,9 +102,26 @@
                 <!-- Price Card -->
                 <div class="glass-panel p-8 mb-8 sticky top-28">
                     <div class="text-center mb-6">
+                        {% if service.has_discount %}
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">
+                            <i class="fas fa-tag"></i> Special Promo &middot; {{ service.discount_percentage|floatformat:-2 }}% OFF
+                        </div>
+                        <span class="text-gray-400 text-sm block">Special Offer</span>
+                        <div class="flex items-center justify-center gap-3 mt-1">
+                            <span class="text-xl text-gray-500 line-through font-medium">₱{{ service.price|floatformat:2 }}</span>
+                            <div class="text-4xl sm:text-5xl font-display font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">₱{{ service.discounted_price|floatformat:2 }}</div>
+                        </div>
+                        <div class="mt-2.5 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-lg">
+                            <i class="fas fa-sparkles text-[11px]"></i> You save ₱{{ service.discount_amount|floatformat:2 }} today!
+                        </div>
+                        <div class="mt-2 text-[10px] text-emerald-400/80 tracking-wide text-center">
+                            Promo applied: {{ service.promo_effective_date|date:"M d, Y" }}{% if service.promo_effective_to %} &ndash; {{ service.promo_effective_to|date:"M d, Y" }}{% endif %}
+                        </div>
+                        {% else %}
                         <span class="text-gray-400 text-sm">Starting from</span>
-                        <div class="text-4xl font-display font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent mt-1">₱{{ service.price }}</div>
-                        <span class="text-gray-500 text-sm">{{ service.duration_minutes }} minutes session</span>
+                        <div class="text-4xl font-display font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent mt-1">₱{{ service.price|floatformat:2 }}</div>
+                        {% endif %}
+                        <span class="text-gray-500 text-sm block mt-2"><i class="far fa-clock mr-1"></i>{{ service.duration_minutes }} minutes session</span>
                     </div>
 
                     <div class="space-y-3 mb-8">
@@ -116,7 +143,7 @@
                         </div>
                     </div>
 
-                    <a href="{% url 'website:booking' %}" class="block w-full text-center px-6 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5">
+                    <a href="{% url 'website:booking' %}?service={{ service.pk }}" class="block w-full text-center px-6 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5">
                         <i class="fas fa-calendar-check mr-2"></i>Book This Service
                     </a>
 
@@ -154,11 +181,26 @@
                         <i class="fas fa-spa text-4xl text-purple-400/30"></i>
                     </div>
                     {% endif %}
-                    <div class="absolute top-3 right-3 bg-purple-600/90 text-white text-xs font-semibold px-2.5 py-1 rounded-full">₱{{ rs.price }}</div>
+                    {% if rs.has_discount %}
+                    <div class="absolute top-3 left-3 z-10 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-md">
+                        {{ rs.discount_percentage|floatformat:-2 }}% OFF
+                    </div>
+                    <div class="absolute top-3 right-3 z-10 bg-dark-50/90 backdrop-blur-md border border-purple-500/30 text-white text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-md">
+                        <span class="line-through text-gray-400 text-[10px]">₱{{ rs.price|floatformat:2 }}</span>
+                        <span class="text-purple-300 font-bold">₱{{ rs.discounted_price|floatformat:2 }}</span>
+                    </div>
+                    {% else %}
+                    <div class="absolute top-3 right-3 bg-purple-600/90 text-white text-xs font-semibold px-2.5 py-1 rounded-full">₱{{ rs.price|floatformat:2 }}</div>
+                    {% endif %}
                 </div>
                 <div class="p-5">
                     <h3 class="font-display text-lg font-semibold text-white mb-1 group-hover:text-purple-300 transition-colors">{{ rs.name }}</h3>
-                    <p class="text-gray-500 text-xs mb-3"><i class="far fa-clock mr-1"></i>{{ rs.duration_minutes }} min</p>
+                    <p class="text-gray-500 text-xs mb-2"><i class="far fa-clock mr-1"></i>{{ rs.duration_minutes }} min</p>
+                    {% if rs.has_discount %}
+                    <div class="text-[9px] text-emerald-400/80 tracking-wide mb-2">
+                        Promo applied: {{ rs.promo_effective_date|date:"M d, Y" }}
+                    </div>
+                    {% endif %}
                     <a href="{% url 'website:service_detail' rs.slug %}" class="inline-flex items-center gap-1.5 text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors">
                         View Details <i class="fas fa-arrow-right text-xs"></i>
                     </a>

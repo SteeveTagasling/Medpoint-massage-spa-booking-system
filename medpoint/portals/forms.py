@@ -204,6 +204,25 @@ class WalkInBookingForm(forms.ModelForm):
         self.fields['therapist'].required = False
         self.fields['notes'].required = False
 
+    def clean(self):
+        cleaned_data = super().clean()
+        date = cleaned_data.get('date')
+        time_val = cleaned_data.get('time')
+        if date and time_val:
+            from django.utils import timezone
+            now_local = timezone.localtime(timezone.now())
+            today_local = now_local.date()
+            if date < today_local:
+                self.add_error('date', 'You cannot book an appointment for a past date.')
+            elif date == today_local:
+                try:
+                    slot_hour = int(time_val.split(':')[0])
+                    if slot_hour < now_local.hour:
+                        self.add_error('time', f'You cannot book a time in the past for today. Please select an available time.')
+                except (ValueError, IndexError):
+                    pass
+        return cleaned_data
+
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.booking_type = 'walk_in'

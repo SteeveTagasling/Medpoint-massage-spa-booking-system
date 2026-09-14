@@ -2,7 +2,7 @@
 
 {% block title %}Services{% endblock %}
 {% block page_title %}Services{% endblock %}
-{% block page_subtitle %}Add, edit, delete services and apply discounts{% endblock %}
+{% block page_subtitle %}Add, edit, delete services and manage catalog pricing{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -10,80 +10,337 @@
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        margin-bottom: 1.25rem;
+        margin-bottom: 1.5rem;
         flex-wrap: wrap;
     }
     .btn-primary {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.6rem 1.25rem;
+        padding: 0.65rem 1.4rem;
         border-radius: 10px;
         background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
         color: #fff;
         font-size: 0.8125rem;
-        font-weight: 600;
+        font-weight: 700;
         text-decoration: none;
         font-family: inherit;
         border: none;
         cursor: pointer;
         transition: var(--transition);
+        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
     }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary:hover {
+        opacity: 0.95;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+    }
     .btn-primary i { font-size: 0.75rem; }
-    .item-card-actions {
+
+    /* Filter select */
+    .filter-select {
+        padding: 0.6rem 1.1rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 0.8125rem;
+        font-family: inherit;
+        outline: none;
+        cursor: pointer;
+        font-weight: 500;
+        transition: var(--transition);
+    }
+    .filter-select:focus {
+        border-color: var(--purple-400);
+    }
+
+    /* ─── Uniform Card Grid ─── */
+    .items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.35rem;
+    }
+
+    .item-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: var(--transition);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        box-shadow: var(--card-shadow);
+    }
+    .item-card:hover {
+        border-color: var(--border-hover);
+        transform: translateY(-3px);
+        box-shadow: var(--item-hover-shadow);
+    }
+
+    /* Image Wrap with Floating Badges */
+    .item-card-img-wrap {
+        position: relative;
+        width: 100%;
+        height: 190px;
+        overflow: hidden;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        flex-shrink: 0;
+    }
+    .item-card-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+    }
+    .item-card:hover .item-card-img {
+        transform: scale(1.04);
+    }
+    .item-card-img-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(124, 58, 237, 0.06));
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        margin-top: 0.75rem;
-        padding-top: 0.75rem;
-        border-top: 1px solid var(--border-color);
+        justify-content: center;
+        color: var(--purple-400);
+        font-size: 2.5rem;
     }
-    .btn-sm {
+
+    /* Floating Overlay Badges */
+    .badge-discount-overlay {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 2;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: #ffffff;
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 0.28rem 0.7rem;
+        border-radius: 20px;
         display: inline-flex;
         align-items: center;
-        gap: 0.3rem;
-        padding: 0.3rem 0.65rem;
-        border-radius: 8px;
-        font-size: 0.7rem;
+        gap: 0.35rem;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.45);
+        letter-spacing: 0.02em;
+    }
+
+    .badge-status-overlay {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 2;
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 0.25rem 0.65rem;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .badge-status-overlay.active {
+        background: rgba(16, 185, 129, 0.92);
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+    }
+    .badge-status-overlay.inactive {
+        background: rgba(100, 116, 139, 0.9);
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Card Body */
+    .item-card-body {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+
+    /* Fixed 2-line title container for uniform alignment */
+    .item-card-title {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--text-primary);
+        line-height: 1.35;
+        min-height: 2.7rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Subtitle category */
+    .item-card-sub {
+        font-size: 0.78rem;
+        color: var(--text-secondary);
         font-weight: 500;
+        min-height: 1.2rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 0.65rem;
+    }
+
+    /* Promo Date Banner - Same height on all cards */
+    .service-promo-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-size: 0.72rem;
+        padding: 0.32rem 0.65rem;
+        border-radius: 8px;
+        margin-bottom: 0.9rem;
+        min-height: 1.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .service-promo-badge.active-promo {
+        background: rgba(16, 185, 129, 0.09);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        color: #047857;
+        font-weight: 600;
+    }
+    [data-theme="dark"] .service-promo-badge.active-promo {
+        background: rgba(16, 185, 129, 0.12);
+        border-color: rgba(16, 185, 129, 0.3);
+        color: #34d399;
+    }
+    .service-promo-badge.standard-rate {
+        background: rgba(147, 51, 234, 0.05);
+        border: 1px solid rgba(147, 51, 234, 0.14);
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    /* Meta row (Duration & Price) */
+    .item-card-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding-top: 0.75rem;
+        border-top: 1px dashed var(--border-color);
+        margin-top: auto;
+    }
+
+    .meta-duration {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--text-secondary);
+        font-size: 0.78rem;
+        font-weight: 600;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .meta-duration i {
+        color: var(--purple-400);
+        font-size: 0.72rem;
+    }
+
+    .meta-pricing {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        white-space: nowrap;
+    }
+
+    /* Original strikethrough price — high contrast in light mode */
+    .original-price {
+        text-decoration: line-through;
+        color: #8b7d9e;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    [data-theme="dark"] .original-price {
+        color: rgba(255, 255, 255, 0.45);
+    }
+
+    /* Discounted price — crisp bold green */
+    .discounted-price {
+        color: #15803d;
+        font-weight: 800;
+        font-size: 1.05rem;
+        letter-spacing: -0.01em;
+    }
+    [data-theme="dark"] .discounted-price {
+        color: #34d399;
+    }
+
+    /* Regular price — bold text */
+    .regular-price {
+        color: var(--text-primary);
+        font-weight: 800;
+        font-size: 1.05rem;
+        letter-spacing: -0.01em;
+    }
+
+    /* Action Buttons pinned to bottom */
+    .item-card-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.65rem;
+        margin-top: 0.95rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn-action-edit {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 9px;
+        font-size: 0.76rem;
+        font-weight: 600;
         text-decoration: none;
         cursor: pointer;
         transition: var(--transition);
-        border: 1px solid var(--border-color);
-        background: transparent;
-        color: var(--text-secondary);
+        border: 1.5px solid var(--border-color);
+        background: var(--bg-secondary);
+        color: var(--text-primary);
         font-family: inherit;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     }
-    .btn-sm:hover { border-color: var(--border-hover); color: var(--purple-400); }
-    .btn-sm-danger {
-        border-color: rgba(239, 68, 68, 0.2);
-        color: var(--red-400);
-        background: rgba(239, 68, 68, 0.05);
+    .btn-action-edit:hover {
+        border-color: var(--purple-400);
+        color: var(--purple-500);
+        background: rgba(168, 85, 247, 0.08);
+        transform: translateY(-1px);
     }
-    .btn-sm-danger:hover {
-        background: rgba(239, 68, 68, 0.12);
-        border-color: rgba(239, 68, 68, 0.35);
-    }
-    .discount-badge {
+
+    .btn-action-delete {
         display: inline-flex;
         align-items: center;
-        gap: 0.25rem;
-        padding: 0.15rem 0.5rem;
-        border-radius: 9999px;
-        font-size: 0.65rem;
-        font-weight: 700;
-        background: rgba(239, 68, 68, 0.12);
-        color: var(--red-400);
-    }
-    .original-price {
-        text-decoration: line-through;
-        opacity: 0.5;
-        font-size: 0.7rem;
-    }
-    .discounted-price {
-        color: var(--green-400);
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 9px;
+        font-size: 0.76rem;
         font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: var(--transition);
+        border: 1.5px solid rgba(239, 68, 68, 0.28);
+        background: rgba(239, 68, 68, 0.06);
+        color: #dc2626;
+        font-family: inherit;
+        width: 100%;
+    }
+    .btn-action-delete:hover {
+        background: rgba(239, 68, 68, 0.14);
+        border-color: #dc2626;
+        color: #b91c1c;
+        transform: translateY(-1px);
     }
 </style>
 {% endblock %}
@@ -109,45 +366,72 @@
 <div class="items-grid">
     {% for service in services %}
     <div class="item-card">
-        {% if service.image %}
-        <img src="{{ service.image.url }}" alt="{{ service.name }}" class="item-card-img">
-        {% else %}
-        <div class="item-card-img-placeholder">
-            <i class="fas fa-spa"></i>
+        <!-- Image with Floating Overlays -->
+        <div class="item-card-img-wrap">
+            {% if service.image %}
+            <img src="{{ service.image.url }}" alt="{{ service.name }}" class="item-card-img">
+            {% else %}
+            <div class="item-card-img-placeholder">
+                <i class="fas fa-spa"></i>
+            </div>
+            {% endif %}
+
+            <!-- Floating Top-Left Discount Badge -->
+            {% if service.has_discount %}
+            <span class="badge-discount-overlay">
+                <i class="fas fa-tag"></i> {{ service.discount_percentage|floatformat:-2 }}% OFF
+            </span>
+            {% endif %}
+
+            <!-- Floating Top-Right Status Badge -->
+            <span class="badge-status-overlay {% if service.is_active %}active{% else %}inactive{% endif %}">
+                <i class="fas fa-circle" style="font-size: 0.45rem;"></i>
+                {% if service.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
         </div>
-        {% endif %}
+
+        <!-- Uniform Card Body -->
         <div class="item-card-body">
-            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <div class="item-card-title">{{ service.name }}</div>
-                {% if service.has_discount %}
-                <span class="discount-badge"><i class="fas fa-tag"></i> {{ service.discount_percentage }}% OFF</span>
-                {% endif %}
+            <h3 class="item-card-title" title="{{ service.name }}">{{ service.name }}</h3>
+            <div class="item-card-sub" title="{{ service.get_category_display }}">{{ service.get_category_display }}</div>
+
+            <!-- Promo Date Banner (Uniform on all cards) -->
+            {% if service.has_discount %}
+            <div class="service-promo-badge active-promo">
+                <i class="far fa-calendar-alt"></i>
+                <span>Promo: {{ service.promo_effective_date|date:"M d, Y" }}{% if service.promo_effective_to %} &ndash; {{ service.promo_effective_to|date:"M d, Y" }}{% endif %}</span>
             </div>
-            <div class="item-card-sub">{{ service.get_category_display }}</div>
+            {% else %}
+            <div class="service-promo-badge standard-rate">
+                <i class="fas fa-shield-alt"></i>
+                <span>Standard Catalog Rate</span>
+            </div>
+            {% endif %}
+
+            <!-- Meta (Duration & Price) -->
             <div class="item-card-meta">
-                <span><i class="fas fa-clock"></i> {{ service.duration_minutes }} min</span>
-                {% if service.has_discount %}
-                <span class="original-price"><i class="fas fa-peso-sign"></i> {{ service.price }}</span>
-                <span class="discounted-price"><i class="fas fa-peso-sign"></i> {{ service.discounted_price|floatformat:2 }}</span>
-                {% else %}
-                <span><i class="fas fa-peso-sign"></i> {{ service.price }}</span>
-                {% endif %}
-                <span>
-                    {% if service.is_active %}
-                    <i class="fas fa-circle" style="color: var(--green-400); font-size: 0.5rem;"></i> Active
-                    {% else %}
-                    <i class="fas fa-circle" style="color: var(--red-400); font-size: 0.5rem;"></i> Inactive
-                    {% endif %}
+                <span class="meta-duration">
+                    <i class="fas fa-clock"></i> {{ service.duration_minutes }} min
                 </span>
+                <div class="meta-pricing">
+                    {% if service.has_discount %}
+                    <span class="original-price">₱{{ service.price|floatformat:2 }}</span>
+                    <span class="discounted-price">₱{{ service.discounted_price|floatformat:2 }}</span>
+                    {% else %}
+                    <span class="regular-price">₱{{ service.price|floatformat:2 }}</span>
+                    {% endif %}
+                </div>
             </div>
+
+            <!-- Action Buttons (Pinned to bottom) -->
             {% if request.session.portal_role == 'admin' %}
             <div class="item-card-actions">
-                <a href="{% url 'portals:service_edit' service.pk %}" class="btn-sm">
+                <a href="{% url 'portals:service_edit' service.pk %}" class="btn-action-edit">
                     <i class="fas fa-pen"></i> Edit
                 </a>
-                <form method="post" action="{% url 'portals:service_delete' service.pk %}" style="display:inline;" onsubmit="return confirm('Delete &quot;{{ service.name }}&quot;?');">
+                <form method="post" action="{% url 'portals:service_delete' service.pk %}" style="display:inline; margin:0;" onsubmit="return confirm('Delete &quot;{{ service.name }}&quot;?');">
                     {% csrf_token %}
-                    <button type="submit" class="btn-sm btn-sm-danger">
+                    <button type="submit" class="btn-action-delete">
                         <i class="fas fa-trash-alt"></i> Delete
                     </button>
                 </form>

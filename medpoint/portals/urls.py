@@ -55,8 +55,12 @@ urlpatterns = [
     path('my-schedule/leave/<int:pk>/delete/', views.staff_delete_leave, name='staff_delete_leave'),
 
 
-    # ── Admin Reports ─────────────────────────────────
+    # ── Admin Reports & Analytics ─────────────────────
     path('reports/', views.admin_reports, name='admin_reports'),
+    path('price-checker/', views.price_checker, name='price_checker'),
+    path('price-checker/record/', views.price_checker_add_record, name='price_checker_add_record'),
+    path('price-checker/record/<int:pk>/delete/', views.price_checker_delete_record, name='price_checker_delete_record'),
+    path('price-checker/record/<int:pk>/update/', views.price_checker_update_record, name='price_checker_update_record'),
     path('admin-settings/', views.admin_settings, name='admin_settings'),
 
     # ── Staff views (therapist limited access) ────────

@@ -153,7 +153,9 @@
         <select name="status" class="filter-select">
             <option value="">All Statuses</option>
             {% for value, label in status_choices %}
+            {% if value != 'awaiting_verification' %}
             <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endif %}
             {% endfor %}
         </select>
         <select name="type" class="filter-select">

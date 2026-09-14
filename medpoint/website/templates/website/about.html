@@ -35,7 +35,7 @@
                 <img src="{% static 'website/images/about.png' %}" alt="About MEDPOINT" class="rounded-2xl w-full h-[500px] object-cover relative z-10 shadow-2xl shadow-purple-500/10">
                 <div class="absolute -bottom-6 -right-6 bg-gradient-to-br from-purple-600 to-violet-700 rounded-xl p-6 z-20 shadow-xl">
                     <div class="text-center">
-                        <span class="block text-3xl font-display font-bold text-white">10+</span>
+                        <span class="block text-3xl font-display font-bold text-white">{{ years_experience }}+</span>
                         <span class="text-purple-200 text-sm">Years of Excellence</span>
                     </div>
                 </div>
@@ -56,15 +56,15 @@
                 </p>
                 <div class="grid grid-cols-2 gap-6">
                     <div class="text-center p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">
-                        <span class="block text-2xl font-display font-bold text-purple-400">5,000+</span>
+                        <span class="block text-2xl font-display font-bold text-purple-400">{{ happy_clients_display }}+</span>
                         <span class="text-gray-500 text-sm">Happy Clients</span>
                     </div>
                     <div class="text-center p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">
-                        <span class="block text-2xl font-display font-bold text-purple-400">15+</span>
+                        <span class="block text-2xl font-display font-bold text-purple-400">{{ active_therapists_count|default:0 }}+</span>
                         <span class="text-gray-500 text-sm">Expert Therapists</span>
                     </div>
                     <div class="text-center p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">
-                        <span class="block text-2xl font-display font-bold text-purple-400">25+</span>
+                        <span class="block text-2xl font-display font-bold text-purple-400">{{ active_services_count|default:0 }}+</span>
                         <span class="text-gray-500 text-sm">Treatments Offered</span>
                     </div>
                     <div class="text-center p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">

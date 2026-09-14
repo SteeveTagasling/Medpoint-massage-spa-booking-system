@@ -613,14 +613,54 @@ document.addEventListener('DOMContentLoaded', () => {
         if (therapistHidden) therapistHidden.value = '';
     }
 
+    // ── Past-time filter ─────────────────────────────────
+    // If today is selected as the date, hide time slots
+    // whose hour is <= the current hour (already-passed slots).
+    function filterTimesForToday() {
+        if (!dateInput || !timeInput) return;
+        const selectedDate = dateInput.value;
+        if (!selectedDate) return;
+
+        const now      = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const options  = timeInput.querySelectorAll('option');
+
+        if (selectedDate === todayStr) {
+            const currentHour = now.getHours(); // 0-23
+            options.forEach(opt => {
+                const optHour = parseInt(opt.value.split(':')[0], 10);
+                const isPast  = optHour <= currentHour;
+                opt.disabled      = isPast;
+                opt.style.display = isPast ? 'none' : '';
+            });
+            // If currently-selected slot is now in the past, reset to first valid slot
+            const chosen = timeInput.value;
+            if (chosen) {
+                const chosenOpt = timeInput.querySelector(`option[value="${chosen}"]`);
+                if (chosenOpt && chosenOpt.disabled) {
+                    const first = Array.from(options).find(o => !o.disabled);
+                    timeInput.value = first ? first.value : '';
+                    timeInput.dispatchEvent(new Event('change'));
+                }
+            }
+        } else {
+            // Not today — re-enable all options
+            options.forEach(opt => {
+                opt.disabled      = false;
+                opt.style.display = '';
+            });
+        }
+    }
+
     // ── Event Listeners ──────────────────────────────────
     if (genderSelect) genderSelect.addEventListener('change', () => { resetTherapist(); updatePreferenceOptions(); });
     if (prefSelect)   prefSelect.addEventListener('change',   () => { resetTherapist(); maybeLoadTherapists(); });
-    if (dateInput)    dateInput.addEventListener('change',    () => { resetTherapist(); maybeLoadTherapists(); });
+    if (dateInput)    dateInput.addEventListener('change',    () => { filterTimesForToday(); resetTherapist(); maybeLoadTherapists(); });
     if (timeInput)    timeInput.addEventListener('change',    () => { resetTherapist(); maybeLoadTherapists(); });
 
     // ── Init ─────────────────────────────────────────────
     updatePreferenceOptions();
+    filterTimesForToday();   // apply on page load if date is pre-filled
     // Auto-load therapists if date is pre-filled and time gets selected
     maybeLoadTherapists();
 });

@@ -2,17 +2,76 @@
 
 {% block title %}Business Reports{% endblock %}
 {% block page_title %}Business Reports{% endblock %}
-{% block page_subtitle %}{{ period_label }} — Performance Monitoring{% endblock %}
+{% block page_subtitle %}{{ period_label }} — Sales &amp; Performance Monitoring{% endblock %}
 
 {% block extra_css %}
 <style>
+    /* Print dropdown */
+    .print-dropdown-wrap {
+        position: relative;
+        display: inline-flex;
+    }
+    .print-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 1.25rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: inherit;
+    }
+    .print-btn:hover {
+        border-color: var(--border-hover);
+        color: var(--purple-400);
+        background: var(--sidebar-hover-bg);
+    }
+    .print-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+        min-width: 170px;
+        z-index: 999;
+        overflow: hidden;
+    }
+    .print-dropdown.open { display: block; }
+    .print-dropdown button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.65rem 1rem;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 0.82rem;
+        font-weight: 500;
+        cursor: pointer;
+        font-family: inherit;
+        text-align: left;
+        transition: var(--transition);
+        border-bottom: 1px solid var(--border-color);
+    }
+    .print-dropdown button:last-child { border-bottom: none; }
+    .print-dropdown button:hover { background: var(--sidebar-hover-bg); color: var(--purple-400); }
+    .print-dropdown button i { width: 14px; text-align: center; color: var(--purple-400); font-size: 0.8rem; }
+
     /* Period Tabs */
     .period-tabs {
         display: flex;
         border: 1px solid var(--border-color);
         border-radius: 10px;
         overflow: hidden;
-        margin-bottom: 1.5rem;
         width: fit-content;
     }
     .period-tabs a {
@@ -34,27 +93,37 @@
         color: #fff;
     }
 
-    /* Print button */
-    .print-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.55rem 1.25rem;
-        border-radius: 10px;
-        border: 1px solid var(--border-color);
-        background: transparent;
-        color: var(--text-secondary);
-        font-size: 0.8125rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: var(--transition);
-        font-family: inherit;
+    /* Screen display: only show Sales Report on screen */
+    .booking-section {
+        display: none;
     }
-    .print-btn:hover {
-        border-color: var(--border-hover);
-        color: var(--purple-400);
-        background: var(--sidebar-hover-bg);
+
+    /* Screen Data Table typography */
+    .data-table {
+        font-size: 0.8rem;
     }
+    .data-table th {
+        font-size: 0.72rem;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+    .data-table td {
+        font-size: 0.8rem;
+    }
+
+    /* Status & type badges */
+    .status-badge {
+        display: inline-block; padding: 0.15rem 0.55rem;
+        border-radius: 9999px; font-size: 0.68rem;
+        font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .status-completed { background: rgba(52,211,153,0.12); color: var(--green-400); }
+    .status-pending   { background: rgba(251,191,36,0.12); color: #fbbf24; }
+    .status-confirmed { background: rgba(96,165,250,0.12); color: #60a5fa; }
+    .status-cancelled { background: rgba(248,113,113,0.12); color: #f87171; }
+    .type-online { background: rgba(96,165,250,0.1); color: #60a5fa; font-size:0.65rem; font-weight:700; padding:0.12rem 0.45rem; border-radius:9999px; }
+    .type-walkin { background: rgba(251,191,36,0.1); color: #fbbf24; font-size:0.65rem; font-weight:700; padding:0.12rem 0.45rem; border-radius:9999px; }
 
     .header-row {
         display: flex;
@@ -81,7 +150,7 @@
     .revenue-highlight {
         font-weight: 700;
         color: var(--green-400);
-        font-size: 0.9rem;
+        font-size: 0.88rem;
     }
     .section-title {
         font-size: 0.95rem;
@@ -168,45 +237,63 @@
         box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
     }
 
-    /* Print styles: viewable and printable, but NOT downloadable */
+    /* Print styles: viewable and printable, compact & neat */
     @media print {
-        @page { size: portrait; margin: 10mm; }
-        body { background: #fff !important; color: #000 !important; font-family: 'Inter', sans-serif !important; line-height: 1.1 !important; }
+        @page { size: portrait; margin: 8mm; }
+        *, *::before, *::after {
+            box-sizing: border-box !important;
+        }
+        body { 
+            background: #fff !important; 
+            color: #000 !important; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; 
+            line-height: 1.2 !important; 
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
         
         /* Hide all non-essential UI */
-        .sidebar, .topbar-actions, .mobile-header, .sidebar-footer, .print-btn,
+        .sidebar, .topbar-actions, .mobile-header, .sidebar-footer, .print-dropdown-wrap,
         .period-tabs, .sidebar-toggle, .no-profile-alert, .header-row, .topbar { display: none !important; }
-        
+
+        .status-badge, .type-online, .type-walkin { 
+            padding: 0 !important; 
+            border: none !important; 
+            font-size: 6.2pt !important; 
+            font-weight: normal !important; 
+            background: none !important; 
+            color: #000 !important; 
+            text-transform: none !important; 
+        }
+
         .main-content { margin: 0 !important; padding: 0 !important; }
 
-        /* ── Print Logo Header ── */
-        .print-logo-header { display: flex !important; align-items: center; gap: 12px; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 14px; }
-        .print-logo-icon { font-size: 28pt; color: #7c3aed !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        .print-logo-text { line-height: 1.2; }
-        .print-logo-name { font-size: 18pt; font-weight: 800; letter-spacing: 0.1em; color: #000 !important; }
-        .print-logo-sub  { font-size: 8pt; letter-spacing: 0.2em; text-transform: uppercase; color: #555 !important; }
-        .print-logo-report-title { margin-left: auto; text-align: right; }
-        .print-logo-report-title h2 { font-size: 13pt; font-weight: 700; margin: 0; }
-        .print-logo-report-title p  { font-size: 8pt; color: #555 !important; margin: 2px 0 0 0; }
+        /* Print visibility toggling */
+        .booking-section { display: none !important; }
+        .sales-section { display: none !important; }
+        .print-revenue-summary { display: none !important; }
 
-        /* Compact Metrics */
-        .metrics-grid { 
-            display: flex !important; 
-            gap: 10px !important; 
-            margin-bottom: 10px !important; 
-        }
-        .metric-card { 
-            flex: 1 !important;
-            border: 1px solid #000 !important; 
-            padding: 5px !important;
-            text-align: center !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            background: #fff !important;
-        }
-        .metric-card::before, .metric-icon { display: none !important; }
-        .metric-label { font-size: 7pt !important; text-transform: uppercase !important; font-weight: bold !important; margin-bottom: 3px !important; color: #000 !important; }
-        .metric-value { font-size: 11pt !important; font-weight: bold !important; color: #000 !important; }
+        body.print-bookings .booking-section { display: block !important; }
+        body.print-bookings .sales-section { display: none !important; }
+        body.print-bookings .print-revenue-summary { display: none !important; }
+
+        body.print-sales .booking-section { display: none !important; }
+        body.print-sales .sales-section { display: block !important; }
+        body.print-sales .print-revenue-summary { display: block !important; }
+
+        /* Default print view if triggered without specific class */
+        body:not(.print-bookings) .sales-section { display: block !important; }
+        body:not(.print-bookings) .print-revenue-summary { display: block !important; }
+
+        /* ── Print Logo Header ── */
+        .print-logo-header { display: flex !important; align-items: center; gap: 10px; border-bottom: 1.5px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
+        .print-logo-icon { font-size: 22pt; color: #000 !important; }
+        .print-logo-text { line-height: 1.15; }
+        .print-logo-name { font-size: 15pt; font-weight: 800; letter-spacing: 0.08em; color: #000 !important; }
+        .print-logo-sub  { font-size: 7pt; letter-spacing: 0.18em; text-transform: uppercase; color: #000 !important; }
+        .print-logo-report-title { margin-left: auto; text-align: right; }
+        .print-logo-report-title h2 { font-size: 11pt; font-weight: 700; margin: 0; color: #000 !important; }
+        .print-logo-report-title p  { font-size: 7pt; color: #000 !important; margin: 1px 0 0 0; }
 
         /* General Card adjustments (Remove bloated wrappers) */
         .card { 
@@ -216,59 +303,145 @@
             padding: 0 !important;
             box-shadow: none !important;
         }
-        .card-header { padding: 0 0 4px 0 !important; border: none !important; background: transparent !important; margin-bottom: 5px !important; border-bottom: 1px solid #ccc !important; }
-        .card-header-title { font-size: 9pt !important; font-weight: bold !important; }
+        .card-header { padding: 0 0 2px 0 !important; border: none !important; background: transparent !important; margin-bottom: 0 !important; }
+        .card-header-title { font-size: 7.5pt !important; font-weight: 700 !important; color: #000 !important; }
         .card-header-title i, .fa-info-circle { display: none !important; }
         .card > div:not(.card-header) { padding: 0 !important; }
 
-        /* Ultra-compact Tables */
+        /* Summary table (print) */
+        .summary-table-wrap table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            margin-bottom: 8px !important;
+            table-layout: fixed !important;
+        }
+        .summary-table-wrap th, .summary-table-wrap td {
+            border: 1px solid #777 !important;
+            padding: 3px 6px !important;
+            color: #000 !important;
+            font-size: 6.8pt !important;
+            text-align: center !important;
+        }
+        .summary-table-wrap th {
+            background: #f0f0f0 !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            font-size: 6.2pt !important;
+            letter-spacing: 0.03em !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .summary-table-wrap td {
+            font-size: 7.5pt !important;
+            font-weight: 600 !important;
+        }
+        .summary-table-wrap td * {
+            font-size: 7.5pt !important;
+        }
+
+        /* Ultra-compact Data Tables */
         .table-wrapper { overflow: visible !important; }
         table.data-table { 
             width: 100% !important; 
             border-collapse: collapse !important; 
             margin: 0 !important;
+            table-layout: fixed !important;
         }
         table.data-table tr { page-break-inside: avoid !important; }
         table.data-table thead { display: table-header-group !important; }
         table.data-table tfoot { display: table-footer-group !important; }
         
         table.data-table th, table.data-table td { 
-            color: #000 !important; 
-            border: 1px solid #666 !important; 
-            padding: 2px 4px !important; 
-            font-size: 7.5pt !important;
+            color: #111 !important; 
+            border: 1px solid #777 !important; 
+            padding: 3px 5px !important; 
+            font-size: 6.2pt !important;
+            line-height: 1.25 !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            vertical-align: middle !important;
         }
         table.data-table th { 
-            background-color: #ededed !important; 
-            font-weight: bold !important; 
+            background-color: #f0f0f0 !important; 
+            font-weight: 700 !important; 
+            font-size: 6.2pt !important;
             text-transform: uppercase !important;
+            letter-spacing: 0.02em !important;
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important;
         }
-        table.data-table tfoot td {
+        table.data-table td * {
+            font-size: 6.2pt !important;
+            color: #000 !important;
+        }
+        table.data-table tfoot td,
+        table.data-table tfoot td * {
             background-color: #f7f7f7 !important;
             border-top: 1.5px solid #000 !important;
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important;
-            font-weight: bold !important;
+            font-weight: 700 !important;
+            font-size: 6.2pt !important;
+            color: #000 !important;
         }
         
-        .revenue-highlight, .commission-highlight { color: #000 !important; font-weight: bold !important; }
-        .status, .commission-badge { padding: 0 !important; border: none !important; font-size: 7.5pt !important; font-weight: normal !important; text-transform: none !important; }
+        .revenue-highlight, .commission-highlight { 
+            color: #000 !important; 
+            font-weight: 700 !important; 
+            font-size: 6.2pt !important; 
+        }
+        .status, .commission-badge { 
+            padding: 0 !important; 
+            border: none !important; 
+            background: none !important;
+            font-size: 6.2pt !important; 
+            font-weight: normal !important; 
+            text-transform: none !important;
+            color: #000 !important;
+        }
         .status::before, .commission-badge i { display: none !important; }
 
+        /* Specific Column Widths & Alignments for Booking List in print */
+        .booking-list-table th:nth-child(1), .booking-list-table td:nth-child(1) { width: 6% !important; text-align: center !important; white-space: nowrap !important; padding: 3px 2px !important; }
+        .booking-list-table th:nth-child(2), .booking-list-table td:nth-child(2) { width: 17% !important; text-align: left !important; padding-left: 5px !important; padding-right: 5px !important; }
+        .booking-list-table th:nth-child(3), .booking-list-table td:nth-child(3) { width: 23% !important; text-align: left !important; padding-left: 5px !important; padding-right: 5px !important; }
+        .booking-list-table th:nth-child(4), .booking-list-table td:nth-child(4) { width: 12% !important; text-align: left !important; padding-left: 5px !important; padding-right: 5px !important; }
+        .booking-list-table th:nth-child(5), .booking-list-table td:nth-child(5) { width: 9% !important; text-align: center !important; white-space: nowrap !important; }
+        .booking-list-table th:nth-child(6), .booking-list-table td:nth-child(6) { width: 7% !important; text-align: center !important; white-space: nowrap !important; }
+        .booking-list-table th:nth-child(7), .booking-list-table td:nth-child(7) { width: 6% !important; text-align: center !important; }
+        .booking-list-table th:nth-child(8), .booking-list-table td:nth-child(8) { width: 9% !important; text-align: center !important; }
+        .booking-list-table th:nth-child(9), .booking-list-table tbody td:nth-child(9) { width: 11% !important; text-align: right !important; white-space: nowrap !important; padding-right: 6px !important; }
+
+        .booking-list-table tfoot td:first-child { text-align: right !important; padding-right: 12px !important; }
+        .booking-list-table tfoot td:last-child { width: 11% !important; text-align: right !important; white-space: nowrap !important; padding-right: 6px !important; }
+
+        /* Specific Column Widths & Alignments for Staff Performance in print */
+        .staff-table th:nth-child(1), .staff-table td:nth-child(1) { width: 20%; text-align: left; padding-left: 5px; }
+        .staff-table th:nth-child(2), .staff-table td:nth-child(2) { width: 18%; text-align: left; padding-left: 5px; }
+        .staff-table th:nth-child(3), .staff-table td:nth-child(3) { width: 13%; text-align: center; }
+        .staff-table th:nth-child(4), .staff-table td:nth-child(4) { width: 17%; text-align: right; white-space: nowrap; padding-right: 6px; }
+        .staff-table th:nth-child(5), .staff-table td:nth-child(5) { width: 13%; text-align: center; }
+        .staff-table th:nth-child(6), .staff-table td:nth-child(6) { width: 19%; text-align: right; white-space: nowrap; padding-right: 6px; }
+
+        /* Specific Column Widths & Alignments for Service Breakdown in print */
+        .service-table th:nth-child(1), .service-table td:nth-child(1) { width: 35%; text-align: left; padding-left: 5px; }
+        .service-table th:nth-child(2), .service-table td:nth-child(2) { width: 20%; text-align: left; padding-left: 5px; }
+        .service-table th:nth-child(3), .service-table td:nth-child(3) { width: 13%; text-align: center; }
+        .service-table th:nth-child(4), .service-table td:nth-child(4) { width: 16%; text-align: right; white-space: nowrap; padding-right: 6px; }
+        .service-table th:nth-child(5), .service-table td:nth-child(5) { width: 16%; text-align: right; white-space: nowrap; padding-right: 6px; }
+
         /* ── Revenue Summary Footer ── */
-        .print-revenue-summary { display: block !important; border-top: 2px solid #000; margin-top: 14px; padding-top: 8px; }
-        .print-revenue-summary table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-        .print-revenue-summary td { padding: 3px 6px; border: 1px solid #aaa; }
-        .print-revenue-summary .rev-label { font-weight: 700; text-transform: uppercase; font-size: 8pt; }
-        .print-revenue-summary .rev-value { font-weight: 800; font-size: 11pt; text-align: right; }
+        .print-revenue-summary { border-top: 1.5px solid #000; margin-top: 10px; padding-top: 6px; }
+        .print-revenue-summary table { width: 100%; border-collapse: collapse; }
+        .print-revenue-summary td { padding: 2px 5px; border: 1px solid #aaa; }
+        .print-revenue-summary .rev-label { font-weight: 700; text-transform: uppercase; font-size: 6.8pt !important; }
+        .print-revenue-summary .rev-value { font-weight: 800; font-size: 8.5pt !important; text-align: right; }
 
         /* ── Signature Fields ── */
-        .print-signatures { display: flex !important; gap: 40px; margin-top: 32px; }
-        .print-sig-block { flex: 1; }
-        .print-sig-line { border-bottom: 1px solid #000; margin-bottom: 4px; height: 24px; }
-        .print-sig-label { font-size: 7.5pt; color: #333 !important; }
+        .print-signatures { display: flex !important; gap: 50px; margin-top: 24px; }
+        .print-sig-block { flex: 1; text-align: center; }
+        .print-sig-line { border-bottom: 1px solid #000; margin-bottom: 3px; height: 22px; }
+        .print-sig-label { font-size: 6.8pt !important; color: #222 !important; text-align: center; }
     }
 </style>
 {% endblock %}
@@ -282,14 +455,16 @@
         <div class="print-logo-sub">Massage &amp; Spa</div>
     </div>
     <div class="print-logo-report-title">
-        <h2>Business Report</h2>
+        <h2 id="print-report-title">Sales Report</h2>
         <p>Period: {{ period_label }}</p>
     </div>
 </div>
+
 <!-- Header -->
 <div class="header-row">
     <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
-        <div class="period-tabs" style="margin-bottom: 0;">
+        <!-- Period Tabs -->
+        <div class="period-tabs">
             <a href="?period=today" class="{% if period == 'today' %}active{% endif %}">
                 <i class="fas fa-sun"></i> Today
             </a>
@@ -300,6 +475,7 @@
                 <i class="fas fa-calendar-alt"></i> This Month
             </a>
         </div>
+        <!-- Custom Date Filter -->
         <form method="get" class="custom-date-filter">
             <div class="date-input-wrapper">
                 <i class="fas fa-calendar-day" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
@@ -315,161 +491,325 @@
             </button>
         </form>
     </div>
-    <button class="print-btn" onclick="window.print()">
-        <i class="fas fa-print"></i> Print Report
-    </button>
-</div>
-
-<!-- Summary Metrics -->
-<div class="metrics-grid" style="margin-bottom: 1.5rem;">
-    <div class="metric-card metric-green">
-        <div class="metric-icon"><i class="fas fa-peso-sign"></i></div>
-        <div class="metric-info">
-            <div class="metric-label">Total Revenue</div>
-            <div class="metric-value">₱{{ total_revenue|floatformat:2 }}</div>
-        </div>
-    </div>
-    <div class="metric-card metric-purple">
-        <div class="metric-icon"><i class="fas fa-check-circle"></i></div>
-        <div class="metric-info">
-            <div class="metric-label">Services Completed</div>
-            <div class="metric-value">{{ total_completed }}</div>
-        </div>
-    </div>
-    <div class="metric-card metric-blue">
-        <div class="metric-icon"><i class="fas fa-globe"></i></div>
-        <div class="metric-info">
-            <div class="metric-label">Online</div>
-            <div class="metric-value">{{ online_count }}</div>
-        </div>
-    </div>
-    <div class="metric-card metric-amber">
-        <div class="metric-icon"><i class="fas fa-walking"></i></div>
-        <div class="metric-info">
-            <div class="metric-label">Walk-in</div>
-            <div class="metric-value">{{ walkin_count }}</div>
+    <!-- Print Dropdown -->
+    <div class="print-dropdown-wrap" id="printDropdownWrap">
+        <button class="print-btn" id="printDropdownBtn" onclick="togglePrintDropdown(event)">
+            <i class="fas fa-print"></i> Print Report <i class="fas fa-chevron-down" style="font-size:0.7rem; margin-left:0.2rem;"></i>
+        </button>
+        <div class="print-dropdown" id="printDropdown">
+            <button type="button" onclick="printReport('bookings')">
+                <i class="fas fa-calendar-check"></i> Bookings
+            </button>
+            <button type="button" onclick="printReport('sales')">
+                <i class="fas fa-chart-line"></i> Sales
+            </button>
         </div>
     </div>
 </div>
 
-<!-- Staff Performance Table -->
-<div class="card" style="margin-bottom: 1.5rem;">
-    <div class="card-header">
-        <span class="card-header-title">
-            <i class="fas fa-users" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
-            Staff Performance — {{ period_label }}
-        </span>
-    </div>
-    <div class="table-wrapper">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Staff</th>
-                    <th>Title</th>
-                    <th>Services Rendered</th>
-                    <th>Revenue Generated</th>
-                    <th>Commission Rate</th>
-                    <th>Commission Earned (Salary)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in staff_data %}
-                <tr>
-                    <td style="color: var(--text-primary); font-weight: 500;">{{ item.therapist.name }}</td>
-                    <td>{{ item.therapist.title }}</td>
-                    <td style="font-weight: 600;">{{ item.services_rendered }}</td>
-                    <td class="revenue-highlight">₱{{ item.total_revenue|floatformat:2 }}</td>
-                    <td>
-                        <span class="commission-badge">
-                            <i class="fas fa-percentage"></i> {{ item.commission_rate }}%
-                        </span>
-                    </td>
-                    <td style="color: var(--purple-400); font-weight: 600;">₱{{ item.commission_earned|floatformat:2 }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6">
-                        <div class="empty-state">
-                            <i class="fas fa-chart-bar"></i>
-                            <p>No completed services for this period</p>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            {% if staff_data %}
-            <tfoot>
-                <tr style="border-top: 2px solid var(--border-color);">
-                    <td colspan="2" style="font-weight: 700; color: var(--text-primary);">TOTALS</td>
-                    <td style="font-weight: 700; color: var(--text-primary);">{{ total_completed }}</td>
-                    <td class="revenue-highlight">₱{{ total_revenue|floatformat:2 }}</td>
-                    <td></td>
-                    <td style="font-weight: 700; color: var(--purple-400);">
-                        ₱{% widthratio 0 1 0 as total_comm %}
-                        {% for item in staff_data %}{% endfor %}
-                        —
-                    </td>
-                </tr>
-            </tfoot>
-            {% endif %}
-        </table>
-    </div>
-</div>
+{# ═══════════ BOOKING SECTION (hidden on screen, only visible when printing Bookings) ═══════════ #}
+<div class="booking-section">
 
-<!-- Service Breakdown -->
-<div class="card">
-    <div class="card-header">
-        <span class="card-header-title">
-            <i class="fas fa-concierge-bell" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
-            Service Breakdown — {{ period_label }}
-        </span>
+    <!-- Booking Summary -->
+    <div class="card summary-table-wrap" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+            <span class="card-header-title">
+                <i class="fas fa-chart-bar" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+                Booking Summary — {{ period_label }}
+            </span>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table summary-table">
+                <colgroup>
+                    <col style="width: 25%;">
+                    <col style="width: 25%;">
+                    <col style="width: 25%;">
+                    <col style="width: 25%;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Total Bookings</th>
+                        <th>Completed</th>
+                        <th>Online</th>
+                        <th>Walk-in</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight: 600;">{{ total_bookings_period }}</td>
+                        <td style="font-weight: 600; color: var(--green-400);">{{ total_completed }}</td>
+                        <td>{{ online_count }}</td>
+                        <td>{{ walkin_count }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-    <div class="table-wrapper">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Service</th>
-                    <th>Category</th>
-                    <th>Times Performed</th>
-                    <th>Unit Price</th>
-                    <th>Revenue</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in service_breakdown %}
-                <tr>
-                    <td style="color: var(--text-primary); font-weight: 500;">{{ item.service.name }}</td>
-                    <td>{{ item.service.get_category_display }}</td>
-                    <td style="font-weight: 600;">{{ item.count }}</td>
-                    <td>₱{{ item.revenue|floatformat:2 }}</td>
-                    <td class="revenue-highlight">₱{{ item.revenue|floatformat:2 }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5">
-                        <div class="empty-state">
-                            <i class="fas fa-concierge-bell"></i>
-                            <p>No services performed in this period</p>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
 
-<!-- Print-only: Total Revenue Summary -->
+    <!-- Booking List -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-header-title">
+                <i class="fas fa-calendar-check" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+                Booking List — {{ period_label }}
+            </span>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table booking-list-table">
+                <colgroup>
+                    <col style="width: 6%;">
+                    <col style="width: 17%;">
+                    <col style="width: 23%;">
+                    <col style="width: 12%;">
+                    <col style="width: 9%;">
+                    <col style="width: 7%;">
+                    <col style="width: 6%;">
+                    <col style="width: 9%;">
+                    <col style="width: 11%;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Client Name</th>
+                        <th>Service(s)</th>
+                        <th>Therapist</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in all_bookings_in_period %}
+                    <tr>
+                        <td style="color: var(--text-muted); text-align: center; white-space: nowrap;">{{ b.pk|stringformat:"04d" }}</td>
+                        <td style="font-weight: 500; color: var(--text-primary);">{{ b.client_name }}</td>
+                        <td>{{ b.service_names }}</td>
+                        <td>{% if b.therapist %}{{ b.therapist.name }}{% else %}<span style="color:var(--text-muted);">-</span>{% endif %}</td>
+                        <td style="text-align: center; white-space: nowrap;">{{ b.date|date:"M d, Y" }}</td>
+                        <td style="text-align: center; white-space: nowrap;">{{ b.get_time_display }}</td>
+                        <td style="text-align: center;">
+                            {% if b.booking_type == 'online' %}
+                                <span class="type-online">Online</span>
+                            {% else %}
+                                <span class="type-walkin">Walk-in</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;"><span class="status-badge status-{{ b.status }}">{{ b.get_status_display }}</span></td>
+                        <td class="revenue-highlight" style="white-space: nowrap; text-align: right; padding-right: 6px;">₱{{ b.total_discounted_price|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <i class="fas fa-calendar-times"></i>
+                                <p>No bookings found for this period</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                {% if all_bookings_in_period %}
+                <tfoot>
+                    <tr>
+                        <td colspan="8" style="font-weight: 700; color: #000; text-align: right; padding-right: 12px;">TOTAL REVENUE (Completed)</td>
+                        <td class="revenue-highlight" style="white-space: nowrap; text-align: right; padding-right: 6px;">₱{{ total_revenue|floatformat:2 }}</td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+</div>{# end booking-section #}
+
+{# ═══════════ SALES SECTION (visible on screen and when printing Sales) ═══════════ #}
+<div class="sales-section">
+
+    <!-- Sales Summary -->
+    <div class="card summary-table-wrap" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+            <span class="card-header-title">
+                <i class="fas fa-chart-bar" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+                Sales Summary — {{ period_label }}
+            </span>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table summary-table">
+                <colgroup>
+                    <col style="width: 25%;">
+                    <col style="width: 25%;">
+                    <col style="width: 25%;">
+                    <col style="width: 25%;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Total Revenue</th>
+                        <th>Services Completed</th>
+                        <th>Online Bookings</th>
+                        <th>Walk-in</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="revenue-highlight">₱{{ total_revenue|floatformat:2 }}</td>
+                        <td style="font-weight: 600;">{{ total_completed }}</td>
+                        <td>{{ online_count }}</td>
+                        <td>{{ walkin_count }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Staff Performance -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+            <span class="card-header-title">
+                <i class="fas fa-users" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+                Staff Performance — {{ period_label }}
+            </span>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table staff-table">
+                <colgroup>
+                    <col style="width: 20%;">
+                    <col style="width: 18%;">
+                    <col style="width: 13%;">
+                    <col style="width: 17%;">
+                    <col style="width: 13%;">
+                    <col style="width: 19%;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Staff</th>
+                        <th>Title</th>
+                        <th>Services Rendered</th>
+                        <th>Revenue Generated</th>
+                        <th>Commission Rate</th>
+                        <th>Commission Earned</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in staff_data %}
+                    <tr>
+                        <td style="color: var(--text-primary); font-weight: 500;">{{ item.therapist.name }}</td>
+                        <td>{{ item.therapist.title }}</td>
+                        <td style="font-weight: 600; text-align: center;">{{ item.services_rendered }}</td>
+                        <td class="revenue-highlight" style="white-space: nowrap; text-align: right; padding-right: 6px;">₱{{ item.total_revenue|floatformat:2 }}</td>
+                        <td style="text-align: center;">
+                            <span class="commission-badge">
+                                <i class="fas fa-percentage"></i> {{ item.commission_rate }}%
+                            </span>
+                        </td>
+                        <td style="color: #000; font-weight: 600; white-space: nowrap; text-align: right; padding-right: 6px;">₱{{ item.commission_earned|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="fas fa-chart-bar"></i>
+                                <p>No completed services for this period</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                {% if staff_data %}
+                <tfoot>
+                    <tr>
+                        <td colspan="2" style="font-weight: 700; color: var(--text-primary);">TOTALS</td>
+                        <td style="font-weight: 700; color: var(--text-primary); text-align: center;">{{ total_completed }}</td>
+                        <td class="revenue-highlight" style="white-space: nowrap; text-align: right; padding-right: 6px;">₱{{ total_revenue|floatformat:2 }}</td>
+                        <td></td>
+                        <td style="font-weight: 700; color: var(--purple-400); text-align: right;">-</td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+    <!-- Service Breakdown -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-header-title">
+                <i class="fas fa-concierge-bell" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+                Service Breakdown — {{ period_label }}
+            </span>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table service-table">
+                <colgroup>
+                    <col style="width: 35%;">
+                    <col style="width: 20%;">
+                    <col style="width: 13%;">
+                    <col style="width: 16%;">
+                    <col style="width: 16%;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>Category</th>
+                        <th>Times Performed</th>
+                        <th>Unit Price</th>
+                        <th>Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in service_breakdown %}
+                    <tr>
+                        <td style="color: var(--text-primary); font-weight: 500;">{{ item.service.name }}</td>
+                        <td>{{ item.service.get_category_display }}</td>
+                        <td style="font-weight: 600; text-align: center;">{{ item.count }}</td>
+                        <td style="white-space: nowrap; text-align: right; padding-right: 6px;">₱{{ item.service.discounted_price|floatformat:2 }}</td>
+                        <td class="revenue-highlight" style="white-space: nowrap; text-align: right; padding-right: 6px;">₱{{ item.revenue|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="fas fa-concierge-bell"></i>
+                                <p>No services performed in this period</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>{# end sales-section #}
+
+<!-- Print-only: Total Revenue Summary (shown when printing Sales) -->
 <div class="print-revenue-summary" style="display:none;">
     <table>
-        <tr>
-            <td class="rev-label">Total Revenue for {{ period_label }}</td>
-            <td class="rev-value">&#8369;{{ total_revenue|floatformat:2 }}</td>
-        </tr>
-        <tr>
-            <td class="rev-label">Total Services Completed</td>
-            <td class="rev-value">{{ total_completed }}</td>
-        </tr>
+        <thead>
+            <tr>
+                <th style="text-align:left; font-size:6.8pt; text-transform:uppercase; padding:2px 5px; border:1px solid #aaa; background:#ededed;">Metric</th>
+                <th style="text-align:right; font-size:6.8pt; text-transform:uppercase; padding:2px 5px; border:1px solid #aaa; background:#ededed;">Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="rev-label">Total Revenue</td>
+                <td class="rev-value">&#8369;{{ total_revenue|floatformat:2 }}</td>
+            </tr>
+            <tr>
+                <td class="rev-label">Services Completed</td>
+                <td class="rev-value">{{ total_completed }}</td>
+            </tr>
+            <tr>
+                <td class="rev-label">Online Bookings</td>
+                <td class="rev-value">{{ online_count }}</td>
+            </tr>
+            <tr>
+                <td class="rev-label">Walk-in</td>
+                <td class="rev-value">{{ walkin_count }}</td>
+            </tr>
+        </tbody>
     </table>
 </div>
 
@@ -477,15 +817,49 @@
 <div class="print-signatures" style="display:none;">
     <div class="print-sig-block">
         <div class="print-sig-line"></div>
-        <div class="print-sig-label">Prepared by (Admin):</div>
+        <div class="print-sig-label">Prepared by:</div>
     </div>
     <div class="print-sig-block">
         <div class="print-sig-line"></div>
-        <div class="print-sig-label">Reviewed by:</div>
-    </div>
-    <div class="print-sig-block">
-        <div class="print-sig-line"></div>
-        <div class="print-sig-label">Approved by (Owner/Manager):</div>
+        <div class="print-sig-label">Approved by:</div>
     </div>
 </div>
+
+<script>
+function togglePrintDropdown(e) {
+    e.stopPropagation();
+    document.getElementById('printDropdown').classList.toggle('open');
+}
+
+document.addEventListener('click', function(e) {
+    var dropdown = document.getElementById('printDropdown');
+    if (dropdown && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('open');
+    }
+});
+
+function printReport(type) {
+    var dropdown = document.getElementById('printDropdown');
+    if (dropdown) dropdown.classList.remove('open');
+    
+    var titleEl = document.getElementById('print-report-title');
+    if (type === 'bookings') {
+        if (titleEl) titleEl.textContent = 'Booking Report';
+        document.body.classList.remove('print-sales');
+        document.body.classList.add('print-bookings');
+    } else {
+        if (titleEl) titleEl.textContent = 'Sales Report';
+        document.body.classList.remove('print-bookings');
+        document.body.classList.add('print-sales');
+    }
+
+    setTimeout(function() {
+        window.print();
+    }, 50);
+}
+
+window.addEventListener('afterprint', function() {
+    document.body.classList.remove('print-bookings', 'print-sales');
+});
+</script>
 {% endblock %}

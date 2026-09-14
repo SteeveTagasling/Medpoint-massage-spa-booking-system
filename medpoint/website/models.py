@@ -46,7 +46,97 @@ class Service(models.Model):
 
     @property
     def has_discount(self):
-        return self.discount_percentage and self.discount_percentage > 0
+        """Return True only if discount > 0 and today is within the promo effective dates."""
+        if not (self.discount_percentage and self.discount_percentage > 0):
+            return False
+        today = timezone.now().date()
+        active_promo = self.price_history.filter(
+            discount_percentage__gt=0,
+            effective_from__lte=today
+        ).filter(
+            models.Q(effective_to__isnull=True) | models.Q(effective_to__gte=today)
+        ).first()
+        if self.price_history.filter(discount_percentage__gt=0).exists() and not active_promo:
+            return False
+        return True
+
+    @property
+    def discounted_price(self):
+        """Return price after discount."""
+        if self.has_discount:
+            discount = self.price * (self.discount_percentage / 100)
+            return self.price - discount
+        return self.price
+
+    @property
+    def discount_amount(self):
+        """Return discount savings in currency amount."""
+        if self.has_discount:
+            return self.price * (self.discount_percentage / 100)
+        return 0
+
+    @property
+    def promo_effective_date(self):
+        """Return the effective start date of the current promo discount."""
+        if not self.has_discount:
+            return None
+        today = timezone.now().date()
+        active = self.price_history.filter(
+            discount_percentage__gt=0,
+            effective_from__lte=today
+        ).filter(
+            models.Q(effective_to__isnull=True) | models.Q(effective_to__gte=today)
+        ).order_by('-effective_from', '-created_at').first()
+        if active and active.effective_from:
+            return active.effective_from
+
+        if self.updated_at:
+            return self.updated_at.date()
+        if self.created_at:
+            return self.created_at.date()
+        return today
+
+    @property
+    def promo_effective_to(self):
+        """Return the effective end date of the promo discount if set."""
+        if not self.has_discount:
+            return None
+        today = timezone.now().date()
+        active = self.price_history.filter(
+            discount_percentage__gt=0,
+            effective_from__lte=today
+        ).filter(
+            models.Q(effective_to__isnull=True) | models.Q(effective_to__gte=today)
+        ).order_by('-effective_from', '-created_at').first()
+        if active and active.effective_to:
+            return active.effective_to
+        return None
+
+    def sync_rates_with_today(self):
+        """Ensure this service's price & discount match the active price_history record for today."""
+        today = timezone.now().date()
+        active = self.price_history.filter(
+            effective_from__lte=today
+        ).filter(
+            models.Q(effective_to__isnull=True) | models.Q(effective_to__gte=today)
+        ).order_by('-effective_from', '-created_at').first()
+
+        if active:
+            changed = False
+            if self.price != active.base_price:
+                self.price = active.base_price
+                changed = True
+            if self.discount_percentage != active.discount_percentage:
+                self.discount_percentage = active.discount_percentage
+                changed = True
+            if changed:
+                self.save(update_fields=['price', 'discount_percentage'])
+
+    @classmethod
+    def sync_all_for_today(cls):
+        """Synchronize all services with today's effective rate records."""
+        for s in cls.objects.all():
+            s.sync_rates_with_today()
 
     @property
     def get_category_display(self):
@@ -55,6 +145,33 @@ class Service(models.Model):
         codes = self.category.split(',')
         displays = dict(self.CATEGORY_CHOICES)
         return ', '.join(str(displays.get(c.strip(), c.strip())) for c in codes if c.strip())
+
+
+class ServicePriceHistory(models.Model):
+    """Historical and scheduled pricing for spa services."""
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='price_history')
+    base_price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Regular/Original price")
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0, help_text="Discount percentage at this time")
+    effective_from = models.DateField(default=timezone.now, help_text="Date when this price became active")
+    effective_to = models.DateField(null=True, blank=True, help_text="Date when this price ended (null if currently active)")
+    notes = models.CharField(max_length=255, blank=True, default='', help_text="e.g. Regular Rate, Summer Promo, Price Adjustment")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-effective_from', '-created_at']
+        verbose_name = 'Service Price History'
+        verbose_name_plural = 'Service Price Histories'
+
+    @property
+    def discounted_price(self):
+        if self.discount_percentage and self.discount_percentage > 0:
+            discount = self.base_price * (self.discount_percentage / 100)
+            return self.base_price - discount
+        return self.base_price
+
+    def __str__(self):
+        return f"{self.service.name} — ₱{self.discounted_price:.2f} (from {self.effective_from})"
 
 
 from django.conf import settings
@@ -184,6 +301,7 @@ class GalleryImage(models.Model):
 class Booking(models.Model):
     """Appointment booking model."""
     STATUS_CHOICES = [
+        ('awaiting_verification', 'Awaiting Verification'),
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
         ('completed', 'Completed'),
@@ -239,9 +357,17 @@ class Booking(models.Model):
     date = models.DateField()
     time = models.CharField(max_length=5, choices=TIME_CHOICES)
     notes = models.TextField(blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='awaiting_verification')
     is_verified = models.BooleanField(default=False, help_text="True if client verified their email OTP")
     verification_otp = models.CharField(max_length=6, blank=True, null=True)
+    locked_price = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text="Price locked in at time of booking"
+    )
+    service_prices_snapshot = models.JSONField(
+        default=list, blank=True, null=True,
+        help_text="Snapshot of services and their prices at time of booking"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -258,6 +384,8 @@ class Booking(models.Model):
         
     @property
     def total_discounted_price(self):
+        if self.locked_price is not None:
+            return self.locked_price
         return sum(s.discounted_price for s in self.services.all())
         
     @property

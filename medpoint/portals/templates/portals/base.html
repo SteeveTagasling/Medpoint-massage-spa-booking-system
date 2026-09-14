@@ -6,6 +6,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Portal{% endblock %} — MEDPOINT</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{% static 'website/images/favicon.svg' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'website/images/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'website/images/favicon-16x16.png' %}">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'website/images/favicon.ico' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'website/images/apple-touch-icon.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -72,7 +78,7 @@
             --purple-500: #7e22ce;
             --text-primary: #1f1535;
             --text-secondary: #4a3f5c;
-            --text-muted: #7c7291;
+            --text-muted: #605574;
             --green-400: #16a34a;
             --green-500: #15803d;
             --blue-400: #2563eb;
@@ -1314,6 +1320,10 @@
                 <a href="{% url 'portals:admin_reports' %}" class="nav-item {% if request.resolver_match.url_name == 'admin_reports' %}active{% endif %}" id="nav-reports">
                     <i class="fas fa-chart-bar"></i>
                     <span class="nav-label">Reports</span>
+                </a>
+                <a href="{% url 'portals:price_checker' %}" class="nav-item {% if request.resolver_match.url_name == 'price_checker' %}active{% endif %}" id="nav-price-checker">
+                    <i class="fas fa-tags"></i>
+                    <span class="nav-label">Price Checker</span>
                 </a>
             </div>
 
