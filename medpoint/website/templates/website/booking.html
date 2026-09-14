@@ -412,7 +412,9 @@
     }
 
     #service-chips-container.field-error,
-    .family-chip-grid.field-error {
+    .family-chip-grid.field-error,
+    #therapist-cards-container.field-error,
+    [id^="family-therapist-cards-container-"].field-error {
         border: 2px solid #ef4444 !important;
         border-radius: 0.875rem !important;
         padding: 0.65rem !important;
@@ -679,7 +681,7 @@
                                 <!-- Dynamic Therapist Cards -->
                                 <div id="therapist-section" class="therapist-section therapist-section-hidden">
                                     <div class="flex items-center justify-between mb-3">
-                                        <label class="form-label mb-0">Select Your Therapist</label>
+                                        <label class="form-label mb-0">Select Your Therapist <span class="text-red-400">*</span></label>
                                         <span id="gender-info-badge" class="gender-info-badge"></span>
                                     </div>
                                     <div id="therapist-cards-container">
@@ -884,7 +886,7 @@
                                         <div id="family-therapist-section-0"
                                             class="therapist-section therapist-section-hidden mt-4 pt-4 border-t border-purple-500/10">
                                             <div class="flex items-center justify-between mb-3">
-                                                <label class="form-label mb-0">Select Therapist (Optional)</label>
+                                                <label class="form-label mb-0">Select Therapist <span class="text-red-400">*</span></label>
                                                 <span id="family-gender-info-badge-0" class="gender-info-badge"></span>
                                             </div>
                                             <div id="family-therapist-cards-container-0">
@@ -1157,7 +1159,7 @@
             <!-- Dynamic Therapist Cards for Family Member -->
             <div id="family-therapist-section-${index}" class="therapist-section therapist-section-hidden mt-4 pt-4 border-t border-purple-500/10">
                 <div class="flex items-center justify-between mb-3">
-                    <label class="form-label mb-0">Select Therapist (Optional)</label>
+                    <label class="form-label mb-0">Select Therapist <span class="text-red-400">*</span></label>
                     <span id="family-gender-info-badge-${index}" class="gender-info-badge"></span>
                 </div>
                 <div id="family-therapist-cards-container-${index}">
@@ -1483,6 +1485,7 @@
                 hiddenInput.value = ''; // Deselect
             } else {
                 hiddenInput.value = id;
+                clearFieldError(container, container);
             }
 
             container.querySelectorAll('.therapist-card').forEach(c => {
@@ -1845,6 +1848,8 @@
             } else {
                 selectedTherapistId = id;
                 if (therapistHidden) therapistHidden.value = id;
+                const tCardsCont = document.getElementById('therapist-cards-container');
+                if (tCardsCont) clearFieldError(tCardsCont, tCardsCont);
             }
             // Update card visuals
             document.querySelectorAll('.therapist-card').forEach(card => {
@@ -2295,11 +2300,22 @@
                 // 8. Therapist Preference
                 checkField(document.getElementById('booking-therapist-preference'), 'Please select therapist preference');
 
+                // 9. Therapist Selection
+                const therapistInput = document.getElementById('booking-therapist');
+                const therapistCardsContainer = document.getElementById('therapist-cards-container');
+                if ((!therapistInput || !therapistInput.value || !selectedTherapistId) && therapistCardsContainer) {
+                    setFieldError(therapistCardsContainer, 'Please select a therapist', therapistCardsContainer);
+                    hasErrors = true;
+                    if (!firstInvalidEl) firstInvalidEl = therapistCardsContainer;
+                } else if (therapistCardsContainer) {
+                    clearFieldError(therapistCardsContainer, therapistCardsContainer);
+                }
+
                 if (hasErrors) {
                     e.preventDefault();
                     if (firstInvalidEl) {
                         firstInvalidEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        if (typeof firstInvalidEl.focus === 'function' && firstInvalidEl !== chipsContainer) {
+                        if (typeof firstInvalidEl.focus === 'function' && firstInvalidEl !== chipsContainer && firstInvalidEl !== therapistCardsContainer) {
                             firstInvalidEl.focus();
                         }
                     }
@@ -2395,13 +2411,24 @@
                     } else if (chipGrid) {
                         clearFieldError(chipGrid, chipGrid);
                     }
+
+                    // Therapist for family member
+                    const famTherapistInput = card.querySelector('.member-therapist-hidden');
+                    const famTherapistContainer = document.getElementById(`family-therapist-cards-container-${idx}`);
+                    if ((!famTherapistInput || !famTherapistInput.value) && famTherapistContainer) {
+                        setFieldError(famTherapistContainer, `Please select a therapist for Member ${idx + 1}`, famTherapistContainer);
+                        hasErrors = true;
+                        if (!firstInvalidEl) firstInvalidEl = famTherapistContainer;
+                    } else if (famTherapistContainer) {
+                        clearFieldError(famTherapistContainer, famTherapistContainer);
+                    }
                 });
 
                 if (hasErrors) {
                     e.preventDefault();
                     if (firstInvalidEl) {
                         firstInvalidEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        if (typeof firstInvalidEl.focus === 'function' && !firstInvalidEl.classList.contains('family-chip-grid')) {
+                        if (typeof firstInvalidEl.focus === 'function' && !firstInvalidEl.classList.contains('family-chip-grid') && !firstInvalidEl.id.startsWith('family-therapist-cards-container-')) {
                             firstInvalidEl.focus();
                         }
                     }

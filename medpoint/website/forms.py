@@ -70,10 +70,11 @@ class BookingForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['services'].queryset = Service.objects.filter(is_active=True)
         self.fields['therapist'].queryset = Therapist.objects.filter(is_active=True)
-        self.fields['therapist'].required = False
+        self.fields['therapist'].required = True
+        self.fields['therapist'].error_messages = {'required': 'Please select a therapist.'}
         self.fields['notes'].required = False
         # Will be dynamically filtered via JS based on gender preference
-        self.fields['therapist'].label = "Preferred Therapist (Optional)"
+        self.fields['therapist'].label = "Select Your Therapist"
 
     def clean(self):
         cleaned_data = super().clean()
@@ -86,6 +87,11 @@ class BookingForm(forms.ModelForm):
             raise forms.ValidationError(
                 "Female customers can only be assigned to female therapists."
             )
+
+        if not therapist:
+            raise forms.ValidationError({
+                'therapist': "Please select a therapist."
+            })
 
         # If a specific therapist is selected, validate gender matches preference
         if therapist and therapist_preference != 'random':
@@ -182,7 +188,9 @@ class FamilyMemberForm(forms.Form):
     services = forms.ModelMultipleChoiceField(queryset=Service.objects.filter(is_active=True))
     therapist_preference = forms.ChoiceField(choices=Booking.THERAPIST_PREF_CHOICES)
     therapist = forms.ModelChoiceField(
-        queryset=Therapist.objects.filter(is_active=True), required=False
+        queryset=Therapist.objects.filter(is_active=True),
+        required=True,
+        error_messages={'required': 'Please select a therapist.'}
     )
 
     def clean(self):
@@ -196,6 +204,11 @@ class FamilyMemberForm(forms.Form):
             raise forms.ValidationError(
                 "Female customers can only be assigned to female therapists."
             )
+
+        if not therapist:
+            raise forms.ValidationError({
+                'therapist': "Please select a therapist."
+            })
 
         # If a specific therapist is selected, validate gender matches preference
         if therapist and therapist_preference != 'random':
