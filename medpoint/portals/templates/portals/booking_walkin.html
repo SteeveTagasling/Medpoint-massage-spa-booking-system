@@ -98,6 +98,61 @@
         color: var(--red-400);
     }
 
+    /* ── Empty / Missing Field Red Border (matching online booking) ── */
+    .portal-input.field-error,
+    select.portal-input.field-error,
+    input.portal-input.field-error,
+    textarea.portal-input.field-error {
+        border: 2px solid #ef4444 !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25), 0 0 16px rgba(239, 68, 68, 0.15) !important;
+        background-color: rgba(239, 68, 68, 0.05) !important;
+    }
+    .form-group:has(.error-text) .portal-input {
+        border: 2px solid #ef4444 !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25), 0 0 16px rgba(239, 68, 68, 0.15) !important;
+        background-color: rgba(239, 68, 68, 0.05) !important;
+    }
+    .service-chips-grid.field-error {
+        border: 2px solid #ef4444 !important;
+        border-radius: 14px !important;
+        padding: 0.65rem !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25), 0 0 16px rgba(239, 68, 68, 0.15) !important;
+        background-color: rgba(239, 68, 68, 0.03) !important;
+    }
+    #therapist-cards-container.field-error {
+        border: 2px solid #ef4444 !important;
+        border-radius: 14px !important;
+        padding: 0.65rem !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25), 0 0 16px rgba(239, 68, 68, 0.15) !important;
+        background-color: rgba(239, 68, 68, 0.03) !important;
+    }
+    .field-error-msg {
+        color: #f87171;
+        font-size: 0.75rem;
+        margin-top: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        animation: fadeInError 0.2s ease-out;
+    }
+    .field-error-msg::before {
+        content: '!';
+        display: inline-flex;
+        width: 0.95rem;
+        height: 0.95rem;
+        background: rgba(248, 113, 113, 0.2);
+        border-radius: 50%;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+    @keyframes fadeInError {
+        from { opacity: 0; transform: translateY(-3px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
     /* ── Service Chips ── */
     .service-chips-grid {
         display: grid;
@@ -279,12 +334,18 @@
 {% endblock %}
 
 {% block content %}
+{% if request.session.portal_role == 'staff' %}
+<a href="{% url 'portals:staff_my_bookings' %}" class="back-link" style="margin-bottom: 1.25rem; display: inline-flex;">
+    <i class="fas fa-arrow-left"></i> Back to My Bookings
+</a>
+{% else %}
 <a href="{% url 'portals:booking_list' %}" class="back-link" style="margin-bottom: 1.25rem; display: inline-flex;">
     <i class="fas fa-arrow-left"></i> Back to Bookings
 </a>
+{% endif %}
 
 <div class="walkin-wrapper">
-    <form method="post" id="walkin-form">
+    <form method="post" id="walkin-form" novalidate>
         {% csrf_token %}
 
         <!-- SECTION 1: Client Info -->
@@ -296,22 +357,22 @@
             <div class="section-body">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label" for="id_client_name">Full Name</label>
+                        <label class="form-label" for="id_client_name">Full Name <span style="color: var(--red-400);">*</span></label>
                         {{ form.client_name }}
                         {% if form.client_name.errors %}<span class="error-text">{{ form.client_name.errors.0 }}</span>{% endif %}
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="id_client_gender">Gender</label>
+                        <label class="form-label" for="id_client_gender">Gender <span style="color: var(--red-400);">*</span></label>
                         {{ form.client_gender }}
                         {% if form.client_gender.errors %}<span class="error-text">{{ form.client_gender.errors.0 }}</span>{% endif %}
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="id_client_phone">Phone</label>
+                        <label class="form-label" for="id_client_phone">Phone <span style="color: var(--red-400);">*</span></label>
                         {{ form.client_phone }}
                         {% if form.client_phone.errors %}<span class="error-text">{{ form.client_phone.errors.0 }}</span>{% endif %}
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="id_client_email">Email</label>
+                        <label class="form-label" for="id_client_email">Email <span style="color: var(--red-400);">*</span></label>
                         {{ form.client_email }}
                         {% if form.client_email.errors %}<span class="error-text">{{ form.client_email.errors.0 }}</span>{% endif %}
                     </div>
@@ -328,17 +389,20 @@
             <div class="section-body">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label" for="id_date">Date</label>
+                        <label class="form-label" for="id_date">Date <span style="color: var(--red-400);">*</span></label>
                         {{ form.date }}
                         {% if form.date.errors %}<span class="error-text">{{ form.date.errors.0 }}</span>{% endif %}
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="id_time">Time</label>
+                        <label class="form-label" for="id_time">Time <span style="color: var(--red-400);">*</span></label>
                         {{ form.time }}
+                        <span id="time-no-slots-hint" style="display:none; font-size: 0.72rem; color: var(--amber-400); margin-top: 0.25rem;">
+                            <i class="fas fa-clock"></i> No remaining slots available for today. Please select another date.
+                        </span>
                         {% if form.time.errors %}<span class="error-text">{{ form.time.errors.0 }}</span>{% endif %}
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="id_status">Status</label>
+                        <label class="form-label" for="id_status">Status <span style="color: var(--red-400);">*</span></label>
                         {{ form.status }}
                         {% if form.status.errors %}<span class="error-text">{{ form.status.errors.0 }}</span>{% endif %}
                     </div>
@@ -398,7 +462,7 @@
         <div class="section-card">
             <div class="section-header">
                 <div class="section-header-icon"><i class="fas fa-user-nurse"></i></div>
-                <span class="section-header-label">Therapist Assignment</span>
+                <span class="section-header-label">Therapist Assignment <span style="color: var(--red-400);">*</span></span>
                 <span id="pref-badge" class="pref-badge" style="margin-left: auto;"><i class="fas fa-users"></i>&nbsp;All therapists</span>
             </div>
             <div class="section-body">
@@ -427,9 +491,15 @@
             <button type="submit" class="btn-primary">
                 <i class="fas fa-check"></i> Create Walk-in Booking
             </button>
+            {% if request.session.portal_role == 'staff' %}
+            <a href="{% url 'portals:staff_my_bookings' %}" class="btn-cancel">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+            {% else %}
             <a href="{% url 'portals:booking_list' %}" class="btn-cancel">
                 <i class="fas fa-times"></i> Cancel
             </a>
+            {% endif %}
         </div>
     </form>
 </div>
@@ -449,6 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const timeInput      = document.getElementById('id_time');
     const svcSelect      = document.getElementById('id_services');
 
+    const currentTherapistId = {{ current_therapist_id|default:"null" }};
     let selectedServiceIds = [];
     let selectedTherapistId = therapistHidden ? therapistHidden.value : null;
 
@@ -465,6 +536,12 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSummary();
         resetTherapist();
         maybeLoadTherapists();
+
+        // Clear service error if at least one selected
+        const chipsGrid = document.querySelector('.service-chips-grid');
+        if (selectedServiceIds.length > 0 && chipsGrid) {
+            clearFieldError(null, chipsGrid);
+        }
     };
 
     function syncServicesField() {
@@ -583,10 +660,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 disabled = 'opacity:.55;cursor:not-allowed;'; clickFn = ''; selClass = '';
             }
 
+            const youBadge = (currentTherapistId && t.id == currentTherapistId)
+                ? `<span class="you-badge" style="display:inline-block; font-size:0.62rem; font-weight:700; background:rgba(168,85,247,0.25); color:var(--purple-300); border:1px solid rgba(168,85,247,0.4); padding:1px 5px; border-radius:4px; margin-left:4px; vertical-align:middle;">You</span>`
+                : '';
             html += `<div class="therapist-card ${selClass}" style="${disabled}" data-therapist-id="${t.id}" ${clickFn} title="${t.name}">
                 ${overlay}${photo}
                 <div class="therapist-card-info">
-                    <div class="therapist-card-name">${t.name}</div>
+                    <div class="therapist-card-name">${t.name}${youBadge}</div>
                     <div class="therapist-card-title">${t.title}</div>
                 </div>
             </div>`;
@@ -606,6 +686,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.therapist-card').forEach(card => {
             card.classList.toggle('selected', card.dataset.therapistId == selectedTherapistId);
         });
+
+        // Clear therapist error when a therapist is clicked (selected or deselected)
+        const cardsContainer = document.getElementById('therapist-cards-container');
+        if (selectedTherapistId && cardsContainer) {
+            clearFieldError(null, cardsContainer);
+        }
     };
 
     function resetTherapist() {
@@ -613,50 +699,289 @@ document.addEventListener('DOMContentLoaded', () => {
         if (therapistHidden) therapistHidden.value = '';
     }
 
-    // ── Past-time filter ─────────────────────────────────
-    // If today is selected as the date, hide time slots
-    // whose hour is <= the current hour (already-passed slots).
+    // ── Local date helper ────────────────────────────────
+    function getLocalDateString() {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // ── Past-date & Past-time filter ─────────────────────
     function filterTimesForToday() {
         if (!dateInput || !timeInput) return;
+        const todayStr = getLocalDateString();
+        if (dateInput.value && dateInput.value < todayStr) {
+            dateInput.value = todayStr;
+        }
         const selectedDate = dateInput.value;
         if (!selectedDate) return;
 
-        const now      = new Date();
-        const todayStr = now.toISOString().split('T')[0];
-        const options  = timeInput.querySelectorAll('option');
+        const now = new Date();
+        const options = timeInput.querySelectorAll('option');
+        const noSlotsHint = document.getElementById('time-no-slots-hint');
 
         if (selectedDate === todayStr) {
-            const currentHour = now.getHours(); // 0-23
+            const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+            let firstValid = null;
+
             options.forEach(opt => {
-                const optHour = parseInt(opt.value.split(':')[0], 10);
-                const isPast  = optHour <= currentHour;
-                opt.disabled      = isPast;
+                if (!opt.value) return;
+                const parts = opt.value.split(':');
+                const optMinutes = parseInt(parts[0], 10) * 60 + parseInt(parts[1] || '0', 10);
+                const isPast = optMinutes <= currentTotalMinutes;
+                opt.disabled = isPast;
+                opt.hidden = isPast;
                 opt.style.display = isPast ? 'none' : '';
+
+                if (!isPast && !firstValid) {
+                    firstValid = opt.value;
+                }
             });
+
+            if (noSlotsHint) {
+                noSlotsHint.style.display = firstValid ? 'none' : 'block';
+            }
+
             // If currently-selected slot is now in the past, reset to first valid slot
             const chosen = timeInput.value;
-            if (chosen) {
-                const chosenOpt = timeInput.querySelector(`option[value="${chosen}"]`);
-                if (chosenOpt && chosenOpt.disabled) {
-                    const first = Array.from(options).find(o => !o.disabled);
-                    timeInput.value = first ? first.value : '';
-                    timeInput.dispatchEvent(new Event('change'));
-                }
+            const chosenOpt = chosen ? timeInput.querySelector(`option[value="${chosen}"]`) : null;
+            if (!chosen || (chosenOpt && chosenOpt.disabled)) {
+                timeInput.value = firstValid || '';
+                timeInput.dispatchEvent(new Event('change'));
             }
         } else {
-            // Not today — re-enable all options
+            // Future date — re-enable all options
+            if (noSlotsHint) noSlotsHint.style.display = 'none';
             options.forEach(opt => {
-                opt.disabled      = false;
+                opt.disabled = false;
+                opt.hidden = false;
                 opt.style.display = '';
             });
         }
     }
 
+    function handleDateChange() {
+        if (!dateInput) return;
+        const todayStr = getLocalDateString();
+        if (dateInput.value && dateInput.value < todayStr) {
+            dateInput.value = todayStr;
+        }
+        filterTimesForToday();
+        resetTherapist();
+        maybeLoadTherapists();
+    }
+
+    // ── Status Options Safety (Ensure Completed & Cancelled are removed) ──
+    const statusSelect = document.getElementById('id_status');
+    if (statusSelect) {
+        Array.from(statusSelect.options).forEach(opt => {
+            if (['completed', 'cancelled', 'awaiting_verification'].includes(opt.value)) {
+                opt.remove();
+            }
+        });
+    }
+
+    // ── Date input min constraint ────────────────────────
+    if (dateInput) {
+        const todayStr = getLocalDateString();
+        dateInput.min = todayStr;
+        if (!dateInput.value || dateInput.value < todayStr) {
+            dateInput.value = todayStr;
+        }
+    }
+
+    // ═══════════════════════════════════════
+    // CLIENT-SIDE VALIDATION & RED ERROR BORDERS
+    // ═══════════════════════════════════════
+    function setFieldError(fieldEl, message, containerEl) {
+        const target = containerEl || fieldEl;
+        if (!target) return;
+        target.classList.add('field-error');
+
+        const parent = target.parentElement;
+        if (parent) {
+            let msgEl = target.nextElementSibling;
+            if (!msgEl || !msgEl.classList.contains('field-error-msg')) {
+                msgEl = parent.querySelector('.field-error-msg');
+            }
+            if (!msgEl) {
+                msgEl = document.createElement('div');
+                msgEl.className = 'field-error-msg';
+                target.insertAdjacentElement('afterend', msgEl);
+            }
+            msgEl.textContent = message;
+        }
+    }
+
+    function clearFieldError(fieldEl, containerEl) {
+        const target = containerEl || fieldEl;
+        if (!target) return;
+        target.classList.remove('field-error');
+
+        const parent = target.parentElement;
+        if (parent) {
+            const next = target.nextElementSibling;
+            if (next && next.classList.contains('field-error-msg')) {
+                next.remove();
+            } else {
+                const msgEl = parent.querySelector('.field-error-msg');
+                if (msgEl) msgEl.remove();
+            }
+        }
+    }
+
+    const walkinForm = document.getElementById('walkin-form');
+    if (walkinForm) {
+        walkinForm.addEventListener('submit', function (e) {
+            let hasErrors = false;
+            let firstInvalidEl = null;
+
+            function checkField(el, msg, container) {
+                const target = container || el;
+                if (!target) return;
+                let isEmpty = false;
+                if (el && el.tagName === 'SELECT') {
+                    isEmpty = !el.value || el.value.trim() === '';
+                } else if (el) {
+                    isEmpty = !el.value || el.value.trim() === '';
+                } else {
+                    isEmpty = true;
+                }
+
+                if (isEmpty) {
+                    setFieldError(el, msg, container);
+                    hasErrors = true;
+                    if (!firstInvalidEl) firstInvalidEl = target;
+                } else {
+                    clearFieldError(el, container);
+                }
+            }
+
+            // 1. Full Name
+            checkField(document.getElementById('id_client_name'), 'Please enter client full name');
+
+            // 2. Gender
+            checkField(document.getElementById('id_client_gender'), 'Please select client gender');
+
+            // 3. Phone Number
+            checkField(document.getElementById('id_client_phone'), 'Please enter client phone number');
+
+            // 4. Email Address
+            const emailInput = document.getElementById('id_client_email');
+            if (emailInput) {
+                const emailVal = emailInput.value.trim();
+                if (!emailVal) {
+                    setFieldError(emailInput, 'Please enter client email address');
+                    hasErrors = true;
+                    if (!firstInvalidEl) firstInvalidEl = emailInput;
+                } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+                    setFieldError(emailInput, 'Please enter a valid email address');
+                    hasErrors = true;
+                    if (!firstInvalidEl) firstInvalidEl = emailInput;
+                } else {
+                    clearFieldError(emailInput);
+                }
+            }
+
+            // 5. Date
+            const dateInputEl = document.getElementById('id_date');
+            if (dateInputEl) {
+                const dateVal = dateInputEl.value;
+                const todayStr = getLocalDateString();
+                if (!dateVal) {
+                    setFieldError(dateInputEl, 'Please select booking date');
+                    hasErrors = true;
+                    if (!firstInvalidEl) firstInvalidEl = dateInputEl;
+                } else if (dateVal < todayStr) {
+                    setFieldError(dateInputEl, 'Date cannot be in the past');
+                    hasErrors = true;
+                    if (!firstInvalidEl) firstInvalidEl = dateInputEl;
+                } else {
+                    clearFieldError(dateInputEl);
+                }
+            }
+
+            // 6. Time
+            checkField(document.getElementById('id_time'), 'Please select booking time');
+
+            // 7. Status
+            checkField(document.getElementById('id_status'), 'Please select booking status');
+
+            // 8. Services (must select at least one)
+            const chipsGrid = document.querySelector('.service-chips-grid');
+            if (selectedServiceIds.length === 0 && chipsGrid) {
+                setFieldError(null, 'Please select at least one service', chipsGrid);
+                hasErrors = true;
+                if (!firstInvalidEl) firstInvalidEl = chipsGrid;
+            } else if (chipsGrid) {
+                clearFieldError(null, chipsGrid);
+            }
+
+            // 9. Therapist (must select one if therapist cards are visible)
+            const therapistCardsContainer = document.getElementById('therapist-cards-container');
+            const therapistSection = document.getElementById('therapist-section');
+            const isTherapistVisible = therapistSection && !therapistSection.classList.contains('hidden');
+            if (isTherapistVisible && therapistCardsContainer) {
+                if (!selectedTherapistId) {
+                    setFieldError(null, 'Please select a therapist', therapistCardsContainer);
+                    hasErrors = true;
+                    if (!firstInvalidEl) firstInvalidEl = therapistCardsContainer;
+                } else {
+                    clearFieldError(null, therapistCardsContainer);
+                }
+            }
+
+            if (hasErrors) {
+                e.preventDefault();
+                if (firstInvalidEl) {
+                    firstInvalidEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    if (typeof firstInvalidEl.focus === 'function' && !firstInvalidEl.classList.contains('service-chips-grid')) {
+                        firstInvalidEl.focus();
+                    }
+                }
+            }
+        });
+
+        // Live-clear on user typing or selection
+        walkinForm.querySelectorAll('.portal-input').forEach(input => {
+            input.addEventListener('input', () => {
+                if (input.value.trim() !== '') clearFieldError(input);
+            });
+            input.addEventListener('change', () => {
+                if (input.value.trim() !== '') clearFieldError(input);
+            });
+        });
+    }
+
     // ── Event Listeners ──────────────────────────────────
     if (genderSelect) genderSelect.addEventListener('change', () => { resetTherapist(); updatePreferenceOptions(); });
     if (prefSelect)   prefSelect.addEventListener('change',   () => { resetTherapist(); maybeLoadTherapists(); });
-    if (dateInput)    dateInput.addEventListener('change',    () => { filterTimesForToday(); resetTherapist(); maybeLoadTherapists(); });
-    if (timeInput)    timeInput.addEventListener('change',    () => { resetTherapist(); maybeLoadTherapists(); });
+    if (dateInput) {
+        dateInput.addEventListener('change', handleDateChange);
+        dateInput.addEventListener('input', handleDateChange);
+    }
+    if (timeInput) {
+        timeInput.addEventListener('focus', filterTimesForToday);
+        timeInput.addEventListener('change', () => { resetTherapist(); maybeLoadTherapists(); });
+    }
+
+    // ── Highlight server-side errors on page load ────────
+    document.querySelectorAll('.form-group .error-text').forEach(err => {
+        const input = err.closest('.form-group')?.querySelector('.portal-input');
+        if (input) input.classList.add('field-error');
+    });
+
+    // ── Sync preselected services on load ────────────────
+    if (svcSelect) {
+        Array.from(svcSelect.selectedOptions).forEach(opt => {
+            if (!selectedServiceIds.includes(opt.value)) selectedServiceIds.push(opt.value);
+            const chip = document.querySelector(`.service-chip[data-id="${opt.value}"]`);
+            if (chip) chip.classList.add('active');
+        });
+        updateSummary();
+    }
 
     // ── Init ─────────────────────────────────────────────
     updatePreferenceOptions();

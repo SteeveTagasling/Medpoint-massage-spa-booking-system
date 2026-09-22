@@ -1,6 +1,6 @@
 from django.contrib import admin
 # pyrefly: ignore [missing-import]
-from .models import Service, Therapist, Testimonial, Booking, ContactMessage, StaffSchedule, ServicePriceHistory
+from .models import Service, Therapist, Testimonial, Booking, ContactMessage, MessageReply, StaffSchedule, ServicePriceHistory
 
 
 @admin.register(ServicePriceHistory)
@@ -60,10 +60,25 @@ class BookingAdmin(admin.ModelAdmin):
     get_services.short_description = 'Services'
 
 
+class MessageReplyInline(admin.TabularInline):
+    model = MessageReply
+    extra = 0
+    readonly_fields = ['created_at']
+
+
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
-    list_display = ['name', 'subject', 'email', 'is_read', 'created_at']
-    list_filter = ['is_read']
-    list_editable = ['is_read']
+    list_display = ['name', 'subject', 'email', 'is_read', 'is_archived', 'created_at']
+    list_filter = ['is_read', 'is_archived']
+    list_editable = ['is_read', 'is_archived']
     search_fields = ['name', 'email', 'subject', 'message']
+    readonly_fields = ['created_at', 'access_token']
+    inlines = [MessageReplyInline]
+
+
+@admin.register(MessageReply)
+class MessageReplyAdmin(admin.ModelAdmin):
+    list_display = ['message', 'sender_type', 'sender_name', 'created_at']
+    list_filter = ['sender_type', 'created_at']
+    search_fields = ['body', 'sender_name', 'sender_email']
     readonly_fields = ['created_at']

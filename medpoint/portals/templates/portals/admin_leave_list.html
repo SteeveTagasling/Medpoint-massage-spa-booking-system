@@ -113,15 +113,215 @@
         font-size: 1rem;
         font-weight: 700;
     }
+
+    /* ── Leave Approval Confirmation Modal ── */
+    .leave-modal-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        z-index: 1050;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(8px);
+        padding: 1rem;
+    }
+    .leave-modal-backdrop.open {
+        display: flex;
+        animation: leaveModalFadeIn 0.2s ease-out;
+    }
+    @keyframes leaveModalFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .leave-modal-box {
+        background: var(--bg-card);
+        border: 1px solid rgba(168, 85, 247, 0.25);
+        border-radius: 18px;
+        width: 100%;
+        max-width: 480px;
+        overflow: hidden;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(168, 85, 247, 0.1);
+        position: relative;
+        animation: leaveModalPop 0.2s ease-out;
+    }
+    @keyframes leaveModalPop {
+        from { transform: scale(0.96); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .leave-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.25rem 1.5rem;
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(124, 58, 237, 0.1) 100%);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .leave-modal-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .leave-modal-header-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        flex-shrink: 0;
+    }
+    .leave-modal-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+    .leave-modal-subtitle {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+    .leave-modal-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 0.85rem;
+    }
+    .leave-modal-close:hover {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #f87171;
+    }
+    .leave-modal-body {
+        padding: 1.35rem 1.5rem;
+    }
+    .leave-modal-info-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 0.9rem 1.1rem;
+        margin-bottom: 1.1rem;
+    }
+    .leave-modal-info-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        padding: 0.25rem 0;
+    }
+    .leave-modal-info-label {
+        color: var(--text-muted);
+    }
+    .leave-modal-info-value {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+    .leave-modal-warning {
+        display: none;
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.25);
+        border-radius: 10px;
+        padding: 0.75rem 0.9rem;
+        font-size: 0.78rem;
+        color: #fbbf24;
+        margin-bottom: 1.1rem;
+        line-height: 1.45;
+    }
+    .leave-modal-input-label {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+    .leave-modal-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.65rem 0.9rem;
+        border-radius: 10px;
+        border: 1.5px solid var(--border-color);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        outline: none;
+        font-family: inherit;
+        transition: var(--transition);
+    }
+    .leave-modal-input:focus {
+        border-color: var(--purple-500);
+        box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+    }
+    .leave-modal-input.is-valid {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    }
+    .leave-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem 1.25rem;
+        border-top: 1px solid var(--border-color);
+        background: rgba(255, 255, 255, 0.015);
+    }
+    .btn-modal-cancel {
+        padding: 0.55rem 1.15rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        font-family: inherit;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: transparent;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .btn-modal-cancel:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-primary);
+    }
+    .btn-modal-approve {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.55rem 1.25rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        font-family: inherit;
+        border-radius: 8px;
+        border: none;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #fff;
+        cursor: pointer;
+        transition: var(--transition);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .btn-modal-approve:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+    .btn-modal-approve:not(:disabled):hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 
 <div class="header-actions">
-    <a href="{% url 'portals:staff_assign_leave' %}" class="btn-primary">
-        <i class="fas fa-plus"></i> Assign Leave (Admin)
-    </a>
     <form method="get" action="{% url 'portals:admin_leave_list' %}" style="display: flex; gap: 0.5rem; align-items: center;">
         <select id="leave-therapist-filter" name="therapist" class="filter-select" onchange="this.form.submit()">
             <option value="">All Staff</option>
@@ -181,8 +381,22 @@
                     <td>
                         {% if l.status == "pending" %}
                         <span class="leave-status-pending"><i class="fas fa-hourglass-half"></i> Pending</span>
+                        {% if l.affected_count > 0 %}
+                        <div style="margin-top: 4px;">
+                            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25);" title="{{ l.affected_count }} active booking(s) during this leave will be auto-cancelled and clients sent rebooking links upon approval">
+                                <i class="fas fa-exclamation-triangle"></i> {{ l.affected_count }} booking{{ l.affected_count|pluralize }} affected
+                            </span>
+                        </div>
+                        {% endif %}
                         {% elif l.status == "approved" %}
                         <span class="leave-status-approved"><i class="fas fa-check-circle"></i> Approved</span>
+                        {% if l.cancelled_count > 0 %}
+                        <div style="margin-top: 4px;">
+                            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25);" title="{{ l.cancelled_count }} booking(s) during this leave were auto-cancelled with client rebooking links sent">
+                                <i class="fas fa-calendar-times"></i> {{ l.cancelled_count }} booking{{ l.cancelled_count|pluralize }} auto-cancelled
+                            </span>
+                        </div>
+                        {% endif %}
                         {% elif l.status == "rejected" %}
                         <span class="leave-status-rejected"><i class="fas fa-times-circle"></i> Rejected</span>
                         {% endif %}
@@ -190,13 +404,14 @@
                     <td>
                         <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
                             {% if l.status == "pending" %}
-                            <form method="post" action="{% url 'portals:admin_leave_review' l.pk %}" style="margin:0;">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="approve">
-                                <button type="submit" class="btn-sm btn-approve" title="Approve">
-                                    <i class="fas fa-check"></i> Approve
-                                </button>
-                            </form>
+                            {% if not l.is_past %}
+                            <button type="button"
+                                    class="btn-sm btn-approve"
+                                    title="Approve"
+                                    onclick="openApproveModal({{ l.pk }}, '{{ l.therapist.name|escapejs }}', '{{ l.start_date|date:'M j, Y' }}', '{{ l.end_date|date:'M j, Y' }}', {{ l.affected_count }})">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            {% endif %}
                             <form method="post" action="{% url 'portals:admin_leave_review' l.pk %}" style="margin:0;" onsubmit="return confirm('Reject this leave request?');">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="reject">
@@ -205,21 +420,28 @@
                                 </button>
                             </form>
                             {% elif l.status == "approved" %}
-                            <form method="post" action="{% url 'portals:admin_leave_review' l.pk %}" style="margin:0;" onsubmit="return confirm('Reject this previously approved leave?');">
+                            {% if l.can_revoke %}
+                            <form method="post" action="{% url 'portals:admin_leave_review' l.pk %}" style="margin:0;" onsubmit="return confirm('Revoke this approved leave?');">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="reject">
-                                <button type="submit" class="btn-sm btn-reject" title="Reject">
+                                <button type="submit" class="btn-sm btn-reject" title="Revoke Leave">
                                     <i class="fas fa-times"></i> Revoke
                                 </button>
                             </form>
+                            {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.85rem;" title="{% if l.is_past %}Leave period has already ended{% else %}Cannot revoke: bookings were affected{% endif %}">—</span>
+                            {% endif %}
                             {% elif l.status == "rejected" %}
-                            <form method="post" action="{% url 'portals:admin_leave_review' l.pk %}" style="margin:0;">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="approve">
-                                <button type="submit" class="btn-sm btn-approve" title="Approve">
-                                    <i class="fas fa-check"></i> Approve
-                                </button>
-                            </form>
+                            {% if not l.is_past %}
+                            <button type="button"
+                                    class="btn-sm btn-approve"
+                                    title="Approve"
+                                    onclick="openApproveModal({{ l.pk }}, '{{ l.therapist.name|escapejs }}', '{{ l.start_date|date:'M j, Y' }}', '{{ l.end_date|date:'M j, Y' }}', 0)">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            {% else %}
+                            <span style="color: var(--text-muted); font-size: 0.85rem;" title="Leave period has already ended">—</span>
+                            {% endif %}
                             {% endif %}
                         </div>
                     </td>
@@ -248,5 +470,150 @@
         var tf = document.getElementById('leave-therapist-filter');
         if (tf && CURRENT_THERAPIST_FILTER) tf.value = CURRENT_THERAPIST_FILTER;
     })();
+
+    /* ── Approve Leave Confirmation Modal ── */
+    const REVIEW_URL_TEMPLATE = "{% url 'portals:admin_leave_review' 0 %}";
+
+    function openApproveModal(leaveId, therapistName, startDate, endDate, affectedCount) {
+        const modal = document.getElementById('approveLeaveModal');
+        const form = document.getElementById('approveLeaveModalForm');
+        const nameEl = document.getElementById('modalTherapistName');
+        const periodEl = document.getElementById('modalLeavePeriod');
+        const warningEl = document.getElementById('modalLeaveWarning');
+        const warningTextEl = document.getElementById('modalLeaveWarningText');
+        const inputEl = document.getElementById('approveConfirmInput');
+        const submitBtn = document.getElementById('btnModalApproveSubmit');
+
+        if (!modal || !form) return;
+
+        form.action = REVIEW_URL_TEMPLATE.replace('/0/', '/' + leaveId + '/');
+
+        if (nameEl) nameEl.textContent = therapistName;
+        if (periodEl) periodEl.textContent = (startDate === endDate) ? startDate : (startDate + ' — ' + endDate);
+
+        if (warningEl && warningTextEl) {
+            if (affectedCount > 0) {
+                warningTextEl.innerHTML = `<strong>${affectedCount} active booking${affectedCount > 1 ? 's' : ''}</strong> during this leave period will be automatically cancelled and clients notified with rebooking links.`;
+                warningEl.style.display = 'block';
+            } else {
+                warningEl.style.display = 'none';
+                warningTextEl.innerHTML = '';
+            }
+        }
+
+        if (inputEl) {
+            inputEl.value = '';
+            inputEl.classList.remove('is-valid');
+        }
+        if (submitBtn) {
+            submitBtn.disabled = true;
+        }
+
+        modal.classList.add('open');
+        setTimeout(function() {
+            if (inputEl) inputEl.focus();
+        }, 100);
+    }
+
+    function closeApproveModal() {
+        const modal = document.getElementById('approveLeaveModal');
+        if (modal) {
+            modal.classList.remove('open');
+        }
+    }
+
+    function handleLeaveModalBackdropClick(e) {
+        if (e.target && e.target.classList.contains('leave-modal-backdrop')) {
+            closeApproveModal();
+        }
+    }
+
+    function onApproveConfirmInput(val) {
+        const submitBtn = document.getElementById('btnModalApproveSubmit');
+        const inputEl = document.getElementById('approveConfirmInput');
+        const trimmed = (val || '').trim();
+        const isValid = (trimmed.toLowerCase() === 'confirm');
+
+        if (submitBtn) {
+            submitBtn.disabled = !isValid;
+        }
+        if (inputEl) {
+            if (isValid) {
+                inputEl.classList.add('is-valid');
+            } else {
+                inputEl.classList.remove('is-valid');
+            }
+        }
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeApproveModal();
+        }
+    });
 </script>
+
+<!-- ═══════════ CONFIRMATION MODAL: APPROVE LEAVE ═══════════ -->
+<div class="leave-modal-backdrop" id="approveLeaveModal" onclick="handleLeaveModalBackdropClick(event)">
+    <div class="leave-modal-box">
+        <div class="leave-modal-header">
+            <div class="leave-modal-header-left">
+                <div class="leave-modal-header-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div>
+                    <div class="leave-modal-title">Approve Leave Request</div>
+                    <div class="leave-modal-subtitle">Review details and confirm to proceed</div>
+                </div>
+            </div>
+            <button type="button" class="leave-modal-close" onclick="closeApproveModal()" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <form id="approveLeaveModalForm" method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="approve">
+
+            <div class="leave-modal-body">
+                <div class="leave-modal-info-card">
+                    <div class="leave-modal-info-row">
+                        <span class="leave-modal-info-label">Staff Member:</span>
+                        <span class="leave-modal-info-value" id="modalTherapistName">—</span>
+                    </div>
+                    <div class="leave-modal-info-row">
+                        <span class="leave-modal-info-label">Leave Period:</span>
+                        <span class="leave-modal-info-value" id="modalLeavePeriod">—</span>
+                    </div>
+                </div>
+
+                <div id="modalLeaveWarning" class="leave-modal-warning">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    <span id="modalLeaveWarningText"></span>
+                </div>
+
+                <div>
+                    <label for="approveConfirmInput" class="leave-modal-input-label">
+                        Type <strong style="color: var(--text-primary); font-weight: 700;">Confirm</strong> below to proceed:
+                    </label>
+                    <input type="text"
+                           id="approveConfirmInput"
+                           class="leave-modal-input"
+                           placeholder='Type "Confirm" here...'
+                           autocomplete="off"
+                           oninput="onApproveConfirmInput(this.value)">
+                </div>
+            </div>
+
+            <div class="leave-modal-footer">
+                <button type="button" class="btn-modal-cancel" onclick="closeApproveModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" id="btnModalApproveSubmit" class="btn-modal-approve" disabled>
+                    <i class="fas fa-check"></i> Confirm &amp; Approve
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

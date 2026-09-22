@@ -90,11 +90,14 @@
 <!-- Today's Schedule -->
 <h3 class="section-heading">Your Agenda</h3>
 <div class="card">
-    <div class="card-header">
+    <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
         <span class="card-header-title">
             <i class="fas fa-calendar-day" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
             Today's Appointments — {{ today|date:"l, M d, Y" }}
         </span>
+        <a href="{% url 'portals:booking_walkin' %}" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.42rem 0.9rem; border-radius: 8px; background: linear-gradient(135deg, var(--purple-600), var(--violet-600)); color: #fff; font-size: 0.78rem; font-weight: 600; text-decoration: none; box-shadow: 0 2px 8px rgba(147, 51, 234, 0.25); transition: all 0.2s ease;">
+            <i class="fas fa-plus"></i> New Walk-in Booking
+        </a>
     </div>
     <div class="card-body">
         <div class="today-bookings-list">

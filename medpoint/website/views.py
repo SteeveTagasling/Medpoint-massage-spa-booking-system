@@ -1,3 +1,5 @@
+from decimal import Decimal
+from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
@@ -5,7 +7,8 @@ from django.utils import timezone
 
 from .models import (
     Service, Therapist, Testimonial, GalleryImage,
-    Booking, BookingNotification, ContactMessage,
+    Booking, BookingNotification, ContactMessage, MessageReply,
+    StaffLeave, ClosedDay, StaffSchedule,
 )
 from .forms import BookingForm, ContactForm, FamilyMemberForm
 from portals.models import StaffNotification
@@ -105,27 +108,108 @@ def about(request):
 
 
 def _auto_assign_therapist(booking_obj):
-    """Auto-assign a therapist to a booking based on preference/gender rules."""
+    """Auto-assign a therapist to a booking based on preference/gender rules,
+    respecting leave, day-off schedules, and existing booking conflicts."""
     import random as rand_module
-    if not booking_obj.therapist and booking_obj.therapist_preference != 'random':
-        matching = Therapist.objects.filter(
-            is_active=True, gender=booking_obj.therapist_preference
-        )
-        if matching.exists():
-            available = list(matching)
-            rand_module.shuffle(available)
-            booking_obj.therapist = available[0]
-            booking_obj.save()
-    elif not booking_obj.therapist and booking_obj.therapist_preference == 'random':
-        if booking_obj.client_gender == 'female':
-            matching = Therapist.objects.filter(is_active=True, gender='female')
-        else:
-            matching = Therapist.objects.filter(is_active=True)
-        if matching.exists():
-            available = list(matching)
-            rand_module.shuffle(available)
-            booking_obj.therapist = available[0]
-            booking_obj.save()
+    import datetime as dt
+
+    if booking_obj.therapist:
+        return
+
+    target_date = booking_obj.date
+    target_weekday = target_date.weekday()
+    total_duration = sum(s.duration_minutes for s in booking_obj.services.all()) or 60
+
+    # Build base queryset respecting gender rules
+    pref = booking_obj.therapist_preference
+    if booking_obj.client_gender == 'female':
+        qs = Therapist.objects.filter(is_active=True, gender='female')
+    elif pref in ('male', 'female'):
+        qs = Therapist.objects.filter(is_active=True, gender=pref)
+    else:
+        qs = Therapist.objects.filter(is_active=True)
+
+    # Exclude therapists on approved leave
+    on_leave_ids = set(
+        StaffLeave.objects.filter(
+            is_active=True,
+            status=StaffLeave.STATUS_APPROVED,
+            start_date__lte=target_date,
+            end_date__gte=target_date,
+        ).values_list('therapist_id', flat=True)
+    )
+
+    # Exclude therapists scheduled as day-off on this weekday
+    day_off_ids = set(
+        StaffSchedule.objects.filter(
+            therapist__in=qs,
+            day_of_week=target_weekday,
+            is_available=False,
+        ).values_list('therapist_id', flat=True)
+    )
+
+    # Determine requested time window
+    req_start_time = None
+    req_start_dt = None
+    req_end_dt = None
+    req_end_time = None
+    if booking_obj.time:
+        try:
+            req_start_time = dt.datetime.strptime(booking_obj.time, '%H:%M').time()
+            req_start_dt = dt.datetime.combine(target_date, req_start_time)
+            req_end_dt = req_start_dt + dt.timedelta(minutes=total_duration)
+            req_end_time = req_end_dt.time()
+        except Exception:
+            req_start_time = None
+
+    available = []
+    for t in qs:
+        if t.pk in on_leave_ids:
+            continue
+        if t.pk in day_off_ids:
+            continue
+
+        # Check shift hours
+        if req_start_time:
+            sched = StaffSchedule.objects.filter(
+                therapist=t, day_of_week=target_weekday, is_available=True
+            ).first()
+            if sched:
+                is_past_end = False
+                if sched.end_time != dt.time(0, 0):
+                    if req_end_time > sched.end_time:
+                        is_past_end = True
+                if req_start_time < sched.start_time or is_past_end:
+                    continue
+
+            # Check booking conflicts
+            has_conflict = False
+            t_bookings = Booking.objects.filter(
+                therapist=t,
+                date=target_date
+            ).exclude(status='cancelled').exclude(pk=booking_obj.pk).prefetch_related('services')
+            for tb in t_bookings:
+                try:
+                    b_start = dt.datetime.combine(
+                        target_date,
+                        dt.datetime.strptime(tb.time, '%H:%M').time()
+                    )
+                    b_dur = sum(s.duration_minutes for s in tb.services.all())
+                    b_end = b_start + dt.timedelta(minutes=b_dur)
+                    if max(req_start_dt, b_start) < min(req_end_dt, b_end):
+                        has_conflict = True
+                        break
+                except Exception:
+                    pass
+            if has_conflict:
+                continue
+
+        available.append(t)
+
+    if available:
+        rand_module.shuffle(available)
+        booking_obj.therapist = available[0]
+        booking_obj.save()
 
 
 def _create_booking_notifications(booking_obj):
@@ -336,9 +420,9 @@ def _handle_family_booking(request):
             # Check against existing DB bookings
             if not errors:
                 existing_bookings = Booking.objects.filter(
+                    Q(booking_type='walk_in') | Q(is_verified=True) | Q(status__in=['pending', 'confirmed']),
                     date=booking_date,
                     status__in=['pending', 'confirmed'],
-                    is_verified=True,
                 ).prefetch_related('services')
 
                 for t_id, slots in group_therapist_services.items():
@@ -460,21 +544,25 @@ def my_bookings(request):
     searched = False
 
     has_completed_booking = False
+    completed_services = Service.objects.none()
     if email:
         searched = True
         bookings = Booking.objects.filter(
             client_email__iexact=email
         ).exclude(status='awaiting_verification').select_related('therapist').prefetch_related('services').order_by('-created_at')
         has_completed_booking = bookings.filter(status='completed').exists()
-
-    services = Service.objects.filter(is_active=True)
+        if has_completed_booking:
+            completed_services = Service.objects.filter(
+                bookings__client_email__iexact=email,
+                bookings__status='completed',
+            ).distinct()
 
     context = {
         'bookings': bookings,
         'notifications': notifications,
         'email': email,
         'searched': searched,
-        'services': services,
+        'services': completed_services,
         'has_completed_booking': has_completed_booking,
     }
     return render(request, 'website/my_bookings.html', context)
@@ -917,9 +1005,9 @@ def get_therapists_by_preference(request):
                         outside_schedule_map[t.pk] = True
             
             existing_bookings = Booking.objects.filter(
+                Q(booking_type='walk_in') | Q(is_verified=True) | Q(status__in=['pending', 'confirmed']),
                 date=target_date,
                 status__in=['pending', 'confirmed'],
-                is_verified=True,
             ).prefetch_related('services')
 
             therapist_bookings = {}
@@ -1059,3 +1147,623 @@ def submit_testimonial(request):
             
     referer = request.META.get('HTTP_REFERER')
     return redirect(referer if referer else 'website:home')
+
+
+def client_message_thread(request, token):
+    """Customer: View message conversation and reply back to staff."""
+    contact_message = get_object_or_404(
+        ContactMessage.objects.prefetch_related('replies'),
+        access_token=token
+    )
+
+    if request.method == 'POST':
+        reply_text = request.POST.get('reply_text', '').strip()
+        if reply_text:
+            MessageReply.objects.create(
+                message=contact_message,
+                sender_type=MessageReply.SENDER_CLIENT,
+                sender_name=contact_message.name,
+                sender_email=contact_message.email,
+                body=reply_text,
+            )
+            contact_message.is_read = False
+            contact_message.save(update_fields=['is_read'])
+            messages.success(request, 'Your reply has been sent to our team! We will get back to you shortly.')
+            return redirect('website:client_message_thread', token=token)
+        else:
+            messages.error(request, 'Reply message cannot be empty.')
+
+    return render(request, 'website/client_message_reply.html', {
+        'contact_message': contact_message,
+    })
+
+
+# ─── Staff Leave Rebooking Flow ──────────────────────────────────────────────
+
+def _send_rebooking_confirmation_email(new_booking, old_booking=None, action_type='switch_therapist'):
+    """Send an HTML confirmation email to the client when they rebook after staff leave cancellation."""
+    import logging
+    from django.core.mail import send_mail
+    from django.conf import settings
+
+    therapist_name = new_booking.therapist.name if new_booking.therapist else 'Assigned on arrival'
+    time_display = new_booking.get_time_display()
+    date_display = new_booking.date.strftime('%B %d, %Y')
+    services_str = new_booking.service_names
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Medpoint Massage & Spa <noreply@medpoint.com>')
+    price_display = f"PHP {new_booking.locked_price:,.2f}" if new_booking.locked_price else "Standard rates"
+
+    action_text = "therapist selection" if action_type == 'switch_therapist' else "appointment rescheduling"
+    subject = "Booking Rescheduled Confirmation – Medpoint Massage & Spa"
+
+    plain_message = (
+        f"Hi {new_booking.client_name},\n\n"
+        f"Your booking at Medpoint Massage & Spa has been successfully updated following your {action_text}.\n\n"
+        f"Updated Booking Details:\n"
+        f"  Reference #: #{new_booking.pk:04d}\n"
+        f"  Date: {date_display}\n"
+        f"  Time: {time_display}\n"
+        f"  Therapist: {therapist_name}\n"
+        f"  Services: {services_str}\n"
+        f"  Total Amount: {price_display}\n\n"
+        f"We look forward to welcoming you!\n\n"
+        f"– Medpoint Massage & Spa Team"
+    )
+
+    html_message = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Booking Rescheduled – Medpoint Massage & Spa</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0f0f15;font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="max-width:580px;margin:0 auto;padding:32px 16px;">
+    <div style="background-color:#171724;border-radius:16px;overflow:hidden;border:1px solid rgba(168,85,247,0.25);box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+      <!-- Header -->
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+             style="background:linear-gradient(135deg,#4a1a7a 0%,#2d1060 50%,#1a0845 100%);padding:32px 28px;text-align:center;">
+        <tr>
+          <td>
+            <div style="font-size:26px;font-weight:700;letter-spacing:4px;color:#ffffff;font-family:Georgia,serif;">MEDPOINT</div>
+            <div style="font-size:11px;letter-spacing:2px;color:#c084fc;text-transform:uppercase;margin-top:4px;">Massage &amp; Spa Wellness</div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- Status Banner -->
+      <div style="background:rgba(34,197,94,0.12);border-bottom:1px solid rgba(34,197,94,0.25);padding:14px 28px;text-align:center;">
+        <span style="color:#4ade80;font-size:13px;font-weight:600;letter-spacing:0.5px;">
+          &#10003; REBOOKING CONFIRMED &bull; NEW BOOKING #{new_booking.pk:04d}
+        </span>
+      </div>
+
+      <!-- Main Content -->
+      <div style="padding:28px 32px;">
+        <h2 style="margin:0 0 10px;color:#ffffff;font-size:18px;font-weight:600;">
+          Hi {new_booking.client_name},
+        </h2>
+        <p style="margin:0 0 22px;color:#a1a1aa;font-size:14px;line-height:1.6;">
+          Your appointment has been successfully updated. We have reserved your new schedule with our professional team.
+        </p>
+
+        <!-- Booking Details Card -->
+        <div style="background-color:#1f1d2e;border:1px solid rgba(168,85,247,0.2);border-radius:12px;padding:20px;margin-bottom:24px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td style="color:#71717a;font-size:12px;padding-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Booking Reference</td>
+              <td align="right" style="color:#a855f7;font-size:14px;font-weight:700;padding-bottom:10px;">#{new_booking.pk:04d}</td>
+            </tr>
+            <tr>
+              <td style="color:#71717a;font-size:12px;padding-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Services</td>
+              <td align="right" style="color:#ffffff;font-size:13px;font-weight:500;padding-bottom:10px;">{services_str}</td>
+            </tr>
+            <tr>
+              <td style="color:#71717a;font-size:12px;padding-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Date</td>
+              <td align="right" style="color:#ffffff;font-size:13px;font-weight:500;padding-bottom:10px;">{date_display}</td>
+            </tr>
+            <tr>
+              <td style="color:#71717a;font-size:12px;padding-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Time</td>
+              <td align="right" style="color:#ffffff;font-size:13px;font-weight:500;padding-bottom:10px;">{time_display}</td>
+            </tr>
+            <tr>
+              <td style="color:#71717a;font-size:12px;padding-bottom:10px;text-transform:uppercase;letter-spacing:1px;">Therapist</td>
+              <td align="right" style="color:#38bdf8;font-size:13px;font-weight:600;padding-bottom:10px;">{therapist_name}</td>
+            </tr>
+            <tr>
+              <td style="color:#71717a;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Total Price</td>
+              <td align="right" style="color:#4ade80;font-size:15px;font-weight:700;">{price_display}</td>
+            </tr>
+          </table>
+        </div>
+
+        <p style="margin:0;color:#71717a;font-size:12px;line-height:1.6;">
+          If you have any questions or need further assistance, feel free to contact us at
+          <a href="mailto:medpointmassage.spa@gmail.com" style="color:#c084fc;">medpointmassage.spa@gmail.com</a>.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div style="border-top:1px solid rgba(255,255,255,0.06);padding:16px 32px;text-align:center;">
+        <p style="margin:0;color:#52525b;font-size:12px;">
+          &copy; Medpoint Massage &amp; Spa &bull; Dedicated to Your Peace &amp; Well-being
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>"""
+
+    try:
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=from_email,
+            recipient_list=[new_booking.client_email],
+            html_message=html_message,
+            fail_silently=True,
+        )
+    except Exception as e:
+        logging.getLogger(__name__).warning(f'Failed to send rebooking confirmation email to {new_booking.client_email}: {e}')
+
+
+def rebooking_options(request, token):
+    """
+    Public page for clients whose booking was auto-cancelled due to staff leave.
+    Provides options to:
+    1) Choose another available therapist on the same date/time
+    2) Reschedule to another date/time
+    """
+    import datetime
+
+    booking = Booking.objects.filter(
+        rebooking_token=token,
+        status='cancelled'
+    ).select_related('therapist').prefetch_related('services').first()
+
+    if not booking:
+        return render(request, 'website/rebooking_options.html', {
+            'expired': True,
+        })
+
+    if request.method == 'POST':
+        return rebooking_submit(request, token)
+
+    # Calculate total duration for this booking
+    total_duration = sum(s.duration_minutes for s in booking.services.all())
+    req_time_str = booking.time
+    target_date = booking.date
+    target_weekday = target_date.weekday()
+
+    # Check closed day for original date
+    is_closed_day = ClosedDay.objects.filter(date=target_date).exists()
+    available_therapists = []
+
+    if not is_closed_day:
+        candidate_therapists = Therapist.objects.filter(is_active=True)
+        if booking.therapist_id:
+            candidate_therapists = candidate_therapists.exclude(pk=booking.therapist_id)
+
+        # --- Gender filtering based on client gender ---
+        # Female customers can ONLY choose female therapists.
+        # Male customers can choose both male and female therapists.
+        if booking.client_gender == 'female':
+            candidate_therapists = candidate_therapists.filter(gender='female')
+
+        # Exclude therapists on approved leave for target_date
+        leave_therapist_ids = set(
+            StaffLeave.objects.filter(
+                is_active=True,
+                status=StaffLeave.STATUS_APPROVED,
+                start_date__lte=target_date,
+                end_date__gte=target_date
+            ).values_list('therapist_id', flat=True)
+        )
+
+        # Exclude therapists scheduled as day-off on this weekday
+        day_off_therapist_ids = set(
+            StaffSchedule.objects.filter(
+                therapist__in=candidate_therapists,
+                day_of_week=target_weekday,
+                is_available=False
+            ).values_list('therapist_id', flat=True)
+        )
+
+        try:
+            req_start_time = datetime.datetime.strptime(req_time_str, '%H:%M').time()
+            req_start_dt = datetime.datetime.combine(target_date, req_start_time)
+            req_end_dt = req_start_dt + datetime.timedelta(minutes=total_duration)
+            req_end_time = req_end_dt.time()
+        except Exception:
+            req_start_time = None
+
+        for t in candidate_therapists:
+            if t.pk in leave_therapist_ids:
+                continue
+            if t.pk in day_off_therapist_ids:
+                continue
+
+            sched = StaffSchedule.objects.filter(therapist=t, day_of_week=target_weekday, is_available=True).first()
+            if sched and req_start_time:
+                is_past_end = False
+                if sched.end_time != datetime.time(0, 0):
+                    if req_end_time > sched.end_time:
+                        is_past_end = True
+                if req_start_time < sched.start_time or is_past_end:
+                    continue
+
+            has_conflict = False
+            if req_start_time:
+                t_bookings = Booking.objects.filter(
+                    therapist=t,
+                    date=target_date
+                ).exclude(status='cancelled').exclude(pk=booking.pk).prefetch_related('services')
+
+                for tb in t_bookings:
+                    try:
+                        b_start = datetime.datetime.combine(target_date, datetime.datetime.strptime(tb.time, '%H:%M').time())
+                        b_dur = sum(s.duration_minutes for s in tb.services.all())
+                        b_end = b_start + datetime.timedelta(minutes=b_dur)
+                        if max(req_start_dt, b_start) < min(req_end_dt, b_end):
+                            has_conflict = True
+                            break
+                    except Exception:
+                        pass
+
+            if not has_conflict:
+                available_therapists.append(t)
+
+    # --- Reschedule tab: all therapists allowed for the new date
+    # Female customers can only choose female therapists; male customers can choose both
+    if booking.client_gender == 'female':
+        all_therapists = Therapist.objects.filter(is_active=True, gender='female')
+    else:
+        all_therapists = Therapist.objects.filter(is_active=True)
+    today = timezone.localdate()
+    min_date = today.strftime('%Y-%m-%d')
+
+    context = {
+        'expired': False,
+        'booking': booking,
+        'available_therapists': available_therapists,
+        'all_therapists': all_therapists,
+        'is_closed_day': is_closed_day,
+        'time_choices': Booking.TIME_CHOICES,
+        'min_date': min_date,
+        'token': token,
+        'client_gender': booking.client_gender,
+    }
+    return render(request, 'website/rebooking_options.html', context)
+
+
+def rebooking_therapists_api(request, token):
+    """
+    AJAX endpoint: returns available therapists for a given date when rescheduling.
+    Respects client gender rules, leave exclusions, and day-off schedules.
+    URL: /booking/rebook/<uuid:token>/therapists/?date=YYYY-MM-DD
+    """
+    import json
+    import datetime
+
+    booking = Booking.objects.filter(
+        rebooking_token=token,
+        status='cancelled'
+    ).select_related('therapist').first()
+
+    if not booking:
+        return JsonResponse({'error': 'Invalid token'}, status=404)
+
+    date_str = request.GET.get('date', '')
+    try:
+        target_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return JsonResponse({'error': 'Invalid date'}, status=400)
+
+    if ClosedDay.objects.filter(date=target_date).exists():
+        return JsonResponse({'closed': True, 'therapists': []})
+
+    target_weekday = target_date.weekday()
+
+    # Gender constraint: Female clients can only choose female therapists; Male clients can choose both
+    if booking.client_gender == 'female':
+        qs = Therapist.objects.filter(is_active=True, gender='female')
+    else:
+        qs = Therapist.objects.filter(is_active=True)
+
+    # If rescheduling to the same date as the original booking, exclude the original therapist on leave
+    if target_date == booking.date and booking.therapist_id:
+        qs = qs.exclude(pk=booking.therapist_id)
+
+    # Exclude therapists on approved leave on this date
+    on_leave_ids = set(
+        StaffLeave.objects.filter(
+            is_active=True,
+            status=StaffLeave.STATUS_APPROVED,
+            start_date__lte=target_date,
+            end_date__gte=target_date,
+        ).values_list('therapist_id', flat=True)
+    )
+
+    # Exclude therapists on day-off on this weekday
+    day_off_ids = set(
+        StaffSchedule.objects.filter(
+            therapist__in=qs,
+            day_of_week=target_weekday,
+            is_available=False,
+        ).values_list('therapist_id', flat=True)
+    )
+
+    # Parse requested time and compute end time for conflict checking
+    time_str = request.GET.get('time', '').strip()
+    total_duration = sum(s.duration_minutes for s in booking.services.all()) or 60
+    req_start_time = None
+    req_start_dt = None
+    req_end_dt = None
+    req_end_time = None
+    if time_str:
+        try:
+            req_start_time = datetime.datetime.strptime(time_str, '%H:%M').time()
+            req_start_dt = datetime.datetime.combine(target_date, req_start_time)
+            req_end_dt = req_start_dt + datetime.timedelta(minutes=total_duration)
+            req_end_time = req_end_dt.time()
+        except Exception:
+            req_start_time = None
+
+    result = []
+    for t in qs:
+        if t.pk in on_leave_ids:
+            continue
+        if t.pk in day_off_ids:
+            continue
+
+        # Check shift hours
+        if req_start_time:
+            sched = StaffSchedule.objects.filter(
+                therapist=t, day_of_week=target_weekday, is_available=True
+            ).first()
+            if sched:
+                is_past_end = False
+                if sched.end_time != datetime.time(0, 0):
+                    if req_end_time > sched.end_time:
+                        is_past_end = True
+                if req_start_time < sched.start_time or is_past_end:
+                    continue
+
+            # Check booking conflicts
+            has_conflict = False
+            t_bookings = Booking.objects.filter(
+                therapist=t,
+                date=target_date
+            ).exclude(status='cancelled').prefetch_related('services')
+            for tb in t_bookings:
+                try:
+                    b_start = datetime.datetime.combine(
+                        target_date,
+                        datetime.datetime.strptime(tb.time, '%H:%M').time()
+                    )
+                    b_dur = sum(s.duration_minutes for s in tb.services.all())
+                    b_end = b_start + datetime.timedelta(minutes=b_dur)
+                    if max(req_start_dt, b_start) < min(req_end_dt, b_end):
+                        has_conflict = True
+                        break
+                except Exception:
+                    pass
+            if has_conflict:
+                continue
+
+        result.append({
+            'id': t.pk,
+            'name': t.name,
+            'gender': t.gender,
+            'gender_display': t.get_gender_display(),
+        })
+
+    return JsonResponse({'closed': False, 'therapists': result})
+
+
+def rebooking_submit(request, token):
+    """Process customer's rebooking choice (Switch Therapist OR Reschedule Date)."""
+    import datetime
+
+    if request.method != 'POST':
+        return redirect('website:rebooking_options', token=token)
+
+    booking = Booking.objects.filter(
+        rebooking_token=token,
+        status='cancelled'
+    ).select_related('therapist').prefetch_related('services').first()
+
+    if not booking:
+        messages.error(request, 'This rebooking link has expired or has already been used.')
+        return redirect('website:my_bookings')
+
+    action = request.POST.get('action', '').strip()
+
+    if action == 'switch_therapist':
+        if ClosedDay.objects.filter(date=booking.date).exists():
+            messages.error(request, 'The spa is closed on this date. Please choose another date to reschedule.')
+            return redirect('website:rebooking_options', token=token)
+
+        therapist_id = request.POST.get('therapist_id', '').strip()
+        chosen_therapist = None
+
+        if therapist_id and therapist_id != 'auto':
+            chosen_therapist = Therapist.objects.filter(pk=therapist_id, is_active=True).first()
+            if not chosen_therapist:
+                messages.error(request, 'Selected specialist could not be found.')
+                return redirect('website:rebooking_options', token=token)
+
+            if booking.therapist_id and chosen_therapist.pk == booking.therapist_id:
+                messages.error(request, f'{chosen_therapist.name} is on leave on this date. Please select another specialist.')
+                return redirect('website:rebooking_options', token=token)
+
+            if booking.client_gender == 'female' and chosen_therapist.gender != 'female':
+                messages.error(request, 'Female clients may only choose female specialists.')
+                return redirect('website:rebooking_options', token=token)
+
+            if StaffLeave.objects.filter(
+                therapist=chosen_therapist,
+                is_active=True,
+                status=StaffLeave.STATUS_APPROVED,
+                start_date__lte=booking.date,
+                end_date__gte=booking.date
+            ).exists():
+                messages.error(request, f'{chosen_therapist.name} is on leave on this date. Please select another therapist.')
+                return redirect('website:rebooking_options', token=token)
+        else:
+            avail = Therapist.objects.filter(is_active=True)
+            if booking.therapist_id:
+                avail = avail.exclude(pk=booking.therapist_id)
+            if booking.client_gender == 'female':
+                avail = avail.filter(gender='female')
+            on_leave_ids = StaffLeave.objects.filter(
+                is_active=True,
+                status=StaffLeave.STATUS_APPROVED,
+                start_date__lte=booking.date,
+                end_date__gte=booking.date
+            ).values_list('therapist_id', flat=True)
+            avail = avail.exclude(pk__in=on_leave_ids)
+
+            if booking.therapist_preference in ('male', 'female'):
+                avail_pref = avail.filter(gender=booking.therapist_preference)
+                if avail_pref.exists():
+                    avail = avail_pref
+
+            chosen_therapist = avail.order_by('?').first()
+
+        new_booking = Booking.objects.create(
+            booking_type=booking.booking_type or 'online',
+            client_name=booking.client_name,
+            client_email=booking.client_email,
+            client_phone=booking.client_phone,
+            client_gender=booking.client_gender,
+            therapist_preference='female' if booking.client_gender == 'female' else (booking.therapist_preference or 'random'),
+            therapist=chosen_therapist,
+            date=booking.date,
+            time=booking.time,
+            notes=booking.notes or '',
+            status='pending',
+            is_verified=True,
+            locked_price=booking.locked_price,
+            service_prices_snapshot=booking.service_prices_snapshot,
+        )
+        new_booking.services.set(booking.services.all())
+
+        booking.rebooking_token = None
+        booking.save(update_fields=['rebooking_token'])
+
+        _create_booking_notifications(new_booking)
+        _send_rebooking_confirmation_email(new_booking, booking, action_type='switch_therapist')
+
+        request.session['last_booking_id'] = new_booking.pk
+        request.session['last_booking_ids'] = [new_booking.pk]
+        if 'my_bookings' not in request.session:
+            request.session['my_bookings'] = []
+        request.session['my_bookings'].append(new_booking.pk)
+        request.session.modified = True
+
+        therapist_label = chosen_therapist.name if chosen_therapist else 'an assigned therapist'
+        messages.success(
+            request,
+            f'Your booking has been rebooked with {therapist_label} for '
+            f'{new_booking.date.strftime("%B %d, %Y")} at {new_booking.get_time_display()}!'
+        )
+        return redirect('website:booking_success')
+
+    elif action == 'reschedule_date':
+        new_date_str = request.POST.get('new_date', '').strip()
+        new_time_str = request.POST.get('new_time', '').strip()
+        therapist_pref = request.POST.get('therapist_preference', booking.therapist_preference or 'random').strip()
+        therapist_id = request.POST.get('therapist_id', '').strip()
+
+        if not new_date_str:
+            messages.error(request, 'Please select a new date.')
+            return redirect('website:rebooking_options', token=token)
+
+        try:
+            new_date = datetime.datetime.strptime(new_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, 'Invalid date format.')
+            return redirect('website:rebooking_options', token=token)
+
+        today = timezone.localdate()
+        if new_date < today:
+            messages.error(request, 'You cannot select a past date.')
+            return redirect('website:rebooking_options', token=token)
+
+        if ClosedDay.objects.filter(date=new_date).exists():
+            messages.error(request, 'The spa is closed on the selected date. Please choose another day.')
+            return redirect('website:rebooking_options', token=token)
+
+        if not new_time_str or new_time_str not in dict(Booking.TIME_CHOICES):
+            messages.error(request, 'Please select a valid time slot.')
+            return redirect('website:rebooking_options', token=token)
+
+        chosen_therapist = None
+        if therapist_id and therapist_id != 'auto':
+            chosen_therapist = Therapist.objects.filter(pk=therapist_id, is_active=True).first()
+            if chosen_therapist:
+                if booking.client_gender == 'female' and chosen_therapist.gender != 'female':
+                    messages.error(request, 'Female clients may only choose female specialists.')
+                    return redirect('website:rebooking_options', token=token)
+
+                if new_date == booking.date and booking.therapist_id and chosen_therapist.pk == booking.therapist_id:
+                    messages.error(request, f'{chosen_therapist.name} is on leave on {new_date.strftime("%B %d, %Y")}. Please select another specialist.')
+                    return redirect('website:rebooking_options', token=token)
+
+                if StaffLeave.objects.filter(
+                    therapist=chosen_therapist,
+                    is_active=True,
+                    status=StaffLeave.STATUS_APPROVED,
+                    start_date__lte=new_date,
+                    end_date__gte=new_date
+                ).exists():
+                    messages.error(request, f'{chosen_therapist.name} is on leave on {new_date.strftime("%B %d, %Y")}. Please select another therapist or choose auto-assign.')
+                    return redirect('website:rebooking_options', token=token)
+
+        assigned_pref = 'female' if booking.client_gender == 'female' else therapist_pref
+        new_booking = Booking.objects.create(
+            booking_type=booking.booking_type or 'online',
+            client_name=booking.client_name,
+            client_email=booking.client_email,
+            client_phone=booking.client_phone,
+            client_gender=booking.client_gender,
+            therapist_preference=assigned_pref,
+            therapist=chosen_therapist,
+            date=new_date,
+            time=new_time_str,
+            notes=booking.notes or '',
+            status='pending',
+            is_verified=True,
+            locked_price=booking.locked_price,
+            service_prices_snapshot=booking.service_prices_snapshot,
+        )
+        new_booking.services.set(booking.services.all())
+
+        if not new_booking.therapist:
+            _auto_assign_therapist(new_booking)
+
+        booking.rebooking_token = None
+        booking.save(update_fields=['rebooking_token'])
+
+        _create_booking_notifications(new_booking)
+        _send_rebooking_confirmation_email(new_booking, booking, action_type='reschedule_date')
+
+        request.session['last_booking_id'] = new_booking.pk
+        request.session['last_booking_ids'] = [new_booking.pk]
+        if 'my_bookings' not in request.session:
+            request.session['my_bookings'] = []
+        request.session['my_bookings'].append(new_booking.pk)
+        request.session.modified = True
+
+        messages.success(
+            request,
+            f'Your booking has been rescheduled for {new_booking.date.strftime("%B %d, %Y")} at '
+            f'{new_booking.get_time_display()}!'
+        )
+        return redirect('website:booking_success')
+
+    else:
+        messages.error(request, 'Please select a valid rebooking option.')
+        return redirect('website:rebooking_options', token=token)
+

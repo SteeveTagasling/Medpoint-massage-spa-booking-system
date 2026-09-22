@@ -16,7 +16,12 @@ urlpatterns = [
     path('booking/<int:pk>/cancel/', views.cancel_booking, name='cancel_booking'),
     path('booking/cancel/verify/', views.cancel_booking_verify, name='cancel_booking_verify'),
     path('contact/', views.contact, name='contact'),
+    path('messages/thread/<uuid:token>/', views.client_message_thread, name='client_message_thread'),
     path('submit-testimonial/', views.submit_testimonial, name='submit_testimonial'),
+    # Staff leave rebooking routes
+    path('booking/rebook/<uuid:token>/', views.rebooking_options, name='rebooking_options'),
+    path('booking/rebook/<uuid:token>/submit/', views.rebooking_submit, name='rebooking_submit'),
+    path('booking/rebook/<uuid:token>/therapists/', views.rebooking_therapists_api, name='rebooking_therapists_api'),
     # API endpoints
     path('api/therapists/', views.get_therapists_by_preference, name='api_therapists'),
     path('api/notification/<int:pk>/read/', views.mark_notification_read, name='mark_notification_read'),

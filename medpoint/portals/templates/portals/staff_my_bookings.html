@@ -2,84 +2,608 @@
 
 {% block title %}My Bookings{% endblock %}
 {% block page_title %}My Bookings{% endblock %}
-{% block page_subtitle %}View your assigned booking records{% endblock %}
+{% block page_subtitle %}View and manage your assigned booking records{% endblock %}
 
 {% block extra_css %}
 <style>
-    .booking-type-badge {
+    /* ==========================================================================
+       Staff My Bookings — Modern Executive SaaS Layout
+       ========================================================================== */
+
+    .bookings-header-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 1.15rem;
+        flex-wrap: wrap;
+    }
+
+    .bookings-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-create-booking {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        padding: 0.3rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.75rem;
+        gap: 0.45rem;
+        padding: 0.52rem 1.1rem;
+        border-radius: 9px;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #ffffff;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-decoration: none;
+        font-family: inherit;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(147, 51, 234, 0.25);
+        transition: all 0.2s ease;
+    }
+    .btn-create-booking:hover {
+        opacity: 0.94;
+        transform: translateY(-1px);
+        box-shadow: 0 5px 14px rgba(147, 51, 234, 0.35);
+        color: #ffffff;
+    }
+
+    .btn-calendar-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.52rem 1.05rem;
+        border-radius: 9px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
         font-weight: 500;
-        letter-spacing: 0.02em;
-        white-space: nowrap;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .btn-calendar-link:hover {
+        border-color: var(--purple-500);
+        color: var(--purple-400);
+        background: rgba(147, 51, 234, 0.06);
     }
 
-    .booking-type-online {
-        background: rgba(96, 165, 250, 0.08);
-        color: var(--blue-400);
-        border: 1px solid rgba(96, 165, 250, 0.2);
+    /* --- View Switcher (Active / Archived) --- */
+    .view-switcher {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: rgba(0, 0, 0, 0.04);
+        padding: 3px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
     }
-
-    .booking-type-walk_in {
-        background: rgba(251, 191, 36, 0.08);
-        color: var(--amber-400);
-        border: 1px solid rgba(251, 191, 36, 0.2);
+    [data-theme="dark"] .view-switcher {
+        background: rgba(255, 255, 255, 0.03);
+    }
+    .view-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.38rem 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: 7px;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: all 0.18s ease;
+    }
+    .view-tab:hover {
+        color: var(--text-primary);
+    }
+    .view-tab.is-active {
+        background: var(--bg-secondary);
+        color: var(--purple-600);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+    [data-theme="dark"] .view-tab.is-active {
+        background: rgba(147, 51, 234, 0.22);
+        color: #ffffff;
+    }
+    .view-tab-count {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.1rem 0.45rem;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.06);
+        color: inherit;
+    }
+    [data-theme="dark"] .view-tab-count {
+        background: rgba(255, 255, 255, 0.08);
+    }
+    .view-tab-count.is-archived {
+        background: rgba(147, 51, 234, 0.15);
+        color: var(--purple-500, #a855f7);
     }
 
     .no-profile-alert {
-        padding: 1.25rem;
-        border-radius: 12px;
+        padding: 0.85rem 1.15rem;
+        border-radius: 10px;
         border: 1px solid rgba(251, 191, 36, 0.3);
         background: rgba(251, 191, 36, 0.06);
         color: var(--amber-400);
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-        font-size: 0.85rem;
+        gap: 0.65rem;
+        margin-bottom: 1.15rem;
+        font-size: 0.82rem;
+    }
+    .no-profile-alert i { font-size: 1rem; }
+
+    /* --- Card & Filter Bar --- */
+    .bookings-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
     }
 
-    .no-profile-alert i {
-        font-size: 1.1rem;
+    .bookings-filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.75rem 1rem;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
     }
 
-    /* Action Buttons */
-    .action-btn {
+    .filter-select-item {
+        height: 35px;
+        padding: 0 1.9rem 0 0.75rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 0.65rem center;
+        background-size: 8px;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        font-family: inherit;
+        outline: none;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        -webkit-appearance: none;
+        appearance: none;
+        min-width: 140px;
+    }
+    .filter-select-item:focus {
+        border-color: var(--purple-500);
+    }
+    .filter-select-item option {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+    /* --- Bulk Action Bar --- */
+    .booking-bulk-bar {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.55rem 1rem;
+        background: linear-gradient(90deg, rgba(147, 51, 234, 0.09), rgba(124, 58, 237, 0.05));
+        border-bottom: 1px solid rgba(147, 51, 234, 0.18);
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .booking-bulk-bar.is-visible { display: flex; }
+    .bulk-bar-left { display: flex; align-items: center; gap: 0.55rem; }
+    .bulk-count-badge {
+        font-size: 0.74rem;
+        font-weight: 700;
+        padding: 0.25rem 0.65rem;
+        border-radius: 6px;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #ffffff;
+    }
+    .bulk-btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.74rem;
+        font-weight: 500;
+        padding: 0.25rem 0.55rem;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        cursor: pointer;
+    }
+    .bulk-btn-ghost:hover { color: var(--text-primary); }
+    .bulk-action-btn {
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
-        padding: 0.35rem 0.85rem;
-        border-radius: 6px;
-        font-size: 0.78rem;
+        font-size: 0.76rem;
         font-weight: 600;
-        border: none;
+        padding: 0.32rem 0.75rem;
+        border-radius: 6px;
         cursor: pointer;
-        transition: opacity 0.15s, transform 0.1s;
+        border: 1px solid transparent;
+        transition: all 0.18s ease;
+        font-family: inherit;
+    }
+    .bulk-action-btn-archive {
+        background: rgba(147, 51, 234, 0.12);
+        color: var(--purple-500, #a855f7);
+        border-color: rgba(147, 51, 234, 0.25);
+    }
+    .bulk-action-btn-archive:hover {
+        background: var(--purple-600);
+        color: #ffffff;
+        border-color: var(--purple-600);
+    }
+    .bulk-action-btn-restore {
+        background: rgba(16, 185, 129, 0.1);
+        color: #059669;
+        border-color: rgba(16, 185, 129, 0.25);
+    }
+    .bulk-action-btn-restore:hover {
+        background: #10b981;
+        color: #ffffff;
+        border-color: #10b981;
+    }
+    [data-theme="dark"] .bulk-action-btn-restore { color: #34d399; }
+
+    /* --- Custom Checkbox --- */
+    input[type="checkbox"].booking-cb {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 1.5px solid rgba(168, 85, 247, 0.4);
+        border-radius: 4px;
+        cursor: pointer;
+        background: var(--bg-secondary);
+        transition: all 0.15s ease;
+        flex-shrink: 0;
+        vertical-align: middle;
+        margin: 0;
+        display: inline-block;
+    }
+    input[type="checkbox"].booking-cb:checked {
+        background-color: #9333ea !important;
+        border-color: #9333ea !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E") !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        background-size: 10px !important;
+    }
+    input[type="checkbox"].booking-cb:indeterminate {
+        background-color: #9333ea !important;
+        border-color: #9333ea !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath fill-rule='evenodd' d='M4 10a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z' clip-rule='evenodd'/%3E%3C/svg%3E") !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        background-size: 10px !important;
+    }
+    [data-theme="light"] input[type="checkbox"].booking-cb { background: #ffffff; }
+    tr.is-selected-row td { background: rgba(147, 51, 234, 0.04) !important; }
+
+    /* --- Table Layout --- */
+    .table-wrapper {
+        overflow-x: auto;
+        overflow-y: visible;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+    }
+    .bookings-table {
+        width: 100%;
+        min-width: 950px;
+        border-collapse: collapse;
+        text-align: left;
+        table-layout: fixed;
+    }
+    .bookings-table th {
+        padding: 0.75rem 0.85rem;
+        font-size: 0.67rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--text-muted);
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .bookings-table td {
+        padding: 0.75rem 0.85rem;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--table-border);
+        vertical-align: middle;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .bookings-table td.service-td {
+        white-space: normal;
+        overflow: hidden;
+    }
+    .bookings-table tbody tr:hover {
+        background: var(--table-row-hover);
+    }
+    .bookings-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Client Cell */
+    .client-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+    }
+    .client-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(147, 51, 234, 0.15), rgba(124, 58, 237, 0.1));
+        border: 1px solid rgba(147, 51, 234, 0.22);
+        color: var(--purple-400);
+        font-size: 0.73rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        text-transform: uppercase;
+    }
+    .client-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.3;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .client-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.83rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .client-phone-sub {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Service Cell: Clean single/multi-line */
+    .service-cell {
+        overflow: hidden;
+    }
+    .service-line {
+        font-size: 0.8rem;
+        color: var(--text-primary);
+        font-weight: 500;
+        line-height: 1.4;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .service-line i {
+        font-size: 0.65rem;
+        color: var(--purple-400);
+        flex-shrink: 0;
+    }
+    .service-line + .service-line {
+        margin-top: 3px;
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+    }
+
+    /* Booking Type Badge */
+    .booking-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.22rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
         white-space: nowrap;
     }
-    .action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
-    .action-btn:active { transform: translateY(0); }
+    .booking-type-online {
+        background: rgba(96, 165, 250, 0.08);
+        color: var(--blue-400);
+        border: 1px solid rgba(96, 165, 250, 0.22);
+    }
+    .booking-type-walk_in {
+        background: rgba(251, 191, 36, 0.08);
+        color: var(--amber-400);
+        border: 1px solid rgba(251, 191, 36, 0.22);
+    }
 
+    /* Schedule Cell (Date + Time stacked) */
+    .schedule-cell {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.3;
+    }
+    .schedule-date {
+        font-size: 0.81rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        white-space: nowrap;
+    }
+    .schedule-time {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    /* Action Buttons — icon-only */
+    .action-cell {
+        display: flex;
+        gap: 0.35rem;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+    }
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font-family: inherit;
+        flex-shrink: 0;
+    }
+    .action-btn:hover { transform: translateY(-1px); }
     .btn-confirm {
-        background: rgba(96, 165, 250, 0.15);
+        background: rgba(96, 165, 250, 0.12);
         color: #60a5fa;
-        border: 1px solid rgba(96, 165, 250, 0.35);
+        border: 1px solid rgba(96, 165, 250, 0.3);
+    }
+    .btn-confirm:hover {
+        background: #3b82f6;
+        color: #ffffff;
+        border-color: #3b82f6;
     }
     .btn-complete {
-        background: rgba(52, 211, 153, 0.15);
+        background: rgba(52, 211, 153, 0.12);
         color: #34d399;
-        border: 1px solid rgba(52, 211, 153, 0.35);
+        border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+    .btn-complete:hover {
+        background: #10b981;
+        color: #ffffff;
+        border-color: #10b981;
     }
     .btn-cancel {
-        background: rgba(248, 113, 113, 0.12);
+        background: rgba(248, 113, 113, 0.1);
         color: #f87171;
-        border: 1px solid rgba(248, 113, 113, 0.3);
+        border: 1px solid rgba(248, 113, 113, 0.28);
     }
-    .action-cell { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; }
+    .btn-cancel:hover {
+        background: #ef4444;
+        color: #ffffff;
+        border-color: #ef4444;
+    }
+    .btn-archive-sm {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        background: rgba(147, 51, 234, 0.08);
+        color: var(--purple-500, #a855f7);
+        border: 1px solid rgba(147, 51, 234, 0.22);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font-family: inherit;
+        flex-shrink: 0;
+    }
+    .btn-archive-sm:hover {
+        background: var(--purple-600);
+        color: #ffffff;
+        border-color: var(--purple-600);
+        transform: translateY(-1px);
+    }
+    .btn-restore-sm {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        background: rgba(16, 185, 129, 0.08);
+        color: #059669;
+        border: 1px solid rgba(16, 185, 129, 0.24);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font-family: inherit;
+        flex-shrink: 0;
+    }
+    .btn-restore-sm:hover {
+        background: #10b981;
+        color: #ffffff;
+        border-color: #10b981;
+        transform: translateY(-1px);
+    }
+    [data-theme="dark"] .btn-restore-sm {
+        color: #34d399;
+        background: rgba(16, 185, 129, 0.12);
+        border-color: rgba(52, 211, 153, 0.28);
+    }
+    [data-theme="dark"] .btn-restore-sm:hover {
+        background: #10b981;
+        color: #ffffff;
+    }
+
+    /* Compact status badge override */
+    .bookings-table td.status-td {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: nowrap;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    .bookings-table .status {
+        font-size: 0.64rem;
+        padding: 0.2rem 0.5rem;
+        letter-spacing: 0.04em;
+    }
+
+    /* Action cell loading spinner */
+    .action-cell-loading {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        width: 100%;
+        gap: 0.35rem;
+    }
+    .action-spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(147, 51, 234, 0.2);
+        border-top-color: var(--purple-500, #a855f7);
+        border-radius: 50%;
+        animation: action-spin 0.6s linear infinite;
+        flex-shrink: 0;
+    }
+    @keyframes action-spin {
+        to { transform: rotate(360deg); }
+    }
+    .action-loading-text {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        white-space: nowrap;
+    }
 </style>
 {% endblock %}
 
@@ -91,10 +615,61 @@
 </div>
 {% endif %}
 
-<div class="card">
+<!-- Top Header Toolbar -->
+<div class="bookings-header-toolbar">
+    <div class="bookings-header-left">
+        <a href="{% url 'portals:booking_walkin' %}" class="btn-create-booking">
+            <i class="fas fa-plus"></i> New Walk-in Booking
+        </a>
+        <a href="{% url 'portals:staff_my_schedule' %}" class="btn-calendar-link">
+            <i class="fas fa-calendar-week"></i> My Schedule
+        </a>
+    </div>
+
+    <div class="view-switcher">
+        <a href="{% url 'portals:staff_my_bookings' %}{% if status_filter %}?status={{ status_filter }}{% endif %}"
+           class="view-tab {% if show_filter != 'archived' %}is-active{% endif %}">
+            <i class="fas fa-calendar-check"></i>
+            <span>Active</span>
+            <span class="view-tab-count">{{ active_count }}</span>
+        </a>
+        <a href="{% url 'portals:staff_my_bookings' %}?show=archived{% if status_filter %}&status={{ status_filter }}{% endif %}"
+           class="view-tab {% if show_filter == 'archived' %}is-active{% endif %}">
+            <i class="fas fa-box-archive"></i>
+            <span>Archived</span>
+            <span class="view-tab-count is-archived">{{ archived_count }}</span>
+        </a>
+    </div>
+</div>
+
+<div class="bookings-card">
+    <!-- Bulk Action Bar -->
+    <div id="booking-bulk-bar" class="booking-bulk-bar">
+        <div class="bulk-bar-left">
+            <span class="bulk-count-badge" id="booking-bulk-count">0 selected</span>
+            <button type="button" class="bulk-btn-ghost" id="bulk-deselect-btn">
+                <i class="fas fa-times"></i> Deselect
+            </button>
+        </div>
+        <div class="bulk-bar-right">
+            {% if show_filter == 'archived' %}
+            <button type="button" class="bulk-action-btn bulk-action-btn-restore" id="bulk-restore-btn">
+                <i class="fas fa-undo"></i> Restore Selected
+            </button>
+            {% else %}
+            <button type="button" class="bulk-action-btn bulk-action-btn-archive" id="bulk-archive-btn">
+                <i class="fas fa-archive"></i> Archive Selected
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- Filter Bar -->
-    <form class="filter-bar" method="get" action="{% url 'portals:staff_my_bookings' %}">
-        <select name="status" id="status-filter-select" class="filter-select" onchange="this.form.submit()">
+    <form class="bookings-filter-bar" method="get" action="{% url 'portals:staff_my_bookings' %}">
+        {% if show_filter %}
+        <input type="hidden" name="show" value="{{ show_filter }}">
+        {% endif %}
+        <select name="status" id="status-filter-select" class="filter-select-item" onchange="this.form.submit()">
             <option value="">All Statuses</option>
             {% for value, label in status_choices %}
             {% if value != 'awaiting_verification' %}
@@ -102,58 +677,112 @@
             {% endif %}
             {% endfor %}
         </select>
+        {% if status_filter %}
+        <a href="{% url 'portals:staff_my_bookings' %}{% if show_filter %}?show={{ show_filter }}{% endif %}" class="filter-select-item" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: #ef4444; border-color: rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.08); width: auto; padding: 0 0.85rem; font-weight: 500;" title="Clear filter">
+            <i class="fas fa-rotate-left" style="margin-right: 0.35rem;"></i> Reset
+        </a>
+        {% endif %}
     </form>
 
     <div class="table-wrapper">
-        <table class="data-table">
+        <table class="bookings-table">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Client</th>
-                    <th>Service</th>
-                    <th>Type</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th style="width: 38px; text-align: center;">
+                        <input type="checkbox" class="booking-cb" id="booking-select-all" title="Select all">
+                    </th>
+                    <th style="width: 48px;">#</th>
+                    <th style="width: 280px;">Client</th>
+                    <th style="width: 300px;">Service</th>
+                    <th style="width: 85px;">Type</th>
+                    <th style="width: 130px;">Schedule</th>
+                    <th style="width: 105px;">Status</th>
+                    <th style="width: 135px; text-align: right; padding-right: 1rem;">Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for booking in bookings %}
-                <tr>
-                    <td style="color: var(--text-muted);">{{ booking.pk }}</td>
-                    <td style="color: var(--text-primary); font-weight: 500;">{{ booking.client_name }}</td>
-                    <td>{{ booking.service_names }}</td>
+                <tr id="booking-row-{{ booking.pk }}">
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="booking-cb row-cb" data-id="{{ booking.pk }}">
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 0.78rem; font-variant-numeric: tabular-nums;">
+                        #{{ booking.pk }}
+                    </td>
+                    <td>
+                        <div class="client-cell">
+                            <div class="client-avatar">{{ booking.client_name|slice:":2" }}</div>
+                            <div class="client-info">
+                                <span class="client-name" title="{{ booking.client_name }}">{{ booking.client_name }}</span>
+                                {% if booking.client_phone %}
+                                <span class="client-phone-sub">
+                                    <i class="fas fa-phone-alt"></i> {{ booking.client_phone }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="service-td">
+                        <div class="service-cell" title="{{ booking.service_names }}">
+                            {% for s in booking.services.all %}
+                            <div class="service-line">
+                                <i class="fas fa-spa"></i>
+                                <span>{{ s.name }}</span>
+                            </div>
+                            {% empty %}
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">{{ booking.service_names|default:"—" }}</span>
+                            {% endfor %}
+                        </div>
+                    </td>
                     <td>
                         <span class="booking-type-badge booking-type-{{ booking.booking_type }}">
                             {{ booking.get_booking_type_display }}
                         </span>
                     </td>
-                    <td>{{ booking.date|date:"M d, Y" }}</td>
-                    <td>{{ booking.get_time_display }}</td>
                     <td>
+                        <div class="schedule-cell">
+                            <span class="schedule-date">{{ booking.date|date:"M d, Y" }}</span>
+                            <span class="schedule-time">
+                                <i class="far fa-clock"></i> {{ booking.get_time_display }}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="status-td">
                         <span class="status status-{{ booking.status }}" id="status-badge-{{ booking.pk }}">{{ booking.get_status_display }}</span>
                     </td>
-                    <td>
+                    <td style="text-align: right; padding-right: 1rem;">
                         <div class="action-cell" id="action-cell-{{ booking.pk }}" data-status="{{ booking.status }}">
-                            {% if booking.status == 'pending' %}
-                                <button class="action-btn btn-confirm"
-                                    onclick="updateBookingStatus({{ booking.pk }}, 'confirmed')">
-                                    <i class="fas fa-check"></i> Confirm
+                            {% if show_filter == 'archived' %}
+                                <button class="btn-restore-sm" onclick="restoreBooking({{ booking.pk }})" title="Restore booking">
+                                    <i class="fas fa-undo"></i>
                                 </button>
-                            {% elif booking.status == 'confirmed' %}
-                                <button class="action-btn btn-complete"
-                                    onclick="updateBookingStatus({{ booking.pk }}, 'completed')">
-                                    <i class="fas fa-check-double"></i> Complete
-                                </button>
-                                {% if request.user.is_superuser %}
-                                <button class="action-btn btn-cancel"
-                                    onclick="updateBookingStatus({{ booking.pk }}, 'cancelled')">
-                                    <i class="fas fa-times"></i> Cancel
-                                </button>
-                                {% endif %}
                             {% else %}
-                                <span style="color: var(--text-muted); font-size: 0.8rem;">—</span>
+                                {% if booking.status == 'pending' %}
+                                    <button class="action-btn btn-confirm"
+                                        onclick="updateBookingStatus({{ booking.pk }}, 'confirmed')" title="Confirm booking">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    {% if request.user.is_superuser %}
+                                    <button class="action-btn btn-cancel"
+                                        onclick="updateBookingStatus({{ booking.pk }}, 'cancelled')" title="Cancel booking">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
+                                {% elif booking.status == 'confirmed' %}
+                                    <button class="action-btn btn-complete"
+                                        onclick="updateBookingStatus({{ booking.pk }}, 'completed')" title="Mark as completed">
+                                        <i class="fas fa-check-double"></i>
+                                    </button>
+                                    {% if request.user.is_superuser %}
+                                    <button class="action-btn btn-cancel"
+                                        onclick="updateBookingStatus({{ booking.pk }}, 'cancelled')" title="Cancel booking">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
+                                {% endif %}
+                                <button class="btn-archive-sm" onclick="archiveBooking({{ booking.pk }})" title="Archive booking">
+                                    <i class="fas fa-archive"></i>
+                                </button>
                             {% endif %}
                         </div>
                     </td>
@@ -163,7 +792,7 @@
                     <td colspan="8">
                         <div class="empty-state">
                             <i class="fas fa-calendar-check"></i>
-                            <p>No bookings assigned to you</p>
+                            <p>{% if show_filter == 'archived' %}No archived bookings found{% else %}No bookings assigned to you{% endif %}</p>
                         </div>
                     </td>
                 </tr>
@@ -177,6 +806,7 @@
 <script>
     var CURRENT_STATUS_FILTER = "{{ status_filter }}";
     var IS_SUPERUSER = {{ request.user.is_superuser|yesno:"true,false" }};
+    var SHOW_FILTER = "{{ show_filter }}";
 </script>
 {% endblock %}
 
@@ -190,52 +820,192 @@
         }
     })();
 
+    // ── Checkbox & Bulk Selection ──────────────────────────────────────────────
+    const selectAllCb     = document.getElementById('booking-select-all');
+    const bulkBar         = document.getElementById('booking-bulk-bar');
+    const bulkCountBadge  = document.getElementById('booking-bulk-count');
+    const bulkArchiveBtn  = document.getElementById('bulk-archive-btn');
+    const bulkRestoreBtn  = document.getElementById('bulk-restore-btn');
+    const bulkDeselectBtn = document.getElementById('bulk-deselect-btn');
+
+    function getCheckedRows() {
+        return [...document.querySelectorAll('.row-cb:checked')];
+    }
+
+    function updateBulkBar() {
+        const checked = getCheckedRows();
+        const all = [...document.querySelectorAll('.row-cb')];
+        if (checked.length > 0) {
+            bulkBar.classList.add('is-visible');
+            bulkCountBadge.textContent = `${checked.length} selected`;
+        } else {
+            bulkBar.classList.remove('is-visible');
+        }
+        if (selectAllCb) {
+            selectAllCb.indeterminate = checked.length > 0 && checked.length < all.length;
+            selectAllCb.checked = all.length > 0 && checked.length === all.length;
+        }
+        all.forEach(cb => {
+            const row = document.getElementById(`booking-row-${cb.dataset.id}`);
+            if (row) row.classList.toggle('is-selected-row', cb.checked);
+        });
+    }
+
+    document.querySelectorAll('.row-cb').forEach(cb => cb.addEventListener('change', updateBulkBar));
+
+    if (selectAllCb) {
+        selectAllCb.addEventListener('change', () => {
+            document.querySelectorAll('.row-cb').forEach(cb => { cb.checked = selectAllCb.checked; });
+            updateBulkBar();
+        });
+    }
+
+    if (bulkDeselectBtn) {
+        bulkDeselectBtn.addEventListener('click', () => {
+            document.querySelectorAll('.row-cb').forEach(cb => { cb.checked = false; });
+            if (selectAllCb) { selectAllCb.checked = false; selectAllCb.indeterminate = false; }
+            updateBulkBar();
+        });
+    }
+
+    // Bulk Archive
+    if (bulkArchiveBtn) {
+        bulkArchiveBtn.addEventListener('click', () => {
+            const ids = getCheckedRows().map(cb => cb.dataset.id);
+            if (ids.length === 0) return;
+            if (!confirm(`Archive ${ids.length} selected booking${ids.length !== 1 ? 's' : ''}?`)) return;
+            fetch("{% url 'portals:booking_bulk_archive' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    ids.forEach(id => {
+                        const row = document.getElementById(`booking-row-${id}`);
+                        if (row) { row.style.opacity = '0'; row.style.transition = 'opacity 0.3s'; setTimeout(() => row.remove(), 300); }
+                    });
+                    bulkBar.classList.remove('is-visible');
+                    if (selectAllCb) { selectAllCb.checked = false; selectAllCb.indeterminate = false; }
+                }
+            })
+            .catch(err => console.error(err));
+        });
+    }
+
+    // Bulk Restore
+    if (bulkRestoreBtn) {
+        bulkRestoreBtn.addEventListener('click', () => {
+            const ids = getCheckedRows().map(cb => cb.dataset.id);
+            if (ids.length === 0) return;
+            if (!confirm(`Restore ${ids.length} selected booking${ids.length !== 1 ? 's' : ''} to active?`)) return;
+            fetch("{% url 'portals:booking_bulk_restore' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    ids.forEach(id => {
+                        const row = document.getElementById(`booking-row-${id}`);
+                        if (row) { row.style.opacity = '0'; row.style.transition = 'opacity 0.3s'; setTimeout(() => row.remove(), 300); }
+                    });
+                    bulkBar.classList.remove('is-visible');
+                    if (selectAllCb) { selectAllCb.checked = false; selectAllCb.indeterminate = false; }
+                }
+            })
+            .catch(err => console.error(err));
+        });
+    }
+
+    function setActionCellLoading(bookingId) {
+        var cell = document.getElementById('action-cell-' + bookingId);
+        if (cell) {
+            cell.innerHTML = '<div class="action-cell-loading"><div class="action-spinner"></div><span class="action-loading-text">Processing…</span></div>';
+        }
+    }
+
+    // ── Single Archive / Restore ───────────────────────────────────────────────
+    function archiveBooking(bookingId) {
+        if (!confirm('Archive this booking? You can restore it later from the Archived tab.')) return;
+        setActionCellLoading(bookingId);
+        fetch(`/portal/bookings/${bookingId}/archive/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const row = document.getElementById(`booking-row-${bookingId}`);
+                if (row) { row.style.opacity = '0'; row.style.transition = 'opacity 0.3s'; setTimeout(() => row.remove(), 300); }
+            }
+        })
+        .catch(err => console.error(err));
+    }
+
+    function restoreBooking(bookingId) {
+        if (!confirm('Restore this booking to the active list?')) return;
+        setActionCellLoading(bookingId);
+        fetch(`/portal/bookings/${bookingId}/restore/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const row = document.getElementById(`booking-row-${bookingId}`);
+                if (row) { row.style.opacity = '0'; row.style.transition = 'opacity 0.3s'; setTimeout(() => row.remove(), 300); }
+            }
+        })
+        .catch(err => console.error(err));
+    }
+
+    // ── Status Update ──────────────────────────────────────────────────────────
     function renderActionButtons(cell, newStatus) {
-        var labels = { pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled' };
         var bookingId = cell.id.replace('action-cell-', '');
         cell.setAttribute('data-status', newStatus);
 
+        if (SHOW_FILTER === 'archived') {
+            cell.innerHTML = '<button class="btn-restore-sm" onclick="restoreBooking(' + bookingId + ')" title="Restore booking"><i class="fas fa-undo"></i></button>';
+            return;
+        }
+        var archiveBtn = '<button class="btn-archive-sm" onclick="archiveBooking(' + bookingId + ')" title="Archive booking"><i class="fas fa-archive"></i></button>';
         if (newStatus === 'pending') {
-            cell.innerHTML =
-                '<button class="action-btn btn-confirm" onclick="updateBookingStatus(' + bookingId + ', \'confirmed\')">' +
-                '<i class="fas fa-check"></i> Confirm</button>';
+            var cancelBtnPending = IS_SUPERUSER ?
+                '<button class="action-btn btn-cancel" onclick="updateBookingStatus(' + bookingId + ', \'cancelled\')" title="Cancel booking"><i class="fas fa-times"></i></button>' : '';
+            cell.innerHTML = '<button class="action-btn btn-confirm" onclick="updateBookingStatus(' + bookingId + ', \'confirmed\')" title="Confirm booking"><i class="fas fa-check"></i></button>' + cancelBtnPending + archiveBtn;
         } else if (newStatus === 'confirmed') {
-            var completeBtn = '<button class="action-btn btn-complete" onclick="updateBookingStatus(' + bookingId + ', \'completed\')">' +
-                '<i class="fas fa-check-double"></i> Complete</button>';
-            var cancelBtn = IS_SUPERUSER ? 
-                '<button class="action-btn btn-cancel" onclick="updateBookingStatus(' + bookingId + ', \'cancelled\')">' +
-                '<i class="fas fa-times"></i> Cancel</button>' : '';
-            cell.innerHTML = completeBtn + cancelBtn;
+            var cancelBtn = IS_SUPERUSER ?
+                '<button class="action-btn btn-cancel" onclick="updateBookingStatus(' + bookingId + ', \'cancelled\')" title="Cancel booking"><i class="fas fa-times"></i></button>' : '';
+            cell.innerHTML = '<button class="action-btn btn-complete" onclick="updateBookingStatus(' + bookingId + ', \'completed\')" title="Mark as completed"><i class="fas fa-check-double"></i></button>' + cancelBtn + archiveBtn;
         } else {
-            cell.innerHTML = '<span style="color: var(--text-muted); font-size: 0.8rem;">\u2014</span>';
+            cell.innerHTML = archiveBtn;
         }
     }
 
     function updateBookingStatus(bookingId, newStatus) {
+        setActionCellLoading(bookingId);
         fetch('/portal/bookings/' + bookingId + '/update-status/', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': getCookie('csrftoken') },
             body: 'status=' + newStatus
         })
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
-                if (data.success) {
-                    // Update status badge
-                    var badge = document.getElementById('status-badge-' + bookingId);
-                    if (badge) {
-                        badge.className = 'status status-' + newStatus;
-                        var labels = { pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled' };
-                        badge.textContent = labels[newStatus] || newStatus;
-                    }
-                    // Update action buttons
-                    var cell = document.getElementById('action-cell-' + bookingId);
-                    if (cell) { renderActionButtons(cell, newStatus); }
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data.success) {
+                var badge = document.getElementById('status-badge-' + bookingId);
+                if (badge) {
+                    badge.className = 'status status-' + newStatus;
+                    var labels = { pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled' };
+                    badge.textContent = labels[newStatus] || newStatus;
                 }
-            })
-            .catch(function (err) { console.error('Error:', err); });
+                var cell = document.getElementById('action-cell-' + bookingId);
+                if (cell) { renderActionButtons(cell, newStatus); }
+            }
+        })
+        .catch(function (err) { console.error('Error:', err); });
     }
 
     function getCookie(name) {

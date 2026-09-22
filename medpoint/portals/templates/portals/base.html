@@ -612,31 +612,19 @@
         .status {
             display: inline-flex;
             align-items: center;
-            gap: 0.375rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.7rem;
-            font-weight: 600;
+            padding: 0.22rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
         }
 
         .status-pending { background: rgba(251, 191, 36, 0.12); color: var(--amber-400); }
         .status-confirmed { background: rgba(96, 165, 250, 0.12); color: var(--blue-400); }
         .status-completed { background: rgba(34, 197, 94, 0.12); color: var(--green-400); }
         .status-cancelled { background: rgba(239, 68, 68, 0.12); color: var(--red-400); }
-
-        .status::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-        }
-
-        .status-pending::before { background: var(--amber-400); }
-        .status-confirmed::before { background: var(--blue-400); }
-        .status-completed::before { background: var(--green-400); }
-        .status-cancelled::before { background: var(--red-400); }
 
         /* --- Status Select --- */
         .status-select {
@@ -1224,17 +1212,149 @@
             box-shadow: 0 2px 8px rgba(147, 51, 234, 0.2);
         }
 
-        [data-theme="light"] .nav-item .badge {
-            box-shadow: 0 1px 4px rgba(239, 68, 68, 0.25);
+        /* ===================================================================
+           COLLAPSIBLE SIDEBAR (DESKTOP)
+           =================================================================== */
+        .topbar-collapse-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.92rem;
+            flex-shrink: 0;
+        }
+        .topbar-collapse-btn:hover {
+            border-color: var(--border-hover);
+            color: var(--purple-400);
+            background: var(--sidebar-hover-bg);
+            transform: translateY(-1px);
+        }
+        .sidebar-collapse-trigger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            cursor: pointer;
+            margin-left: auto;
+            font-size: 0.72rem;
+            transition: var(--transition);
+        }
+        .sidebar-collapse-trigger:hover {
+            color: var(--purple-400);
+            border-color: var(--border-hover);
+        }
+
+        @media (min-width: 1025px) {
+            body.sidebar-collapsed .sidebar,
+            html.sidebar-collapsed-init .sidebar {
+                width: var(--sidebar-collapsed, 70px);
+            }
+            body.sidebar-collapsed .main-content,
+            html.sidebar-collapsed-init .main-content {
+                margin-left: var(--sidebar-collapsed, 70px);
+            }
+            body.sidebar-collapsed .sidebar-logo-text,
+            html.sidebar-collapsed-init .sidebar-logo-text,
+            body.sidebar-collapsed .sidebar-collapse-trigger,
+            html.sidebar-collapsed-init .sidebar-collapse-trigger {
+                display: none;
+            }
+            body.sidebar-collapsed .sidebar-header,
+            html.sidebar-collapsed-init .sidebar-header {
+                justify-content: center;
+                padding: 1rem 0;
+            }
+            body.sidebar-collapsed .nav-section-label,
+            html.sidebar-collapsed-init .nav-section-label {
+                display: none;
+            }
+            body.sidebar-collapsed .nav-section,
+            html.sidebar-collapsed-init .nav-section {
+                margin-bottom: 0.75rem;
+            }
+            body.sidebar-collapsed .nav-item,
+            html.sidebar-collapsed-init .nav-item {
+                justify-content: center;
+                padding: 0.62rem 0;
+                gap: 0;
+                position: relative;
+            }
+            body.sidebar-collapsed .nav-item .nav-label,
+            html.sidebar-collapsed-init .nav-item .nav-label {
+                display: none;
+            }
+            body.sidebar-collapsed .nav-item i,
+            html.sidebar-collapsed-init .nav-item i {
+                width: auto;
+                font-size: 1.15rem;
+                margin: 0;
+            }
+            body.sidebar-collapsed .nav-item .badge,
+            html.sidebar-collapsed-init .nav-item .badge {
+                position: absolute;
+                top: 4px;
+                right: 8px;
+                width: 8px;
+                height: 8px;
+                min-width: unset;
+                padding: 0;
+                border-radius: 50%;
+                font-size: 0;
+                line-height: 0;
+            }
+            body.sidebar-collapsed .sidebar-user-info,
+            html.sidebar-collapsed-init .sidebar-user-info {
+                display: none;
+            }
+            body.sidebar-collapsed .sidebar-user,
+            html.sidebar-collapsed-init .sidebar-user {
+                justify-content: center;
+                padding: 0.5rem 0;
+            }
+            body.sidebar-collapsed .sidebar-logout-btn,
+            html.sidebar-collapsed-init .sidebar-logout-btn {
+                justify-content: center;
+                padding: 0.6rem 0;
+            }
+            body.sidebar-collapsed .sidebar-logout-btn span,
+            html.sidebar-collapsed-init .sidebar-logout-btn span {
+                display: none;
+            }
+            body.sidebar-collapsed .sidebar-footer,
+            html.sidebar-collapsed-init .sidebar-footer {
+                padding: 0.75rem 0.35rem;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .topbar-collapse-btn { display: none !important; }
+            .sidebar-collapse-trigger { display: none !important; }
         }
     </style>
     <script>
-        /* Prevent flash of wrong theme */
+        /* Prevent flash of wrong theme or uncollapsed sidebar */
         (function() {
-            const saved = localStorage.getItem('medpoint-portal-theme');
-            if (saved) {
-                document.documentElement.setAttribute('data-theme', saved);
-            }
+            try {
+                const savedTheme = localStorage.getItem('medpoint-portal-theme');
+                if (savedTheme) {
+                    document.documentElement.setAttribute('data-theme', savedTheme);
+                }
+                if (localStorage.getItem('medpoint-sidebar-collapsed') === 'true') {
+                    document.documentElement.classList.add('sidebar-collapsed-init');
+                }
+            } catch (e) {}
         })();
     </script>
     {% block extra_css %}{% endblock %}
@@ -1259,6 +1379,9 @@
                 <span class="brand">MEDPOINT</span>
                 <span class="sub">Portal</span>
             </div>
+            <button class="sidebar-collapse-trigger" id="sidebarCollapseTrigger" title="Collapse sidebar">
+                <i class="fas fa-chevron-left"></i>
+            </button>
         </div>
 
         <nav class="sidebar-nav">
@@ -1372,6 +1495,10 @@
                     <i class="fas fa-calendar-check"></i>
                     <span class="nav-label">My Bookings</span>
                 </a>
+                <a href="{% url 'portals:booking_walkin' %}" class="nav-item {% if request.resolver_match.url_name == 'booking_walkin' %}active{% endif %}" id="nav-staff-walkin">
+                    <i class="fas fa-plus-circle"></i>
+                    <span class="nav-label">New Walk-in</span>
+                </a>
                 <a href="{% url 'portals:staff_my_schedule' %}" class="nav-item {% if request.resolver_match.url_name == 'staff_my_schedule' %}active{% endif %}" id="nav-my-schedule">
                     <i class="fas fa-clock"></i>
                     <span class="nav-label">My Schedule</span>
@@ -1457,9 +1584,14 @@
     <div class="main-content">
         <!-- Top Bar -->
         <header class="topbar">
-            <div>
-                <h1 class="topbar-title">{% block page_title %}Dashboard{% endblock %}</h1>
-                <p class="topbar-subtitle">{% block page_subtitle %}{% endblock %}</p>
+            <div style="display: flex; align-items: center; gap: 0.85rem;">
+                <button class="topbar-collapse-btn" id="desktopSidebarToggle" title="Toggle sidebar (Ctrl+B)" aria-label="Toggle sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div>
+                    <h1 class="topbar-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                    <p class="topbar-subtitle">{% block page_subtitle %}{% endblock %}</p>
+                </div>
             </div>
             <div class="topbar-actions">
                 <a href="{% url 'portals:notification_list' %}" class="topbar-btn" id="notif-bell" title="Notifications">
@@ -1518,6 +1650,36 @@
                 overlay.classList.remove('active');
             });
         }
+
+        // Desktop sidebar collapse toggle
+        const desktopToggle = document.getElementById('desktopSidebarToggle');
+        const sidebarCollapseTrigger = document.getElementById('sidebarCollapseTrigger');
+
+        function toggleSidebarCollapse() {
+            document.body.classList.toggle('sidebar-collapsed');
+            const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+            localStorage.setItem('medpoint-sidebar-collapsed', isCollapsed ? 'true' : 'false');
+        }
+
+        if (document.documentElement.classList.contains('sidebar-collapsed-init')) {
+            document.body.classList.add('sidebar-collapsed');
+            document.documentElement.classList.remove('sidebar-collapsed-init');
+        }
+
+        if (desktopToggle) {
+            desktopToggle.addEventListener('click', toggleSidebarCollapse);
+        }
+        if (sidebarCollapseTrigger) {
+            sidebarCollapseTrigger.addEventListener('click', toggleSidebarCollapse);
+        }
+
+        // Ctrl+B shortcut to toggle sidebar
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b' && !e.target.matches('input, textarea, select')) {
+                e.preventDefault();
+                toggleSidebarCollapse();
+            }
+        });
 
         // Auto-dismiss alerts
         document.querySelectorAll('.alert').forEach(alert => {

@@ -153,7 +153,5 @@ EMAIL_HOST_USER = 'medpointmassage.spa@gmail.com'
 EMAIL_HOST_PASSWORD = 'evcpmbddvqnaqnci'  # App Password (no spaces)
 DEFAULT_FROM_EMAIL = 'Medpoint Massage & Spa <medpointmassage.spa@gmail.com>'
 
-# TIP: While testing locally, you can switch to console backend to see OTPs in
-# the terminal instead of actually sending emails (comment out the lines above
-# and uncomment the line below):
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Site URL for generating absolute links in emails (e.g. rebooking links, thread replies)
+SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')

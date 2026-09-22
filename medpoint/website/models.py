@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.utils import timezone
 
@@ -368,6 +369,11 @@ class Booking(models.Model):
         default=list, blank=True, null=True,
         help_text="Snapshot of services and their prices at time of booking"
     )
+    is_archived = models.BooleanField(default=False, db_index=True, help_text="Archived bookings are hidden from main list but not deleted")
+    rebooking_token = models.UUIDField(
+        null=True, blank=True, db_index=True,
+        help_text="One-time UUID token sent to client when booking is cancelled due to staff leave. Cleared after use."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -421,8 +427,10 @@ class ContactMessage(models.Model):
     subject = models.CharField(max_length=300)
     message = models.TextField()
     is_read = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False, db_index=True)
     reply_text = models.TextField(blank=True, null=True)
     replied_at = models.DateTimeField(null=True, blank=True)
+    access_token = models.UUIDField(default=uuid.uuid4, editable=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -430,6 +438,30 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.subject}"
+
+
+class MessageReply(models.Model):
+    """Threaded replies to a ContactMessage from either admin or client."""
+    SENDER_ADMIN = 'admin'
+    SENDER_CLIENT = 'client'
+    SENDER_CHOICES = [
+        (SENDER_ADMIN, 'Admin / Staff'),
+        (SENDER_CLIENT, 'Client'),
+    ]
+
+    message = models.ForeignKey(ContactMessage, on_delete=models.CASCADE, related_name='replies')
+    sender_type = models.CharField(max_length=10, choices=SENDER_CHOICES, default=SENDER_ADMIN)
+    sender_name = models.CharField(max_length=200, blank=True)
+    sender_email = models.EmailField(blank=True)
+    body = models.TextField()
+    email_message_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Reply from {self.sender_name or self.sender_type} on #{self.message_id}"
 
 
 class ClosedDay(models.Model):

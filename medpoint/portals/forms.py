@@ -203,22 +203,36 @@ class WalkInBookingForm(forms.ModelForm):
         self.fields['therapist'].queryset = Therapist.objects.filter(is_active=True)
         self.fields['therapist'].required = False
         self.fields['notes'].required = False
+        self.fields['status'].choices = [
+            ('confirmed', 'Confirmed'),
+            ('pending', 'Pending'),
+        ]
+        from django.utils import timezone
+        today_local = timezone.localtime(timezone.now()).date()
+        self.fields['date'].widget.attrs['min'] = today_local.isoformat()
 
     def clean(self):
         cleaned_data = super().clean()
         date = cleaned_data.get('date')
         time_val = cleaned_data.get('time')
+        status = cleaned_data.get('status')
+
+        if status and status not in ('pending', 'confirmed'):
+            self.add_error('status', 'Invalid status. Only Confirmed and Pending are permitted for walk-in.')
+
         if date and time_val:
             from django.utils import timezone
             now_local = timezone.localtime(timezone.now())
             today_local = now_local.date()
             if date < today_local:
-                self.add_error('date', 'You cannot book an appointment for a past date.')
+                self.add_error('date', 'You cannot select a previous date.')
             elif date == today_local:
                 try:
-                    slot_hour = int(time_val.split(':')[0])
-                    if slot_hour < now_local.hour:
-                        self.add_error('time', f'You cannot book a time in the past for today. Please select an available time.')
+                    slot_parts = time_val.split(':')
+                    slot_mins = int(slot_parts[0]) * 60 + int(slot_parts[1])
+                    now_mins = now_local.hour * 60 + now_local.minute
+                    if slot_mins <= now_mins:
+                        self.add_error('time', 'You cannot select a past time for today. Please select an available time.')
                 except (ValueError, IndexError):
                     pass
         return cleaned_data

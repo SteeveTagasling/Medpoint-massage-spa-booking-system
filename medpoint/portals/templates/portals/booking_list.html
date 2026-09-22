@@ -6,151 +6,817 @@
 
 {% block extra_css %}
 <style>
-    .booking-type-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.3rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        letter-spacing: 0.02em;
-        white-space: nowrap;
-    }
-    .booking-type-online {
-        background: rgba(96, 165, 250, 0.08);
-        color: var(--blue-400);
-        border: 1px solid rgba(96, 165, 250, 0.2);
-    }
-    .booking-type-walk_in {
-        background: rgba(251, 191, 36, 0.08);
-        color: var(--amber-400);
-        border: 1px solid rgba(251, 191, 36, 0.2);
-    }
-    .header-actions {
+    /* ==========================================================================
+       Bookings Management — Modern Executive SaaS Layout
+       ========================================================================== */
+
+    /* --- Header Toolbar --- */
+    .bookings-header-toolbar {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: 0.75rem;
-        margin-bottom: 1.25rem;
+        margin-bottom: 1.15rem;
+        flex-wrap: wrap;
     }
-    .btn-primary {
+
+    .bookings-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-create-booking {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.6rem 1.25rem;
-        border-radius: 10px;
+        gap: 0.45rem;
+        padding: 0.52rem 1.1rem;
+        border-radius: 9px;
         background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
-        color: #fff;
+        color: #ffffff;
         font-size: 0.8125rem;
         font-weight: 600;
         text-decoration: none;
         font-family: inherit;
         border: none;
         cursor: pointer;
-        transition: var(--transition);
+        box-shadow: 0 3px 10px rgba(147, 51, 234, 0.25);
+        transition: all 0.2s ease;
     }
-    .btn-primary:hover {
-        opacity: 0.9;
+    .btn-create-booking:hover {
+        opacity: 0.94;
         transform: translateY(-1px);
+        box-shadow: 0 5px 14px rgba(147, 51, 234, 0.35);
+        color: #ffffff;
     }
-    .btn-primary i { font-size: 0.75rem; }
-    .btn-outline {
+
+    .btn-calendar-link {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.6rem 1.25rem;
-        border-radius: 10px;
+        gap: 0.45rem;
+        padding: 0.52rem 1.05rem;
+        border-radius: 9px;
         border: 1px solid var(--border-color);
-        background: transparent;
+        background: var(--bg-secondary);
         color: var(--text-secondary);
         font-size: 0.8125rem;
         font-weight: 500;
         text-decoration: none;
         font-family: inherit;
         cursor: pointer;
-        transition: var(--transition);
+        transition: all 0.2s ease;
     }
-    .btn-outline:hover {
+    .btn-calendar-link:hover {
         border-color: var(--border-hover);
         color: var(--purple-400);
         background: var(--sidebar-hover-bg);
-    }
-    .btn-outline i { font-size: 0.75rem; }
-    .btn-danger-sm {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        padding: 0.25rem 0.5rem;
-        border-radius: 6px;
-        border: 1px solid rgba(239, 68, 68, 0.2);
-        background: rgba(239, 68, 68, 0.08);
-        color: var(--red-400);
-        font-size: 0.7rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: var(--transition);
-        font-family: inherit;
-    }
-    .btn-danger-sm:hover {
-        background: rgba(239, 68, 68, 0.15);
-        border-color: rgba(239, 68, 68, 0.35);
+        transform: translateY(-1px);
     }
 
-    /* Status Action Buttons */
-    .action-btn {
+    /* --- View Switcher (Active / Archived) --- */
+    .view-switcher {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: rgba(0, 0, 0, 0.04);
+        padding: 3px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+    }
+    [data-theme="dark"] .view-switcher {
+        background: rgba(255, 255, 255, 0.03);
+    }
+    .view-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.38rem 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: 7px;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: all 0.18s ease;
+    }
+    .view-tab:hover {
+        color: var(--text-primary);
+    }
+    .view-tab.is-active {
+        background: var(--bg-secondary);
+        color: var(--purple-600);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+    [data-theme="dark"] .view-tab.is-active {
+        background: rgba(147, 51, 234, 0.22);
+        color: #ffffff;
+    }
+    .view-tab-count {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.1rem 0.45rem;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.06);
+        color: inherit;
+    }
+    [data-theme="dark"] .view-tab-count {
+        background: rgba(255, 255, 255, 0.08);
+    }
+    .view-tab-count.is-archived {
+        background: rgba(147, 51, 234, 0.15);
+        color: var(--purple-500, #a855f7);
+    }
+
+    /* --- Card & Filter Bar --- */
+    .bookings-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+    }
+
+    /* --- Table Wrapper: enables horizontal scroll without clipping card --- */
+    .table-wrapper {
+        overflow-x: auto;
+        overflow-y: visible;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .bookings-filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.75rem 1rem;
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        flex-wrap: wrap;
+    }
+
+    .filter-search-wrap {
+        position: relative;
+        flex: 1 1 180px;
+        min-width: 170px;
+        max-width: 260px;
+    }
+    .filter-search-wrap i {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.78rem;
+        pointer-events: none;
+    }
+    .filter-search-input {
+        width: 100%;
+        height: 35px;
+        padding: 0 0.85rem 0 2.1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        font-family: inherit;
+        outline: none;
+        transition: all 0.18s ease;
+    }
+    .filter-search-input:focus {
+        border-color: var(--purple-500);
+        box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.12);
+        background: var(--bg-secondary);
+    }
+    .filter-search-input::placeholder {
+        color: var(--text-muted);
+    }
+
+    .filter-select-item {
+        height: 35px;
+        padding: 0 1.9rem 0 0.75rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 0.65rem center;
+        background-size: 8px;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        font-family: inherit;
+        outline: none;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        -webkit-appearance: none;
+        appearance: none;
+        flex: 0 1 auto;
+    }
+    .filter-select-item:focus {
+        border-color: var(--purple-500);
+    }
+    .filter-select-item option {
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+    .filter-date-item {
+        height: 35px;
+        padding: 0 0.65rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        font-family: inherit;
+        outline: none;
+        transition: all 0.18s ease;
+        flex: 0 1 auto;
+    }
+    .filter-date-item:focus {
+        border-color: var(--purple-500);
+    }
+
+    .filter-action-group {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-left: auto;
+    }
+
+    .filter-submit-btn {
+        height: 35px;
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
-        padding: 0.3rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
+        padding: 0 1rem;
+        border-radius: 8px;
         border: none;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #ffffff;
+        font-size: 0.8rem;
+        font-weight: 600;
+        font-family: inherit;
         cursor: pointer;
-        transition: opacity 0.15s, transform 0.1s;
+        box-shadow: 0 2px 6px rgba(147, 51, 234, 0.25);
+        transition: all 0.18s ease;
         white-space: nowrap;
+    }
+    .filter-submit-btn:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+    }
+
+    .filter-reset-btn {
+        height: 35px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0 0.65rem;
+        border-radius: 8px;
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        background: rgba(239, 68, 68, 0.08);
+        color: #ef4444;
+        font-size: 0.78rem;
+        font-weight: 500;
+        text-decoration: none;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        white-space: nowrap;
+    }
+    .filter-reset-btn:hover {
+        background: rgba(239, 68, 68, 0.15);
+        color: #dc2626;
+    }
+
+    /* --- Bulk Actions Bar --- */
+    .booking-bulk-bar {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.55rem 1rem;
+        background: linear-gradient(90deg, rgba(147, 51, 234, 0.09), rgba(124, 58, 237, 0.05));
+        border-bottom: 1px solid rgba(147, 51, 234, 0.18);
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .booking-bulk-bar.is-visible { display: flex; }
+    .bulk-bar-left { display: flex; align-items: center; gap: 0.55rem; }
+    .bulk-count-badge {
+        font-size: 0.74rem;
+        font-weight: 700;
+        padding: 0.25rem 0.65rem;
+        border-radius: 6px;
+        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
+        color: #ffffff;
+    }
+    .bulk-btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.74rem;
+        font-weight: 500;
+        padding: 0.25rem 0.55rem;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        cursor: pointer;
+    }
+    .bulk-btn-ghost:hover { color: var(--text-primary); }
+    .bulk-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.76rem;
+        font-weight: 600;
+        padding: 0.32rem 0.75rem;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: all 0.18s ease;
         font-family: inherit;
     }
-    .action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
-    .action-btn:active { transform: translateY(0); }
+    .bulk-action-btn-archive {
+        background: rgba(147, 51, 234, 0.12);
+        color: var(--purple-500, #a855f7);
+        border-color: rgba(147, 51, 234, 0.25);
+    }
+    .bulk-action-btn-archive:hover {
+        background: var(--purple-600);
+        color: #ffffff;
+        border-color: var(--purple-600);
+    }
+    .bulk-action-btn-restore {
+        background: rgba(16, 185, 129, 0.1);
+        color: #059669;
+        border-color: rgba(16, 185, 129, 0.25);
+    }
+    .bulk-action-btn-restore:hover {
+        background: #10b981;
+        color: #ffffff;
+        border-color: #10b981;
+    }
+    [data-theme="dark"] .bulk-action-btn-restore { color: #34d399; }
+
+    /* --- Custom Checkbox --- */
+    input[type="checkbox"].booking-cb {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 1.5px solid rgba(168, 85, 247, 0.4);
+        border-radius: 4px;
+        cursor: pointer;
+        background: var(--bg-secondary);
+        transition: all 0.15s ease;
+        flex-shrink: 0;
+        vertical-align: middle;
+        margin: 0;
+        display: inline-block;
+    }
+    input[type="checkbox"].booking-cb:checked {
+        background-color: #9333ea !important;
+        border-color: #9333ea !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E") !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        background-size: 10px !important;
+    }
+    input[type="checkbox"].booking-cb:indeterminate {
+        background-color: #9333ea !important;
+        border-color: #9333ea !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath fill-rule='evenodd' d='M4 10a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1z' clip-rule='evenodd'/%3E%3C/svg%3E") !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        background-size: 10px !important;
+    }
+    [data-theme="light"] input[type="checkbox"].booking-cb { background: #ffffff; }
+    tr.is-selected-row td { background: rgba(147, 51, 234, 0.04) !important; }
+
+    /* --- Table Layout --- */
+    .table-wrapper {
+        overflow-x: auto;
+        overflow-y: visible;
+        width: 100%;
+        border-radius: 0 0 14px 14px;
+        -webkit-overflow-scrolling: touch;
+    }
+    .bookings-table {
+        width: 100%;
+        min-width: 1050px;
+        border-collapse: collapse;
+        text-align: left;
+        table-layout: fixed;
+    }
+    .bookings-table th {
+        padding: 0.75rem 0.85rem;
+        font-size: 0.67rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--text-muted);
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .bookings-table td {
+        padding: 0.75rem 0.85rem;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--table-border);
+        vertical-align: middle;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .bookings-table td.service-td {
+        white-space: normal;
+        overflow: hidden;
+    }
+    .bookings-table tbody tr:hover {
+        background: var(--table-row-hover);
+    }
+    .bookings-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Client Cell */
+    .client-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+    }
+    .client-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(147, 51, 234, 0.15), rgba(124, 58, 237, 0.1));
+        border: 1px solid rgba(147, 51, 234, 0.22);
+        color: var(--purple-400);
+        font-size: 0.73rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        text-transform: uppercase;
+    }
+    .client-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.3;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .client-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.83rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .client-contact {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .contact-sep {
+        opacity: 0.45;
+        font-size: 0.65rem;
+    }
+
+    /* Service Cell: Clean single/multi-line */
+    .service-cell {
+        overflow: hidden;
+    }
+    .service-line {
+        font-size: 0.8rem;
+        color: var(--text-primary);
+        font-weight: 500;
+        line-height: 1.4;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .service-line i {
+        font-size: 0.65rem;
+        color: var(--purple-400);
+        flex-shrink: 0;
+    }
+    .service-line + .service-line {
+        margin-top: 3px;
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+    }
+
+    /* Therapist Cell */
+    .therapist-name {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+    .therapist-name i {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+    }
+
+    /* Booking Type Badge */
+    .booking-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.22rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+    .booking-type-online {
+        background: rgba(96, 165, 250, 0.08);
+        color: var(--blue-400);
+        border: 1px solid rgba(96, 165, 250, 0.22);
+    }
+    .booking-type-walk_in {
+        background: rgba(251, 191, 36, 0.08);
+        color: var(--amber-400);
+        border: 1px solid rgba(251, 191, 36, 0.22);
+    }
+
+    /* Schedule Cell (Date + Time stacked) */
+    .schedule-cell {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.3;
+    }
+    .schedule-date {
+        font-size: 0.81rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        white-space: nowrap;
+    }
+    .schedule-time {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-top: 2px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    /* Action Buttons — icon-only */
+    .action-cell {
+        display: flex;
+        gap: 0.35rem;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+    }
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font-family: inherit;
+        flex-shrink: 0;
+    }
+    .action-btn:hover { transform: translateY(-1px); }
     .btn-confirm {
-        background: rgba(96, 165, 250, 0.15);
+        background: rgba(96, 165, 250, 0.12);
         color: #60a5fa;
-        border: 1px solid rgba(96, 165, 250, 0.35);
+        border: 1px solid rgba(96, 165, 250, 0.3);
+    }
+    .btn-confirm:hover {
+        background: #3b82f6;
+        color: #ffffff;
+        border-color: #3b82f6;
     }
     .btn-complete {
-        background: rgba(52, 211, 153, 0.15);
+        background: rgba(52, 211, 153, 0.12);
         color: #34d399;
-        border: 1px solid rgba(52, 211, 153, 0.35);
+        border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+    .btn-complete:hover {
+        background: #10b981;
+        color: #ffffff;
+        border-color: #10b981;
     }
     .btn-cancel {
-        background: rgba(248, 113, 113, 0.12);
+        background: rgba(248, 113, 113, 0.1);
         color: #f87171;
-        border: 1px solid rgba(248, 113, 113, 0.3);
+        border: 1px solid rgba(248, 113, 113, 0.28);
     }
-    .action-cell { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; }
+    .btn-cancel:hover {
+        background: #ef4444;
+        color: #ffffff;
+        border-color: #ef4444;
+    }
+    .btn-archive-sm {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        background: rgba(147, 51, 234, 0.08);
+        color: var(--purple-500, #a855f7);
+        border: 1px solid rgba(147, 51, 234, 0.22);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font-family: inherit;
+        flex-shrink: 0;
+    }
+    .btn-archive-sm:hover {
+        background: var(--purple-600);
+        color: #ffffff;
+        border-color: var(--purple-600);
+        transform: translateY(-1px);
+    }
+    .btn-restore-sm {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        background: rgba(16, 185, 129, 0.08);
+        color: #059669;
+        border: 1px solid rgba(16, 185, 129, 0.24);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font-family: inherit;
+        flex-shrink: 0;
+    }
+    .btn-restore-sm:hover {
+        background: #10b981;
+        color: #ffffff;
+        border-color: #10b981;
+        transform: translateY(-1px);
+    }
+    [data-theme="dark"] .btn-restore-sm {
+        color: #34d399;
+        background: rgba(16, 185, 129, 0.12);
+        border-color: rgba(52, 211, 153, 0.28);
+    }
+    [data-theme="dark"] .btn-restore-sm:hover {
+        background: #10b981;
+        color: #ffffff;
+    }
+
+    .btn-delete-sm {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 7px;
+        font-size: 0.78rem;
+        background: rgba(239, 68, 68, 0.1);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.28);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font-family: inherit;
+        flex-shrink: 0;
+    }
+    .btn-delete-sm:hover {
+        background: #ef4444;
+        color: #ffffff;
+        border-color: #ef4444;
+        transform: translateY(-1px);
+    }
+
+    /* Compact status badge override for booking list */
+    .bookings-table td.status-td {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: nowrap;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    .bookings-table .status {
+        font-size: 0.64rem;
+        padding: 0.2rem 0.5rem;
+        letter-spacing: 0.04em;
+    }
+
+    /* Action cell loading spinner */
+    .action-cell-loading {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        width: 100%;
+        gap: 0.35rem;
+    }
+    .action-spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(147, 51, 234, 0.2);
+        border-top-color: var(--purple-500, #a855f7);
+        border-radius: 50%;
+        animation: action-spin 0.6s linear infinite;
+        flex-shrink: 0;
+    }
+    @keyframes action-spin {
+        to { transform: rotate(360deg); }
+    }
+    .action-loading-text {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        font-weight: 500;
+        white-space: nowrap;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Header Actions -->
-<div class="header-actions">
-    <a href="{% url 'portals:booking_walkin' %}" class="btn-primary">
-        <i class="fas fa-plus"></i> New Walk-in Booking
-    </a>
-    <a href="{% url 'portals:booking_calendar' %}" class="btn-outline">
-        <i class="fas fa-calendar-week"></i> Calendar View
-    </a>
+<!-- Top Header Toolbar -->
+<div class="bookings-header-toolbar">
+    <div class="bookings-header-left">
+        <a href="{% url 'portals:booking_walkin' %}" class="btn-create-booking">
+            <i class="fas fa-plus"></i> New Walk-in Booking
+        </a>
+        <a href="{% url 'portals:booking_calendar' %}" class="btn-calendar-link">
+            <i class="fas fa-calendar-week"></i> Calendar View
+        </a>
+    </div>
+
+    <!-- Segmented Control (Active / Archived) -->
+    <div class="view-switcher">
+        <a href="{% url 'portals:booking_list' %}{% if status_filter or type_filter or search or date_filter or service_filter %}?{% if status_filter %}status={{ status_filter }}&{% endif %}{% if type_filter %}type={{ type_filter }}&{% endif %}{% if search %}search={{ search }}&{% endif %}{% if date_filter %}date={{ date_filter }}&{% endif %}{% if service_filter %}service={{ service_filter }}{% endif %}{% endif %}"
+           class="view-tab {% if show_filter != 'archived' %}is-active{% endif %}">
+            <i class="fas fa-calendar-check"></i>
+            <span>Active</span>
+            <span class="view-tab-count">{{ active_count }}</span>
+        </a>
+        <a href="{% url 'portals:booking_list' %}?show=archived{% if status_filter %}&status={{ status_filter }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if service_filter %}&service={{ service_filter }}{% endif %}"
+           class="view-tab {% if show_filter == 'archived' %}is-active{% endif %}">
+            <i class="fas fa-box-archive"></i>
+            <span>Archived</span>
+            <span class="view-tab-count is-archived">{{ archived_count }}</span>
+        </a>
+    </div>
 </div>
 
-<div class="card">
-    <!-- Filter Bar -->
-    <form class="filter-bar" method="get" action="{% url 'portals:booking_list' %}">
-        <div class="filter-input-wrap">
-            <i class="fas fa-search"></i>
-            <input type="text" name="search" class="filter-input" placeholder="Search by name, email, phone..." value="{{ search }}">
+<div class="bookings-card">
+    <!-- Bulk Actions Bar -->
+    <div id="booking-bulk-bar" class="booking-bulk-bar">
+        <div class="bulk-bar-left">
+            <span class="bulk-count-badge" id="booking-bulk-count">0 selected</span>
+            <button type="button" class="bulk-btn-ghost" id="bulk-deselect-btn">
+                <i class="fas fa-times"></i> Deselect
+            </button>
         </div>
-        <select name="status" class="filter-select">
+        <div class="bulk-bar-right">
+            {% if show_filter == 'archived' %}
+            <button type="button" class="bulk-action-btn bulk-action-btn-restore" id="bulk-restore-btn">
+                <i class="fas fa-undo"></i> Restore Selected
+            </button>
+            {% else %}
+            <button type="button" class="bulk-action-btn bulk-action-btn-archive" id="bulk-archive-btn">
+                <i class="fas fa-archive"></i> Archive Selected
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <form class="bookings-filter-bar" method="get" action="{% url 'portals:booking_list' %}">
+        {% if show_filter %}
+        <input type="hidden" name="show" value="{{ show_filter }}">
+        {% endif %}
+
+        <div class="filter-search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" class="filter-search-input" placeholder="Search client, email, phone..." value="{{ search }}">
+        </div>
+
+        <select name="status" class="filter-select-item" style="width: 130px;">
             <option value="">All Statuses</option>
             {% for value, label in status_choices %}
             {% if value != 'awaiting_verification' %}
@@ -158,92 +824,161 @@
             {% endif %}
             {% endfor %}
         </select>
-        <select name="type" class="filter-select">
+
+        <select name="type" class="filter-select-item" style="width: 110px;">
             <option value="">All Types</option>
             {% for value, label in type_choices %}
             <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
-        <input type="date" name="date" class="filter-input" value="{{ date_filter }}" style="width: auto;">
-        <select name="service" class="filter-select">
+
+        <input type="date" name="date" class="filter-date-item" value="{{ date_filter }}" title="Filter by date">
+
+        <select name="service" class="filter-select-item" style="width: 150px;">
             <option value="">All Services</option>
             {% for s in services %}
             <option value="{{ s.id }}" {% if service_filter == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
             {% endfor %}
         </select>
-        <button type="submit" class="filter-btn"><i class="fas fa-filter" style="margin-right: 0.35rem;"></i> Filter</button>
-        {% if status_filter or type_filter or search or date_filter or service_filter %}
-        <a href="{% url 'portals:booking_list' %}" class="btn-outline" style="padding: 0.45rem 0.85rem; height: auto;" title="Clear Filters">
-            <i class="fas fa-times"></i>
-        </a>
-        {% endif %}
+
+        <div class="filter-action-group">
+            <button type="submit" class="filter-submit-btn">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+            {% if status_filter or type_filter or search or date_filter or service_filter %}
+            <a href="{% url 'portals:booking_list' %}{% if show_filter %}?show={{ show_filter }}{% endif %}" class="filter-reset-btn" title="Reset Filters">
+                <i class="fas fa-rotate-left"></i> Reset
+            </a>
+            {% endif %}
+        </div>
     </form>
 
     <!-- Bookings Table -->
     <div class="table-wrapper">
-        <table class="data-table">
+        <table class="bookings-table">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Client</th>
-                    <th>Email</th>
-                    <th>Service</th>
-                    <th>Therapist</th>
-                    <th>Type</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th style="width: 38px; text-align: center;">
+                        <input type="checkbox" class="booking-cb" id="booking-select-all" title="Select all bookings">
+                    </th>
+                    <th style="width: 48px;">#</th>
+                    <th style="width: 270px;">Client</th>
+                    <th style="width: 280px;">Service</th>
+                    <th style="width: 135px;">Therapist</th>
+                    <th style="width: 85px;">Type</th>
+                    <th style="width: 125px;">Schedule</th>
+                    <th style="width: 105px;">Status</th>
+                    <th style="width: 120px; text-align: right; padding-right: 1rem;">Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for booking in bookings %}
                 <tr id="booking-row-{{ booking.pk }}">
-                    <td style="color: var(--text-muted);">{{ booking.pk }}</td>
-                    <td style="color: var(--text-primary); font-weight: 500;">{{ booking.client_name }}</td>
-                    <td>{{ booking.client_email }}</td>
-                    <td>{{ booking.service_names }}</td>
-                    <td>{{ booking.therapist.name|default:"—" }}</td>
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="booking-cb row-cb" data-id="{{ booking.pk }}">
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 0.78rem; font-variant-numeric: tabular-nums;">
+                        #{{ booking.pk }}
+                    </td>
+                    <td>
+                        <div class="client-cell">
+                            <div class="client-avatar">{{ booking.client_name|slice:":2" }}</div>
+                            <div class="client-info">
+                                <span class="client-name" title="{{ booking.client_name }}">{{ booking.client_name }}</span>
+                                <span class="client-contact" title="{{ booking.client_email }}{% if booking.client_phone %} · {{ booking.client_phone }}{% endif %}">
+                                    {{ booking.client_email }}
+                                    {% if booking.client_phone %}
+                                    <span class="contact-sep">•</span>{{ booking.client_phone }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="service-td">
+                        <div class="service-cell" title="{{ booking.service_names }}">
+                            {% for s in booking.services.all %}
+                            <div class="service-line">
+                                <i class="fas fa-spa"></i>
+                                <span>{{ s.name }}</span>
+                            </div>
+                            {% empty %}
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">{{ booking.service_names|default:"—" }}</span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="therapist-name">
+                            {% if booking.therapist %}
+                                <i class="far fa-user"></i> {{ booking.therapist.name }}
+                            {% else %}
+                                <span style="color: var(--text-muted);">—</span>
+                            {% endif %}
+                        </span>
+                    </td>
                     <td>
                         <span class="booking-type-badge booking-type-{{ booking.booking_type }}">
                             {{ booking.get_booking_type_display }}
                         </span>
                     </td>
-                    <td>{{ booking.date|date:"M d, Y" }}</td>
-                    <td>{{ booking.get_time_display }}</td>
                     <td>
+                        <div class="schedule-cell">
+                            <span class="schedule-date">{{ booking.date|date:"M d, Y" }}</span>
+                            <span class="schedule-time">
+                                <i class="far fa-clock"></i> {{ booking.get_time_display }}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="status-td">
                         <span class="status status-{{ booking.status }}" id="status-badge-{{ booking.pk }}">{{ booking.get_status_display }}</span>
                     </td>
-                    <td>
+                    <td style="text-align: right; padding-right: 1rem;">
                         <div class="action-cell" id="action-cell-{{ booking.pk }}" data-status="{{ booking.status }}">
-                            {% if booking.status == 'pending' %}
-                                <button class="action-btn btn-confirm"
-                                    onclick="updateBookingStatus({{ booking.pk }}, 'confirmed')">
-                                    <i class="fas fa-check"></i> Confirm
-                                </button>
-                            {% elif booking.status == 'confirmed' %}
-                                <button class="action-btn btn-complete"
-                                    onclick="updateBookingStatus({{ booking.pk }}, 'completed')">
-                                    <i class="fas fa-check-double"></i> Complete
+                            {% if show_filter == 'archived' %}
+                                <button class="btn-restore-sm" onclick="restoreBooking({{ booking.pk }})" title="Restore to active bookings">
+                                    <i class="fas fa-undo"></i>
                                 </button>
                                 {% if request.user.is_superuser %}
-                                <button class="action-btn btn-cancel"
-                                    onclick="openCancelModal({{ booking.pk }})">
-                                    <i class="fas fa-times"></i> Cancel
+                                <button class="btn-delete-sm" onclick="deleteBooking({{ booking.pk }})" title="Permanently delete this booking">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                                 {% endif %}
                             {% else %}
-                                <span style="color: var(--text-muted); font-size: 0.8rem;">&#8212;</span>
+                                {% if booking.status == 'pending' %}
+                                    <button class="action-btn btn-confirm"
+                                        onclick="updateBookingStatus({{ booking.pk }}, 'confirmed')" title="Confirm booking">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    {% if request.user.is_superuser %}
+                                    <button class="action-btn btn-cancel"
+                                        onclick="openCancelModal({{ booking.pk }})" title="Cancel booking">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
+                                {% elif booking.status == 'confirmed' %}
+                                    <button class="action-btn btn-complete"
+                                        onclick="updateBookingStatus({{ booking.pk }}, 'completed')" title="Mark as completed">
+                                        <i class="fas fa-check-double"></i>
+                                    </button>
+                                    {% if request.user.is_superuser %}
+                                    <button class="action-btn btn-cancel"
+                                        onclick="openCancelModal({{ booking.pk }})" title="Cancel booking">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    {% endif %}
+                                {% endif %}
+                                <button class="btn-archive-sm" onclick="archiveBooking({{ booking.pk }})" title="Archive booking">
+                                    <i class="fas fa-archive"></i>
+                                </button>
                             {% endif %}
                         </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="10">
+                    <td colspan="9">
                         <div class="empty-state">
                             <i class="fas fa-calendar-times"></i>
-                            <p>No bookings found</p>
+                            <p>{% if show_filter == 'archived' %}No archived bookings found{% else %}No bookings found{% endif %}</p>
                         </div>
                     </td>
                 </tr>
@@ -252,52 +987,222 @@
         </table>
     </div>
 </div>
+
 <script>
     var IS_SUPERUSER = {{ request.user.is_superuser|yesno:"true,false" }};
+    var SHOW_FILTER = "{{ show_filter }}";
 </script>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    // ── Checkbox & Bulk Selection ──────────────────────────────────────────────
+    const selectAllCb     = document.getElementById('booking-select-all');
+    const bulkBar         = document.getElementById('booking-bulk-bar');
+    const bulkCountBadge  = document.getElementById('booking-bulk-count');
+    const bulkArchiveBtn  = document.getElementById('bulk-archive-btn');
+    const bulkRestoreBtn  = document.getElementById('bulk-restore-btn');
+    const bulkDeselectBtn = document.getElementById('bulk-deselect-btn');
+
+    function getCheckedRows() {
+        return [...document.querySelectorAll('.row-cb:checked')];
+    }
+
+    function updateBulkBar() {
+        const checked = getCheckedRows();
+        const all = [...document.querySelectorAll('.row-cb')];
+        if (checked.length > 0) {
+            bulkBar.classList.add('is-visible');
+            bulkCountBadge.textContent = `${checked.length} selected`;
+        } else {
+            bulkBar.classList.remove('is-visible');
+        }
+        if (selectAllCb) {
+            selectAllCb.indeterminate = checked.length > 0 && checked.length < all.length;
+            selectAllCb.checked = all.length > 0 && checked.length === all.length;
+        }
+        all.forEach(cb => {
+            const row = document.getElementById(`booking-row-${cb.dataset.id}`);
+            if (row) row.classList.toggle('is-selected-row', cb.checked);
+        });
+    }
+
+    document.querySelectorAll('.row-cb').forEach(cb => cb.addEventListener('change', updateBulkBar));
+
+    if (selectAllCb) {
+        selectAllCb.addEventListener('change', () => {
+            document.querySelectorAll('.row-cb').forEach(cb => { cb.checked = selectAllCb.checked; });
+            updateBulkBar();
+        });
+    }
+
+    if (bulkDeselectBtn) {
+        bulkDeselectBtn.addEventListener('click', () => {
+            document.querySelectorAll('.row-cb').forEach(cb => { cb.checked = false; });
+            if (selectAllCb) { selectAllCb.checked = false; selectAllCb.indeterminate = false; }
+            updateBulkBar();
+        });
+    }
+
+    // Bulk Archive
+    if (bulkArchiveBtn) {
+        bulkArchiveBtn.addEventListener('click', () => {
+            const ids = getCheckedRows().map(cb => cb.dataset.id);
+            if (ids.length === 0) return;
+            if (!confirm(`Archive ${ids.length} selected booking${ids.length !== 1 ? 's' : ''}?`)) return;
+            fetch("{% url 'portals:booking_bulk_archive' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    ids.forEach(id => {
+                        const row = document.getElementById(`booking-row-${id}`);
+                        if (row) { row.style.opacity = '0'; row.style.transition = 'opacity 0.3s'; setTimeout(() => row.remove(), 300); }
+                    });
+                    bulkBar.classList.remove('is-visible');
+                    if (selectAllCb) { selectAllCb.checked = false; selectAllCb.indeterminate = false; }
+                }
+            })
+            .catch(err => console.error(err));
+        });
+    }
+
+    // Bulk Restore
+    if (bulkRestoreBtn) {
+        bulkRestoreBtn.addEventListener('click', () => {
+            const ids = getCheckedRows().map(cb => cb.dataset.id);
+            if (ids.length === 0) return;
+            if (!confirm(`Restore ${ids.length} selected booking${ids.length !== 1 ? 's' : ''} to active?`)) return;
+            fetch("{% url 'portals:booking_bulk_restore' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    ids.forEach(id => {
+                        const row = document.getElementById(`booking-row-${id}`);
+                        if (row) { row.style.opacity = '0'; row.style.transition = 'opacity 0.3s'; setTimeout(() => row.remove(), 300); }
+                    });
+                    bulkBar.classList.remove('is-visible');
+                    if (selectAllCb) { selectAllCb.checked = false; selectAllCb.indeterminate = false; }
+                }
+            })
+            .catch(err => console.error(err));
+        });
+    }
+
+    // ── Single Archive / Restore ───────────────────────────────────────────────
+    function setActionCellLoading(bookingId) {
+        const cell = document.getElementById(`action-cell-${bookingId}`);
+        if (cell) {
+            cell.innerHTML = `<div class="action-cell-loading"><div class="action-spinner"></div><span class="action-loading-text">Processing…</span></div>`;
+        }
+    }
+
+    function archiveBooking(bookingId) {
+        if (!confirm('Archive this booking? You can restore it later from the Archived tab.')) return;
+        setActionCellLoading(bookingId);
+        fetch(`/portal/bookings/${bookingId}/archive/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const row = document.getElementById(`booking-row-${bookingId}`);
+                if (row) { row.style.opacity = '0'; row.style.transition = 'opacity 0.3s'; setTimeout(() => row.remove(), 300); }
+            }
+        })
+        .catch(err => console.error(err));
+    }
+
+    function restoreBooking(bookingId) {
+        if (!confirm('Restore this booking to the active list?')) return;
+        setActionCellLoading(bookingId);
+        fetch(`/portal/bookings/${bookingId}/restore/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const row = document.getElementById(`booking-row-${bookingId}`);
+                if (row) { row.style.opacity = '0'; row.style.transition = 'opacity 0.3s'; setTimeout(() => row.remove(), 300); }
+            }
+        })
+        .catch(err => console.error(err));
+    }
+
+    function deleteBooking(bookingId) {
+        bookingToDelete = bookingId;
+        document.getElementById('custom-delete-modal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+        bookingToDelete = null;
+        document.getElementById('custom-delete-modal').classList.remove('active');
+    }
+
+    function confirmDeleteBooking() {
+        if (!bookingToDelete) return;
+        const id = bookingToDelete;
+        closeDeleteModal();
+        setActionCellLoading(id);
+        fetch(`/portal/bookings/${id}/delete/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const row = document.getElementById(`booking-row-${id}`);
+                if (row) { row.style.opacity = '0'; row.style.transition = 'opacity 0.3s'; setTimeout(() => row.remove(), 300); }
+            }
+        })
+        .catch(err => console.error(err));
+    }
+
+    // ── Status Update ──────────────────────────────────────────────────────────
     function renderActionButtons(cell, newStatus) {
         const bookingId = cell.id.replace('action-cell-', '');
         cell.setAttribute('data-status', newStatus);
+        if (SHOW_FILTER === 'archived') {
+            cell.innerHTML = `<button class="btn-restore-sm" onclick="restoreBooking(${bookingId})" title="Restore booking"><i class="fas fa-undo"></i></button>`;
+            return;
+        }
+        const archiveBtn = `<button class="btn-archive-sm" onclick="archiveBooking(${bookingId})" title="Archive booking"><i class="fas fa-archive"></i></button>`;
         if (newStatus === 'pending') {
-            cell.innerHTML =
-                `<button class="action-btn btn-confirm" onclick="updateBookingStatus(${bookingId}, 'confirmed')">`+
-                `<i class="fas fa-check"></i> Confirm</button>`;
+            var cancelBtn = IS_SUPERUSER ? `<button class="action-btn btn-cancel" onclick="openCancelModal(${bookingId})" title="Cancel booking"><i class="fas fa-times"></i></button>` : '';
+            cell.innerHTML = `<button class="action-btn btn-confirm" onclick="updateBookingStatus(${bookingId}, 'confirmed')" title="Confirm booking"><i class="fas fa-check"></i></button>` + cancelBtn + archiveBtn;
         } else if (newStatus === 'confirmed') {
-            var completeBtn = `<button class="action-btn btn-complete" onclick="updateBookingStatus(${bookingId}, 'completed')">`+
-                `<i class="fas fa-check-double"></i> Complete</button>`;
-            var cancelBtn = IS_SUPERUSER ? 
-                `<button class="action-btn btn-cancel" onclick="openCancelModal(${bookingId})">`+
-                `<i class="fas fa-times"></i> Cancel</button>` : '';
-            cell.innerHTML = completeBtn + cancelBtn;
+            var cancelBtn = IS_SUPERUSER ? `<button class="action-btn btn-cancel" onclick="openCancelModal(${bookingId})" title="Cancel booking"><i class="fas fa-times"></i></button>` : '';
+            cell.innerHTML = `<button class="action-btn btn-complete" onclick="updateBookingStatus(${bookingId}, 'completed')" title="Mark as completed"><i class="fas fa-check-double"></i></button>` + cancelBtn + archiveBtn;
         } else {
-            cell.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem;">&#8212;</span>`;
+            cell.innerHTML = archiveBtn;
         }
     }
 
     function updateBookingStatus(bookingId, newStatus) {
+        setActionCellLoading(bookingId);
         fetch(`/portal/bookings/${bookingId}/update-status/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': getCookie('csrftoken') },
             body: `status=${newStatus}`
         })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                // Update status badge
                 const badge = document.getElementById(`status-badge-${bookingId}`);
                 if (badge) {
                     badge.className = `status status-${newStatus}`;
                     const labels = { pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled' };
                     badge.textContent = labels[newStatus] || newStatus;
                 }
-                // Update action buttons
                 const cell = document.getElementById(`action-cell-${bookingId}`);
                 if (cell) { renderActionButtons(cell, newStatus); }
             }
@@ -315,6 +1220,7 @@
     }
 
     let bookingToCancel = null;
+    let bookingToDelete = null;
 
     function openCancelModal(bookingId) {
         bookingToCancel = bookingId;
@@ -333,11 +1239,12 @@
         }
     }
 
-    // Close modal if clicking outside the content box
     document.getElementById('custom-cancel-modal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeCancelModal();
-        }
+        if (e.target === this) { closeCancelModal(); }
+    });
+
+    document.getElementById('custom-delete-modal').addEventListener('click', function(e) {
+        if (e.target === this) { closeDeleteModal(); }
     });
 </script>
 
@@ -352,6 +1259,21 @@
         <div class="logout-modal-actions">
             <button class="logout-btn-cancel" onclick="closeCancelModal()">No, Keep it</button>
             <button class="logout-btn-confirm" onclick="confirmCancelBooking()">Yes, Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Delete Modal HTML -->
+<div class="logout-modal-overlay" id="custom-delete-modal">
+    <div class="logout-modal-content">
+        <div class="logout-modal-icon" style="background: rgba(239,68,68,0.15); color: #ef4444;">
+            <i class="fas fa-trash"></i>
+        </div>
+        <h3 class="logout-modal-title">Delete Booking?</h3>
+        <p class="logout-modal-desc">This will <strong>permanently delete</strong> the booking and cannot be undone.</p>
+        <div class="logout-modal-actions">
+            <button class="logout-btn-cancel" onclick="closeDeleteModal()">No, Keep it</button>
+            <button class="logout-btn-confirm" onclick="confirmDeleteBooking()" style="background: #ef4444;">Yes, Delete</button>
         </div>
     </div>
 </div>

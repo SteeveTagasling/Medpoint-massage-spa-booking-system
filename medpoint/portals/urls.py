@@ -14,8 +14,12 @@ urlpatterns = [
     # ── Booking management ────────────────────────────
     path('bookings/', views.booking_list, name='booking_list'),
     path('bookings/walk-in/', views.booking_create_walkin, name='booking_walkin'),
+    path('bookings/bulk-archive/', views.booking_bulk_archive, name='booking_bulk_archive'),
+    path('bookings/bulk-restore/', views.booking_bulk_restore, name='booking_bulk_restore'),
     path('bookings/<int:pk>/update-status/', views.booking_update_status, name='booking_update_status'),
     path('bookings/<int:pk>/delete/', views.booking_delete, name='booking_delete'),
+    path('bookings/<int:pk>/archive/', views.booking_archive, name='booking_archive'),
+    path('bookings/<int:pk>/restore/', views.booking_restore, name='booking_restore'),
     path('bookings/calendar/', views.booking_calendar, name='booking_calendar'),
     path('bookings/calendar/toggle-holiday/', views.toggle_holiday, name='toggle_holiday'),
 
@@ -71,7 +75,16 @@ urlpatterns = [
 
     # ── Messages ──────────────────────────────────────
     path('messages/', views.message_list, name='message_list'),
+    path('messages/bulk-delete/', views.message_bulk_delete, name='message_bulk_delete'),
+    path('messages/bulk-mark-read/', views.message_bulk_mark_read, name='message_bulk_mark_read'),
+    path('messages/bulk-mark-unread/', views.message_bulk_mark_unread, name='message_bulk_mark_unread'),
+    path('messages/bulk-archive/', views.message_bulk_archive, name='message_bulk_archive'),
+    path('messages/bulk-restore/', views.message_bulk_restore, name='message_bulk_restore'),
+    path('messages/sync-replies/', views.message_sync_replies, name='message_sync_replies'),
     path('messages/<int:pk>/toggle-read/', views.message_toggle_read, name='message_toggle_read'),
+    path('messages/<int:pk>/archive/', views.message_archive, name='message_archive'),
+    path('messages/<int:pk>/restore/', views.message_restore, name='message_restore'),
+    path('messages/<int:pk>/delete/', views.message_delete, name='message_delete'),
     path('messages/<int:pk>/reply/', views.message_reply, name='message_reply'),
 
     # ── Testimonials (admin only) ─────────────────────

@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background-color: #110a19;
+            background-color: #0e0817;
             color: #d1c4e9;
             margin: 0;
             padding: 0;
@@ -14,114 +14,150 @@
         }
         .container {
             max-width: 600px;
-            margin: 40px auto;
-            background-color: #1a1025;
-            border-radius: 12px;
+            margin: 35px auto;
+            background-color: #170e24;
+            border-radius: 14px;
             overflow: hidden;
-            border: 1px solid rgba(168, 85, 247, 0.2);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
         }
         .header {
-            background-color: #581c87;
-            padding: 30px;
+            background: linear-gradient(135deg, #7e22ce, #9333ea);
+            padding: 28px;
             text-align: center;
         }
         .header h1 {
             color: #ffffff;
             margin: 0;
-            font-size: 24px;
-            font-weight: 600;
+            font-size: 22px;
+            font-weight: 700;
             letter-spacing: 2px;
             text-transform: uppercase;
         }
+        .header .ticket-ref {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.85);
+            margin-top: 6px;
+            letter-spacing: 0.5px;
+        }
         .content {
-            padding: 40px 30px;
+            padding: 35px 30px;
             color: #d1c4e9;
         }
-        .content p {
-            color: #c4b5d9;
-            font-size: 15px;
-            margin: 12px 0;
-        }
         .greeting {
-            font-size: 18px;
+            font-size: 17px;
             color: #ffffff;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+        .intro-text {
+            color: #c4b5d9;
+            font-size: 14.5px;
             margin-bottom: 20px;
-            font-weight: 500;
         }
         .reply-box {
-            background-color: rgba(168, 85, 247, 0.05);
+            background-color: rgba(147, 51, 234, 0.08);
             border-left: 4px solid #a855f7;
-            padding: 20px;
-            margin: 30px 0;
-            border-radius: 0 8px 8px 0;
-            color: #f3e8ff;
-            font-size: 16px;
+            padding: 18px 22px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+            color: #ffffff;
+            font-size: 15.5px;
+            line-height: 1.65;
+        }
+        .instructions-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed rgba(168, 85, 247, 0.3);
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin: 28px 0;
+            text-align: center;
+        }
+        .instructions-box p {
+            color: #e2d9f3;
+            font-size: 13.5px;
+            margin: 0 0 14px 0;
+        }
+        .btn-reply-online {
+            display: inline-block;
+            background: linear-gradient(135deg, #9333ea, #7c3aed);
+            color: #ffffff !important;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13.5px;
+            padding: 10px 24px;
+            border-radius: 25px;
+            box-shadow: 0 3px 12px rgba(147, 51, 234, 0.4);
         }
         .original-msg {
-            background-color: #110a19;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: #100a1b;
+            padding: 18px 20px;
+            border-radius: 10px;
+            margin-top: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.07);
         }
         .original-msg-title {
-            font-size: 12px;
+            font-size: 11.5px;
             text-transform: uppercase;
-            color: #94a3b8;
-            margin-bottom: 10px;
-            font-weight: 600;
-            letter-spacing: 1px;
+            color: #a855f7;
+            margin-bottom: 8px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
         }
         .original-msg p {
             color: #94a3b8;
-            font-size: 14px;
+            font-size: 13.5px;
             margin: 0;
             font-style: italic;
+            line-height: 1.55;
         }
         .footer {
-            background-color: #110a19;
-            padding: 25px;
+            background-color: #0c0615;
+            padding: 22px;
             text-align: center;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
         .footer p {
-            color: #64748b;
-            font-size: 13px;
+            color: #6b7280;
+            font-size: 12.5px;
             margin: 0;
-        }
-        .divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.3), transparent);
-            margin: 30px 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Medpoint</h1>
+            <h1>Medpoint Massage & Spa</h1>
+            <div class="ticket-ref">Ticket #{{ ticket_id }} &mdash; Customer Inquiry</div>
         </div>
         
         <div class="content">
             <div class="greeting">Hi {{ client_name }},</div>
             
-            <p>Thank you for reaching out to us. We have received your message and an administrator has replied:</p>
+            <p class="intro-text">Thank you for reaching out to us. Our team has reviewed your inquiry and replied below:</p>
             
             <div class="reply-box">
                 {{ reply_text|linebreaksbr }}
             </div>
             
-            <p>If you have any further questions, feel free to reply directly to this email or contact us through our website.</p>
+            <div class="instructions-box">
+                <p>
+                    <strong>Have more questions?</strong><br>
+                    You can reply directly to this email from your inbox, or click below to reply online:
+                </p>
+                {% if web_reply_url %}
+                <a href="{{ web_reply_url }}" class="btn-reply-online">View Conversation &amp; Reply Online</a>
+                {% endif %}
+            </div>
             
             <div class="original-msg">
-                <div class="original-msg-title">Your Original Message ({{ original_subject }})</div>
+                <div class="original-msg-title">Your Initial Inquiry ({{ original_subject }})</div>
                 <p>"{{ original_message|linebreaksbr }}"</p>
             </div>
         </div>
         
         <div class="footer">
-            <p>&copy; {% now "Y" %} Medpoint Massage & Spa. All rights reserved.</p>
+            <p>&copy; {% now "Y" %} Medpoint Massage &amp; Spa. All rights reserved.</p>
         </div>
     </div>
 </body>

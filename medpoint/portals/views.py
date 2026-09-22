@@ -10,10 +10,11 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Count, Sum, Q, F
 from django.utils import timezone
+from django.conf import settings
 
 from website.models import (
     Service, Therapist, Testimonial, GalleryImage,
-    Booking, ContactMessage, StaffSchedule, StaffLeave,
+    Booking, ContactMessage, MessageReply, StaffSchedule, StaffLeave,
     ServicePriceHistory,
 )
 from .forms import ServiceForm, TherapistForm, WalkInBookingForm, StaffScheduleForm, AdminSettingsForm, AdminUserForm, StaffSettingsForm, BulkStaffScheduleForm, StaffLeaveForm, StaffLeaveRequestForm
@@ -387,8 +388,14 @@ def booking_list(request):
     search = request.GET.get('search', '')
     date_filter = request.GET.get('date', '')
     service_filter = request.GET.get('service', '')
+    show_filter = request.GET.get('show', '')  # '' = active, 'archived' = archived
 
-    bookings = Booking.objects.filter(Q(booking_type='walk_in') | Q(is_verified=True)).select_related('therapist').prefetch_related('services').order_by('-created_at')
+    base_qs = Booking.objects.filter(Q(booking_type='walk_in') | Q(is_verified=True)).select_related('therapist').prefetch_related('services').order_by('-created_at')
+
+    if show_filter == 'archived':
+        bookings = base_qs.filter(is_archived=True)
+    else:
+        bookings = base_qs.filter(is_archived=False)
 
     if status_filter:
         bookings = bookings.filter(status=status_filter)
@@ -404,8 +411,10 @@ def booking_list(request):
         bookings = bookings.filter(date=date_filter)
     if service_filter:
         bookings = bookings.filter(services__id=service_filter)
-        
+
     services = Service.objects.all()
+    active_count = base_qs.filter(is_archived=False).count()
+    archived_count = base_qs.filter(is_archived=True).count()
 
     context = {
         'bookings': bookings,
@@ -414,6 +423,9 @@ def booking_list(request):
         'date_filter': date_filter,
         'service_filter': service_filter,
         'search': search,
+        'show_filter': show_filter,
+        'active_count': active_count,
+        'archived_count': archived_count,
         'status_choices': [c for c in Booking.STATUS_CHOICES if c[0] != 'awaiting_verification'],
         'type_choices': Booking.BOOKING_TYPE_CHOICES,
         'services': services,
@@ -909,6 +921,8 @@ def booking_create_walkin(request):
             if is_closed:
                 booking_obj.delete()
                 messages.error(request, 'The selected date is a Holiday. The spa is closed. Please select another date.')
+                if _is_staff_only(request):
+                    return redirect('portals:staff_my_bookings')
                 return redirect('portals:booking_list')
 
             # Create notification for client
@@ -934,25 +948,112 @@ def booking_create_walkin(request):
                     link=reverse('portals:staff_my_bookings')
                 )
 
+            # Create portal notification for admin when created by staff
+            if _is_staff_only(request):
+                from django.urls import reverse
+                StaffNotification.objects.create(
+                    notification_type='new_booking',
+                    title='New Walk-in Booking',
+                    message=f"Staff {request.user.get_full_name() or request.user.username} created walk-in booking #{booking_obj.pk:04d}.",
+                    target_role='admin',
+                    link=reverse('portals:booking_list')
+                )
+
             messages.success(request, f'Walk-in booking #{booking_obj.pk:04d} created successfully.')
+            if _is_staff_only(request):
+                return redirect('portals:staff_my_bookings')
             return redirect('portals:booking_list')
         else:
             first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
             messages.error(request, first_error)
     else:
         form = WalkInBookingForm(initial={
-            'date': timezone.now().date(),
+            'date': timezone.localtime(timezone.now()).date(),
             'status': 'confirmed',
         })
+    staff_therapist = _get_staff_therapist(request) if _is_staff_only(request) else None
     return render(request, 'portals/booking_walkin.html', {
         'form': form,
         'services_list': Service.objects.filter(is_active=True),
+        'current_therapist_id': staff_therapist.id if staff_therapist else None,
     })
 
 
 @login_required(login_url='portals:login')
 def booking_delete(request, pk):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@login_required(login_url='portals:login')
+def booking_archive(request, pk):
+    """Admin: Archive a single booking."""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    booking = get_object_or_404(Booking, pk=pk)
+    booking.is_archived = True
+    booking.save(update_fields=['is_archived'])
+    return JsonResponse({'success': True, 'is_archived': True})
+
+
+@login_required(login_url='portals:login')
+def booking_restore(request, pk):
+    """Admin: Restore an archived booking back to the active list."""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    booking = get_object_or_404(Booking, pk=pk)
+    booking.is_archived = False
+    booking.save(update_fields=['is_archived'])
+    return JsonResponse({'success': True, 'is_archived': False})
+
+
+@login_required(login_url='portals:login')
+def booking_bulk_archive(request):
+    """Admin: Bulk-archive bookings."""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    import json as _json
+    try:
+        data = _json.loads(request.body)
+        ids = [int(i) for i in data.get('ids', [])]
+    except Exception:
+        return JsonResponse({'error': 'Invalid payload'}, status=400)
+    Booking.objects.filter(pk__in=ids).update(is_archived=True)
+    return JsonResponse({'success': True, 'count': len(ids)})
+
+
+@login_required(login_url='portals:login')
+def booking_bulk_restore(request):
+    """Admin: Bulk-restore archived bookings."""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    import json as _json
+    try:
+        data = _json.loads(request.body)
+        ids = [int(i) for i in data.get('ids', [])]
+    except Exception:
+        return JsonResponse({'error': 'Invalid payload'}, status=400)
+    Booking.objects.filter(pk__in=ids).update(is_archived=False)
+    return JsonResponse({'success': True, 'count': len(ids)})
+
+
+@login_required(login_url='portals:login')
+def booking_delete(request, pk):
+    """Admin: Permanently delete an archived booking (superuser only)."""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    booking = get_object_or_404(Booking, pk=pk)
+    booking.delete()
+    return JsonResponse({'success': True})
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1344,6 +1445,245 @@ def schedule_create(request):
     return render(request, 'portals/schedule_form.html', {'form': form, 'action': 'Assign'})
 
 
+# ─── Staff Leave — Booking Cancellation Helpers ──────────────────────────────
+
+def _send_leave_cancellation_email(booking, leave, rebook_url):
+    """Send a premium HTML email to a client whose booking was cancelled due to staff leave."""
+    import logging
+    from django.core.mail import send_mail
+    from django.conf import settings
+
+    therapist_name = booking.therapist.name if booking.therapist else 'Your therapist'
+    time_display = dict(booking.TIME_CHOICES).get(booking.time, booking.time)
+    date_display = booking.date.strftime('%B %d, %Y')
+    services_str = booking.service_names
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Medpoint Massage & Spa <noreply@medpoint.com>')
+
+    subject = 'Important Update About Your Booking – Medpoint Massage & Spa'
+
+    plain_message = (
+        f"Hi {booking.client_name},\n\n"
+        f"We regret to inform you that your booking at Medpoint Massage & Spa has been cancelled because "
+        f"{therapist_name} is unexpectedly unavailable on {date_display}.\n\n"
+        f"Cancelled Booking Details:\n"
+        f"  Reference #: {booking.pk:04d}\n"
+        f"  Services: {services_str}\n"
+        f"  Date: {date_display}\n"
+        f"  Time: {time_display}\n\n"
+        f"We sincerely apologize for the inconvenience. You can rebook by visiting the link below:\n"
+        f"{rebook_url}\n\n"
+        f"From that page, you may:\n"
+        f"  - Choose a different available therapist for the same date and time, or\n"
+        f"  - Reschedule your appointment to a new date.\n\n"
+        f"Thank you for your understanding.\n"
+        f"– The Medpoint Team"
+    )
+
+    html_message = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Important Update – Medpoint Massage & Spa</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0f0f15;font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="max-width:580px;margin:0 auto;padding:32px 16px;">
+
+    <!-- Logo Header -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+           style="max-width:580px;margin:0 auto;background:linear-gradient(135deg,#4a1a7a 0%,#2d1060 50%,#1a0845 100%);
+                  border-radius:16px 16px 0 0;overflow:hidden;">
+      <tr>
+        <td align="center" style="padding:32px 32px 28px;">
+          <span style="font-size:24px;font-weight:700;letter-spacing:4px;
+                       color:#ffffff;font-family:Georgia,serif;">MEDPOINT</span><br/>
+          <span style="font-size:11px;letter-spacing:2px;color:#c084fc;
+                       text-transform:uppercase;margin-top:4px;display:block;">Massage &amp; Spa</span>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Card -->
+    <div style="background:#1a1a2e;border-radius:0 0 18px 18px;overflow:hidden;
+                border:1px solid rgba(255,255,255,0.08);border-top:none;max-width:580px;margin:0 auto;">
+
+      <!-- Amber alert banner -->
+      <div style="background:linear-gradient(135deg,#b45309,#92400e);padding:28px 32px;text-align:center;">
+        <h1 style="margin:0;color:#fff;font-size:21px;font-weight:700;">Booking Cancelled – Action Required</h1>
+        <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Your therapist is unexpectedly unavailable.</p>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:28px 32px;">
+        <p style="margin:0 0 18px;color:#c8c8d8;font-size:15px;">Hi <strong style="color:#fff;">{booking.client_name}</strong>,</p>
+        <p style="margin:0 0 20px;color:#c8c8d8;font-size:14px;line-height:1.7;">
+          We sincerely apologize, but we had to cancel your booking at
+          <strong style="color:#a78bfa;">Medpoint Massage &amp; Spa</strong> because
+          <strong style="color:#fbbf24;">{therapist_name}</strong> is unexpectedly unavailable on <strong style="color:#fbbf24;">{date_display}</strong>.
+          We understand this is inconvenient and we are very sorry.
+        </p>
+
+        <!-- Details box -->
+        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+                    border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+          <h3 style="margin:0 0 14px;color:#a78bfa;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;">Cancelled Booking</h3>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:7px 0;color:#888;font-size:13px;width:38%;">Reference #</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;font-weight:600;">#{booking.pk:04d}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Service(s)</td>
+              <td style="padding:7px 0;color:#fff;font-size:13px;">{services_str}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Date</td>
+              <td style="padding:7px 0;color:#fbbf24;font-size:13px;font-weight:600;">{date_display}</td>
+            </tr>
+            <tr style="border-top:1px solid rgba(255,255,255,0.05);">
+              <td style="padding:7px 0;color:#888;font-size:13px;">Time</td>
+              <td style="padding:7px 0;color:#fbbf24;font-size:13px;font-weight:600;">{time_display}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- What to do next -->
+        <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);
+                    border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+          <h3 style="margin:0 0 12px;color:#c4b5fd;font-size:13px;font-weight:600;">What would you like to do?</h3>
+          <p style="margin:0 0 8px;color:#9ca3af;font-size:13px;line-height:1.6;">
+            Click the button below to choose one of these options:
+          </p>
+          <ul style="margin:0 0 16px;padding-left:20px;color:#9ca3af;font-size:13px;line-height:2;">
+            <li><strong style="color:#c4b5fd;">Choose a different therapist</strong> &mdash; keep the same date &amp; time</li>
+            <li><strong style="color:#c4b5fd;">Reschedule to a new date</strong> &mdash; your services will be pre-filled</li>
+          </ul>
+          <a href="{rebook_url}"
+             style="display:inline-block;padding:13px 28px;background:linear-gradient(135deg,#7c3aed,#6d28d9);
+                    color:#fff;font-size:14px;font-weight:700;text-decoration:none;
+                    border-radius:10px;margin-top:4px;">
+            Rebook My Appointment
+          </a>
+        </div>
+
+        <p style="margin:0;color:#555;font-size:12px;line-height:1.6;">
+          This link is unique to your booking and can only be used once.
+          If you need further assistance, please contact us at
+          <a href="mailto:medpointmassage.spa@gmail.com" style="color:#a78bfa;">medpointmassage.spa@gmail.com</a>.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div style="border-top:1px solid rgba(255,255,255,0.06);padding:18px 32px;text-align:center;">
+        <p style="margin:0;color:#555;font-size:12px;">
+          &copy; Medpoint Massage &amp; Spa &nbsp;|&nbsp; We look forward to serving you!
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>"""
+
+    try:
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=from_email,
+            recipient_list=[booking.client_email],
+            html_message=html_message,
+            fail_silently=True,
+        )
+    except Exception as e:
+        logging.getLogger(__name__).warning(f'Failed to send leave-cancellation email to {booking.client_email}: {e}')
+
+
+def _cancel_bookings_for_leave(leave, request=None):
+    """
+    Auto-cancel all pending/confirmed bookings for a therapist during their leave.
+    Sends a leave-cancellation email to each client with a secure rebooking link.
+    Returns the number of bookings cancelled.
+    """
+    import uuid as uuid_module
+    from django.urls import reverse
+    from website.models import BookingNotification
+
+    # Bookings that still need to be cancelled (active)
+    pending_affected = Booking.objects.filter(
+        therapist=leave.therapist,
+        date__gte=leave.start_date,
+        date__lte=leave.end_date,
+        status__in=['pending', 'confirmed'],
+        is_archived=False,
+    ).select_related('therapist').prefetch_related('services')
+
+    # Bookings already cancelled in this period but never sent a rebook token/email
+    already_cancelled_no_token = Booking.objects.filter(
+        therapist=leave.therapist,
+        date__gte=leave.start_date,
+        date__lte=leave.end_date,
+        status='cancelled',
+        rebooking_token__isnull=True,
+        is_archived=False,
+    ).select_related('therapist').prefetch_related('services')
+
+    from django.db.models import QuerySet
+    from itertools import chain
+    affected = list(chain(pending_affected, already_cancelled_no_token))
+
+    cancelled_count = 0
+    for booking in affected:
+        # Generate a fresh rebooking token
+        booking.rebooking_token = uuid_module.uuid4()
+        booking.status = 'cancelled'
+        booking.save(update_fields=['status', 'rebooking_token'])
+        cancelled_count += 1
+
+        # Build the public absolute rebooking URL
+        path = reverse('website:rebooking_options', args=[str(booking.rebooking_token)])
+        base_url = getattr(settings, 'SITE_URL', 'http://127.0.0.1:8000').rstrip('/')
+        rebook_url = None
+
+        if request:
+            try:
+                candidate = request.build_absolute_uri(path)
+                if candidate and candidate.startswith(('http://', 'https://')) and not candidate.startswith(('http:///', 'https:///')):
+                    rebook_url = candidate
+            except Exception:
+                pass
+
+        if not rebook_url:
+            clean_path = '/' + path.lstrip('/')
+            rebook_url = f"{base_url}{clean_path}"
+
+        # Send the leave-cancellation email
+        _send_leave_cancellation_email(booking, leave, rebook_url)
+
+        # Create a client-facing booking notification
+        BookingNotification.objects.create(
+            booking=booking,
+            notification_type='cancelled',
+            message=(
+                f"Your booking #{booking.pk:04d} for {booking.service_names} on "
+                f"{booking.date.strftime('%B %d, %Y')} was cancelled because "
+                f"your therapist is on leave. Please check your email to rebook."
+            ),
+        )
+
+        # Notify admin portal
+        StaffNotification.objects.create(
+            notification_type='booking_cancelled',
+            title='Booking Auto-Cancelled (Staff Leave)',
+            message=(
+                f"Booking #{booking.pk:04d} ({booking.client_name}) was automatically "
+                f"cancelled due to {leave.therapist.name}'s approved leave."
+            ),
+            target_role='admin',
+        )
+
+    return cancelled_count
+
+
 @login_required(login_url='portals:login')
 def staff_assign_leave(request):
     """Admin-only: directly assign leave (auto-approved)."""
@@ -1359,6 +1699,13 @@ def staff_assign_leave(request):
             leave = form.save(commit=False)
             leave.status = StaffLeave.STATUS_APPROVED
             leave.save()
+            cancelled_count = _cancel_bookings_for_leave(leave, request)
+            if cancelled_count:
+                messages.warning(
+                    request,
+                    f'{cancelled_count} booking(s) during this leave period were automatically '
+                    f'cancelled and clients have been notified by email.'
+                )
             messages.success(request, 'Leave assigned and approved successfully.')
             return redirect('portals:admin_leave_list')
         else:
@@ -1395,24 +1742,23 @@ def staff_apply_leave(request):
                 therapist=therapist,
                 date__gte=start_date,
                 date__lte=end_date,
-            ).exclude(status__in=['cancelled']).order_by('date')
+                status__in=['pending', 'confirmed'],
+                is_archived=False,
+            )
 
-            if conflicting_bookings.exists():
-                conflict_dates = ', '.join(
-                    set(b.date.strftime('%b %d, %Y') for b in conflicting_bookings)
-                )
-                messages.error(
+            leave.save()
+            conflict_count = conflicting_bookings.count()
+            if conflict_count > 0:
+                messages.warning(
                     request,
-                    f'You have active bookings during this period ({conflict_dates}). '
-                    f'Please resolve those bookings before applying for leave on those days.'
+                    f'Your leave request has been submitted for admin approval. Note: You have {conflict_count} '
+                    f'booking(s) during this period. If approved by admin, clients will be automatically notified with rebooking options.'
                 )
             else:
-                leave.save()
                 messages.success(request, 'Your leave request has been submitted and is awaiting admin approval.')
-                return redirect('portals:staff_my_schedule')
+            return redirect('portals:staff_my_schedule')
         else:
-            first_error = list(form.errors.values())[0][0] if form.errors else 'Please correct the errors below.'
-            messages.error(request, first_error)
+            pass  # form errors are rendered via form.non_field_errors in the template
     else:
         form = StaffLeaveRequestForm()
 
@@ -1461,8 +1807,37 @@ def admin_leave_list(request):
     therapists = Therapist.objects.filter(is_active=True)
     pending_count = StaffLeave.objects.filter(status=StaffLeave.STATUS_PENDING).count()
 
+    today = timezone.localdate()
+    leaves_list = list(leaves)
+    for l in leaves_list:
+        l.is_past = l.end_date < today
+        if l.status == StaffLeave.STATUS_APPROVED:
+            l.cancelled_count = Booking.objects.filter(
+                therapist=l.therapist,
+                date__gte=l.start_date,
+                date__lte=l.end_date,
+                status='cancelled'
+            ).count()
+            l.affected_count = 0
+            # Can only revoke if no bookings were affected and leave is not already completed/passed
+            l.can_revoke = (l.cancelled_count == 0) and (not l.is_past)
+        elif l.status == StaffLeave.STATUS_PENDING:
+            l.cancelled_count = 0
+            l.affected_count = Booking.objects.filter(
+                therapist=l.therapist,
+                date__gte=l.start_date,
+                date__lte=l.end_date,
+                status__in=['pending', 'confirmed'],
+                is_archived=False,
+            ).count()
+            l.can_revoke = False
+        else:
+            l.cancelled_count = 0
+            l.affected_count = 0
+            l.can_revoke = False
+
     context = {
-        'leaves': leaves,
+        'leaves': leaves_list,
         'therapists': therapists,
         'status_filter': status_filter,
         'therapist_filter': therapist_filter,
@@ -1484,16 +1859,49 @@ def admin_leave_review(request, pk):
     if request.method == 'POST':
         leave = get_object_or_404(StaffLeave, pk=pk)
         action = request.POST.get('action')
+        today = timezone.localdate()
+
         if action == 'approve':
+            if leave.end_date < today:
+                messages.error(request, 'Cannot approve a leave request that has already passed.')
+                return redirect('portals:admin_leave_list')
+
             leave.status = StaffLeave.STATUS_APPROVED
             leave.is_active = True
             leave.save()
+            cancelled_count = _cancel_bookings_for_leave(leave, request)
+            if cancelled_count:
+                messages.warning(
+                    request,
+                    f'{cancelled_count} booking(s) during this leave period were automatically '
+                    f'cancelled and clients have been notified by email.'
+                )
             messages.success(request, f'Leave for {leave.therapist.name} has been approved.')
         elif action == 'reject':
+            was_approved = (leave.status == StaffLeave.STATUS_APPROVED)
+            if was_approved:
+                if leave.end_date < today:
+                    messages.error(request, 'Cannot revoke a leave that has already passed.')
+                    return redirect('portals:admin_leave_list')
+
+                affected_count = Booking.objects.filter(
+                    therapist=leave.therapist,
+                    date__gte=leave.start_date,
+                    date__lte=leave.end_date,
+                    status='cancelled'
+                ).count()
+                if affected_count > 0:
+                    messages.error(
+                        request,
+                        f'Cannot revoke this leave because {affected_count} booking(s) were affected/cancelled.'
+                    )
+                    return redirect('portals:admin_leave_list')
+
             leave.status = StaffLeave.STATUS_REJECTED
             leave.is_active = False
             leave.save()
-            messages.success(request, f'Leave for {leave.therapist.name} has been rejected.')
+            msg = f'Leave for {leave.therapist.name} has been revoked.' if was_approved else f'Leave for {leave.therapist.name} has been rejected.'
+            messages.success(request, msg)
         elif action == 'toggle':
             leave.is_active = not leave.is_active
             leave.save()
@@ -1779,6 +2187,7 @@ def admin_reports(request):
 
     # ── Sales Report data ──
     staff_data = []
+    total_commission = Decimal('0')
     therapists = Therapist.objects.filter(is_active=True)
     for t in therapists:
         t_bookings = completed.filter(therapist=t)
@@ -1788,6 +2197,7 @@ def admin_reports(request):
             for svc in b.services.all():
                 t_revenue += svc.discounted_price
         t_commission = t_revenue * (t.commission_percentage / Decimal('100'))
+        total_commission += t_commission
         staff_data.append({
             'therapist': t,
             'services_rendered': t_count,
@@ -1797,8 +2207,8 @@ def admin_reports(request):
         })
     staff_data.sort(key=lambda x: x['services_rendered'], reverse=True)
 
-    online_count = completed.filter(booking_type='online').count()
-    walkin_count = completed.filter(booking_type='walk_in').count()
+    online_count = all_bookings_in_period.filter(booking_type='online').count()
+    walkin_count = all_bookings_in_period.filter(booking_type='walk_in').count()
 
     service_breakdown = []
     for svc in Service.objects.filter(is_active=True):
@@ -1821,6 +2231,7 @@ def admin_reports(request):
         'end_date': end_date,
         'total_revenue': total_revenue,
         'total_completed': total_completed,
+        'total_commission': total_commission,
         'total_bookings_period': total_bookings_period,
         'all_bookings_in_period': all_bookings_in_period,
         'staff_data': staff_data,
@@ -2320,20 +2731,33 @@ def staff_my_bookings(request):
 
     therapist = _get_staff_therapist(request)
     status_filter = request.GET.get('status', '')
-    bookings = Booking.objects.select_related('therapist').prefetch_related('services').none()
+    show_filter = request.GET.get('show', '')  # '' = active, 'archived' = archived
+    base_qs = Booking.objects.select_related('therapist').prefetch_related('services').none()
 
     if therapist:
-        bookings = Booking.objects.select_related('therapist').prefetch_related('services').filter(
+        base_qs = Booking.objects.select_related('therapist').prefetch_related('services').filter(
             Q(booking_type='walk_in') | Q(is_verified=True),
             therapist=therapist,
         )
-        if status_filter:
-            bookings = bookings.filter(status=status_filter)
+
+    if show_filter == 'archived':
+        bookings = base_qs.filter(is_archived=True)
+    else:
+        bookings = base_qs.filter(is_archived=False)
+
+    if status_filter:
+        bookings = bookings.filter(status=status_filter)
+
+    active_count = base_qs.filter(is_archived=False).count()
+    archived_count = base_qs.filter(is_archived=True).count()
 
     context = {
         'bookings': bookings,
         'therapist': therapist,
         'status_filter': status_filter,
+        'show_filter': show_filter,
+        'active_count': active_count,
+        'archived_count': archived_count,
         'status_choices': [c for c in Booking.STATUS_CHOICES if c[0] != 'awaiting_verification'],
     }
     return render(request, 'portals/staff_my_bookings.html', context)
@@ -2506,17 +2930,41 @@ def message_list(request):
     check = _require_admin(request)
     if check:
         return check
+
+    search_query = request.GET.get('q', '').strip()
     read_filter = request.GET.get('read', '')
-    contact_messages = ContactMessage.objects.all()
-    if read_filter == 'unread':
-        contact_messages = contact_messages.filter(is_read=False)
-    elif read_filter == 'read':
-        contact_messages = contact_messages.filter(is_read=True)
-    unread_count = ContactMessage.objects.filter(is_read=False).count()
+    contact_messages = ContactMessage.objects.prefetch_related('replies').all()
+
+    if search_query:
+        contact_messages = contact_messages.filter(
+            Q(name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(subject__icontains=search_query) |
+            Q(message__icontains=search_query)
+        )
+
+    if read_filter == 'archived':
+        contact_messages = contact_messages.filter(is_archived=True)
+    else:
+        contact_messages = contact_messages.filter(is_archived=False)
+        if read_filter == 'unread':
+            contact_messages = contact_messages.filter(is_read=False)
+        elif read_filter == 'read':
+            contact_messages = contact_messages.filter(is_read=True)
+
+    total_count = ContactMessage.objects.filter(is_archived=False).count()
+    unread_count = ContactMessage.objects.filter(is_archived=False, is_read=False).count()
+    read_count = ContactMessage.objects.filter(is_archived=False, is_read=True).count()
+    archived_count = ContactMessage.objects.filter(is_archived=True).count()
+
     context = {
         'contact_messages': contact_messages,
         'read_filter': read_filter,
+        'search_query': search_query,
+        'total_count': total_count,
         'unread_count': unread_count,
+        'read_count': read_count,
+        'archived_count': archived_count,
     }
     return render(request, 'portals/message_list.html', context)
 
@@ -2544,12 +2992,37 @@ def message_reply(request, pk):
     if request.method == 'POST':
         reply_text = request.POST.get('reply_text', '').strip()
         if reply_text:
+            # 1. Create a threaded MessageReply
+            staff_name = request.user.get_full_name() or request.user.username or "Medpoint Staff"
+            reply = MessageReply.objects.create(
+                message=msg,
+                sender_type=MessageReply.SENDER_ADMIN,
+                sender_name=staff_name,
+                sender_email=request.user.email or settings.DEFAULT_FROM_EMAIL,
+                body=reply_text,
+            )
+
+            # 2. Update parent message for backward compatibility and status
             msg.reply_text = reply_text
             msg.replied_at = timezone.now()
             msg.is_read = True
-            msg.save()
+            msg.save(update_fields=['reply_text', 'replied_at', 'is_read'])
 
-            # Send Email
+            # 3. Generate client web reply link
+            thread_path = reverse('website:client_message_thread', kwargs={'token': msg.access_token})
+            base_url = getattr(settings, 'SITE_URL', 'http://127.0.0.1:8000').rstrip('/')
+            web_reply_url = None
+            try:
+                candidate = request.build_absolute_uri(thread_path)
+                if candidate and candidate.startswith(('http://', 'https://')) and not candidate.startswith(('http:///', 'https:///')):
+                    web_reply_url = candidate
+            except Exception:
+                pass
+            if not web_reply_url:
+                clean_path = '/' + thread_path.lstrip('/')
+                web_reply_url = f"{base_url}{clean_path}"
+
+            # 4. Send Email to client with [Ticket #ID]
             from django.core.mail import EmailMultiAlternatives
             from django.template.loader import render_to_string
             from django.utils.html import strip_tags
@@ -2561,17 +3034,25 @@ def message_reply(request, pk):
                 'original_subject': msg.subject,
                 'original_message': msg.message,
                 'reply_text': reply_text,
+                'ticket_id': msg.pk,
+                'web_reply_url': web_reply_url,
             }
 
             try:
                 html_content = render_to_string('website/emails/message_reply.html', context)
                 text_content = strip_tags(html_content)
 
+                sender_domain = getattr(settings, 'EMAIL_HOST_USER', 'medpointmassage.spa@gmail.com')
                 email = EmailMultiAlternatives(
-                    subject=f"Re: {msg.subject} - Medpoint Massage & Spa",
+                    subject=f"Re: [Ticket #{msg.pk}] {msg.subject} - Medpoint Massage & Spa",
                     body=text_content,
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[msg.email]
+                    to=[msg.email],
+                    headers={
+                        'Message-ID': f"<ticket-{msg.pk}-{reply.pk}@{sender_domain}>",
+                        'In-Reply-To': f"<ticket-{msg.pk}@{sender_domain}>",
+                        'References': f"<ticket-{msg.pk}@{sender_domain}>",
+                    }
                 )
                 email.attach_alternative(html_content, "text/html")
                 email.send(fail_silently=False)
@@ -2579,13 +3060,148 @@ def message_reply(request, pk):
                 messages.success(request, f'Reply sent successfully to {msg.email}.')
             except Exception as e:
                 logging.getLogger(__name__).warning(f'Failed to send reply email: {e}')
-                messages.warning(request, f'Reply saved, but email failed to send: {e}')
+                messages.warning(request, f'Reply saved to thread, but email failed to send: {e}')
         else:
             messages.error(request, 'Reply text cannot be empty.')
             
     return redirect('portals:message_list')
 
+
 @login_required(login_url='portals:login')
+def message_sync_replies(request):
+    """Admin: Manually trigger IMAP sync to fetch client email replies from Gmail."""
+    if not request.user.is_staff or not _is_admin(request):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    from website.email_sync import sync_incoming_email_replies
+    result = sync_incoming_email_replies()
+    return JsonResponse(result)
+
+
+@login_required(login_url='portals:login')
+def message_bulk_delete(request):
+    """Admin: Delete multiple contact messages in one request."""
+    if not request.user.is_staff or not _is_admin(request):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    import json as _json
+    try:
+        data = _json.loads(request.body)
+        ids = [int(i) for i in data.get('ids', [])]
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Invalid payload'}, status=400)
+    deleted, _ = ContactMessage.objects.filter(pk__in=ids).delete()
+    return JsonResponse({'success': True, 'deleted': deleted})
+
+
+@login_required(login_url='portals:login')
+def message_bulk_mark_read(request):
+    """Admin: Mark multiple contact messages as read."""
+    if not request.user.is_staff or not _is_admin(request):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    import json as _json
+    try:
+        data = _json.loads(request.body)
+        ids = [int(i) for i in data.get('ids', [])]
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Invalid payload'}, status=400)
+    ContactMessage.objects.filter(pk__in=ids).update(is_read=True)
+    return JsonResponse({'success': True})
+
+
+@login_required(login_url='portals:login')
+def message_bulk_mark_unread(request):
+    """Admin: Mark multiple contact messages as unread."""
+    if not request.user.is_staff or not _is_admin(request):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    import json as _json
+    try:
+        data = _json.loads(request.body)
+        ids = [int(i) for i in data.get('ids', [])]
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Invalid payload'}, status=400)
+    ContactMessage.objects.filter(pk__in=ids).update(is_read=False)
+    return JsonResponse({'success': True})
+
+
+@login_required(login_url='portals:login')
+def message_archive(request, pk):
+    """Admin: Archive a single contact message."""
+    if not request.user.is_staff or not _is_admin(request):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    msg = get_object_or_404(ContactMessage, pk=pk)
+    msg.is_archived = True
+    msg.save(update_fields=['is_archived'])
+    return JsonResponse({'success': True, 'is_archived': True})
+
+
+@login_required(login_url='portals:login')
+def message_restore(request, pk):
+    """Admin: Restore an archived contact message back to inbox."""
+    if not request.user.is_staff or not _is_admin(request):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    msg = get_object_or_404(ContactMessage, pk=pk)
+    msg.is_archived = False
+    msg.save(update_fields=['is_archived'])
+    return JsonResponse({'success': True, 'is_archived': False})
+
+
+@login_required(login_url='portals:login')
+def message_delete(request, pk):
+    """Admin: Permanently delete a single contact message."""
+    if not request.user.is_staff or not _is_admin(request):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    msg = get_object_or_404(ContactMessage, pk=pk)
+    msg.delete()
+    return JsonResponse({'success': True})
+
+
+@login_required(login_url='portals:login')
+def message_bulk_archive(request):
+    """Admin: Archive multiple contact messages."""
+    if not request.user.is_staff or not _is_admin(request):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    import json as _json
+    try:
+        data = _json.loads(request.body)
+        ids = [int(i) for i in data.get('ids', [])]
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Invalid payload'}, status=400)
+    ContactMessage.objects.filter(pk__in=ids).update(is_archived=True)
+    return JsonResponse({'success': True})
+
+
+@login_required(login_url='portals:login')
+def message_bulk_restore(request):
+    """Admin: Restore multiple contact messages back to inbox."""
+    if not request.user.is_staff or not _is_admin(request):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    import json as _json
+    try:
+        data = _json.loads(request.body)
+        ids = [int(i) for i in data.get('ids', [])]
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Invalid payload'}, status=400)
+    ContactMessage.objects.filter(pk__in=ids).update(is_archived=False)
+    return JsonResponse({'success': True})
+
+
 def testimonial_list(request):
     if not request.user.is_staff:
         return redirect('portals:login')

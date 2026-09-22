@@ -1,0 +1,648 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}Rebook Appointment - MEDPOINT Massage &amp; Spa{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rebook-tab-btn {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .rebook-tab-btn.active {
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(124, 58, 237, 0.35));
+        border-color: rgba(168, 85, 247, 0.6);
+        color: #ffffff;
+        box-shadow: 0 4px 20px rgba(168, 85, 247, 0.2);
+    }
+    .therapist-card-radio:checked + .therapist-card-label {
+        border-color: #a855f7;
+        background: linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(88, 28, 135, 0.25));
+        box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.4), 0 8px 24px rgba(168, 85, 247, 0.15);
+    }
+    .therapist-card-radio:checked + .therapist-card-label .radio-indicator {
+        border-color: #a855f7;
+        background: #a855f7;
+    }
+    .therapist-card-radio:checked + .therapist-card-label .radio-indicator-inner {
+        opacity: 1;
+    }
+    .time-pill-radio:checked + .time-pill-label {
+        background: linear-gradient(135deg, #a855f7, #7c3aed);
+        color: #ffffff;
+        border-color: #c084fc;
+        box-shadow: 0 4px 14px rgba(168, 85, 247, 0.35);
+    }
+    /* ── Therapist Filter Bar ─────────────────────────────── */
+    .therapist-filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        padding: 0.75rem 1rem;
+        border-radius: 14px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        margin-bottom: 1.25rem;
+    }
+    .therapist-filter-bar .search-wrap {
+        flex: 1;
+        min-width: 140px;
+        position: relative;
+    }
+    .therapist-filter-bar .search-wrap i {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6b7280;
+        font-size: 0.8rem;
+        pointer-events: none;
+    }
+    .therapist-filter-bar input[type="text"] {
+        width: 100%;
+        padding: 0.55rem 0.75rem 0.55rem 2rem;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.10);
+        border-radius: 10px;
+        color: #fff;
+        font-size: 0.82rem;
+        outline: none;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+    }
+    .therapist-filter-bar input[type="text"]:focus {
+        border-color: rgba(168,85,247,0.6);
+        box-shadow: 0 0 0 2px rgba(168,85,247,0.12);
+    }
+    .therapist-filter-bar input[type="text"]::placeholder { color: #6b7280; }
+    .gender-match-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid rgba(168,85,247,0.3);
+        background: rgba(168,85,247,0.12);
+        color: #c084fc;
+        user-select: none;
+        white-space: nowrap;
+    }
+    #therapist-no-results {
+        display: none;
+        padding: 1.5rem;
+        text-align: center;
+        color: #6b7280;
+        font-size: 0.82rem;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.02);
+        border: 1px dashed rgba(255,255,255,0.08);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Hero -->
+<section class="page-hero">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="flex items-center gap-3 mb-4 animate-fade-in">
+            <div class="w-8 h-px bg-purple-500"></div>
+            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Appointment Adjustment</span>
+        </div>
+        <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-2 animate-fade-in-up">
+            Rebook Your <span class="bg-gradient-to-r from-purple-400 to-amber-300 bg-clip-text text-transparent">Appointment</span>
+        </h1>
+        <div class="flex items-center gap-2 mt-4 text-sm animate-fade-in text-gray-400">
+            <a href="{% url 'website:home' %}" class="hover:text-purple-400 transition-colors">Home</a>
+            <span class="breadcrumb-sep">/</span>
+            <a href="{% url 'website:my_bookings' %}" class="hover:text-purple-400 transition-colors">My Bookings</a>
+            <span class="breadcrumb-sep">/</span>
+            <span class="text-purple-300">Rebook</span>
+        </div>
+    </div>
+</section>
+
+<section class="py-12 relative">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+        {% if messages %}
+        <div class="mb-6 space-y-3">
+            {% for message in messages %}
+            <div class="p-4 rounded-xl {% if message.tags == 'success' %}bg-green-500/10 border border-green-500/25 text-green-300{% elif message.tags == 'error' %}bg-red-500/10 border border-red-500/25 text-red-300{% else %}bg-purple-500/10 border border-purple-500/25 text-purple-300{% endif %} flex items-center gap-3">
+                <i class="fas {% if message.tags == 'success' %}fa-check-circle text-green-400{% elif message.tags == 'error' %}fa-exclamation-circle text-red-400{% else %}fa-info-circle text-purple-400{% endif %}"></i>
+                <span class="text-sm font-medium">{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if expired %}
+        <!-- Expired Link State -->
+        <div class="glass-panel p-8 sm:p-12 rounded-2xl border border-red-500/20 text-center max-w-xl mx-auto shadow-2xl">
+            <div class="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-link-slash text-red-400 text-3xl"></i>
+            </div>
+            <h2 class="font-display text-2xl font-bold text-white mb-3">Rebooking Link Expired</h2>
+            <p class="text-gray-400 text-sm leading-relaxed mb-8">
+                This rebooking link has already been used or has expired. If your appointment was already rescheduled, you can view your updated details in your booking portal.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <a href="{% url 'website:my_bookings' %}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-medium text-sm transition-all shadow-lg shadow-purple-600/25">
+                    <i class="fas fa-calendar-check"></i> View My Bookings
+                </a>
+                <a href="{% url 'website:booking' %}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-sm border border-white/10 transition-all">
+                    <i class="fas fa-plus"></i> New Reservation
+                </a>
+            </div>
+        </div>
+
+        {% else %}
+
+        <!-- Staff Leave Explanation Alert -->
+        <div class="mb-8 p-5 sm:p-6 rounded-2xl bg-amber-500/10 border border-amber-500/25 relative overflow-hidden">
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 text-lg shrink-0 mt-0.5">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-amber-300 font-semibold text-base mb-1">
+                        Staff Schedule Update
+                    </h3>
+                    <p class="text-amber-200/80 text-sm leading-relaxed">
+                        Your assigned specialist, <strong class="text-white">{{ booking.therapist.name|default:"your therapist" }}</strong>, has taken an approved leave covering your booking on <strong class="text-white">{{ booking.date|date:"l, F j, Y" }} at {{ booking.get_time_display }}</strong>.
+                        We sincerely apologize for any inconvenience.
+                    </p>
+                    <p class="text-amber-200/80 text-sm mt-2">
+                        Please choose one of the options below to <strong>switch to another available specialist</strong> for the same time or <strong>reschedule to a new date</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Original Booking Summary Card -->
+        <div class="glass-panel p-6 sm:p-7 rounded-2xl border border-purple-500/20 mb-8 shadow-xl">
+            <div class="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
+                <div class="flex items-center gap-2 text-purple-400 text-xs font-semibold uppercase tracking-wider">
+                    <i class="fas fa-receipt"></i> Original Booking Details
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
+                    Cancelled (Pending Rebook)
+                </span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                <div>
+                    <div class="text-xs text-gray-500 mb-1">Reference</div>
+                    <div class="font-semibold text-white font-mono">#{{ booking.pk|stringformat:"04d" }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500 mb-1">Services</div>
+                    <div class="font-medium text-white truncate" title="{{ booking.service_names }}">{{ booking.service_names }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500 mb-1">Original Date &amp; Time</div>
+                    <div class="font-medium text-purple-300">{{ booking.date|date:"M j, Y" }} &bull; {{ booking.get_time_display }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500 mb-1">Price</div>
+                    <div class="font-semibold text-green-400">
+                        {% if booking.locked_price %}₱{{ booking.locked_price|floatformat:2 }}{% else %}Standard rates{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Option Selection Tabs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            <button type="button" id="tab-btn-switch" onclick="switchRebookTab('switch')"
+                    class="rebook-tab-btn active p-5 rounded-2xl border border-white/10 bg-dark-200/50 text-left flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 text-xl shrink-0">
+                    <i class="fas fa-user-doctor"></i>
+                </div>
+                <div>
+                    <div class="text-xs uppercase tracking-wider font-semibold text-purple-400 mb-0.5">Option 1</div>
+                    <div class="text-white font-semibold text-base mb-1">Switch Specialist</div>
+                    <div class="text-gray-400 text-xs">
+                        Keep same date &amp; time ({{ booking.date|date:"M j" }} @ {{ booking.get_time_display }})
+                    </div>
+                </div>
+            </button>
+
+            <button type="button" id="tab-btn-reschedule" onclick="switchRebookTab('reschedule')"
+                    class="rebook-tab-btn p-5 rounded-2xl border border-white/10 bg-dark-200/50 text-left flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400 text-xl shrink-0">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div>
+                    <div class="text-xs uppercase tracking-wider font-semibold text-violet-400 mb-0.5">Option 2</div>
+                    <div class="text-white font-semibold text-base mb-1">Pick a New Date</div>
+                    <div class="text-gray-400 text-xs">
+                        Choose a different day and preferred time slot
+                    </div>
+                </div>
+            </button>
+        </div>
+
+        <!-- Tab 1: Switch Therapist Form -->
+        <div id="tab-content-switch" class="glass-panel p-6 sm:p-8 rounded-2xl border border-purple-500/20 shadow-2xl">
+            <div class="flex items-center justify-between pb-5 border-b border-white/10 mb-6">
+                <div>
+                    <h2 class="font-display text-xl font-bold text-white mb-1">Select Available Specialist</h2>
+                    <p class="text-gray-400 text-xs sm:text-sm">
+                        Appointment locked for <strong class="text-purple-300">{{ booking.date|date:"l, F j, Y" }} at {{ booking.get_time_display }}</strong>.
+                    </p>
+                </div>
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300">
+                    <i class="fas fa-lock text-purple-400"></i> Same Time Slot
+                </div>
+            </div>
+
+            {% if is_closed_day %}
+            <div class="p-6 rounded-xl bg-red-500/10 border border-red-500/25 text-center my-4">
+                <i class="fas fa-door-closed text-red-400 text-2xl mb-2"></i>
+                <h4 class="text-white font-medium mb-1">Spa is Closed on this Date</h4>
+                <p class="text-gray-400 text-xs mb-4">Our facility has a scheduled holiday/closure on {{ booking.date|date:"F j, Y" }}.</p>
+                <button type="button" onclick="switchRebookTab('reschedule')" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-all">
+                    Choose Another Date &rarr;
+                </button>
+            </div>
+            {% elif not available_therapists %}
+            <div class="p-6 rounded-xl bg-amber-500/10 border border-amber-500/25 text-center my-4">
+                <i class="fas fa-user-clock text-amber-400 text-2xl mb-2"></i>
+                <h4 class="text-white font-medium mb-1">No Other Specialists Available at this Time</h4>
+                <p class="text-gray-400 text-xs mb-4">All other therapists are either booked or scheduled off during this exact time slot on {{ booking.date|date:"F j, Y" }}.</p>
+                <button type="button" onclick="switchRebookTab('reschedule')" class="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-all">
+                    Reschedule to Another Date or Time &rarr;
+                </button>
+            </div>
+            {% else %}
+            <form id="form-switch-therapist" method="post" action="{% url 'website:rebooking_submit' token=token %}" onsubmit="return handleFormSubmit(this, 'submit-btn-switch')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="switch_therapist">
+
+                <!-- ── Therapist Filter Bar ────────────────────────────── -->
+                <div class="therapist-filter-bar">
+                    <div class="search-wrap">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="therapist-search" placeholder="Search specialist by name…" autocomplete="off" oninput="filterTherapists()">
+                    </div>
+                    <div class="gender-match-pill">
+                        {% if client_gender == 'female' %}
+                        <i class="fas fa-venus text-pink-400"></i>
+                        <span>Showing Female Specialists Only</span>
+                        {% else %}
+                        <i class="fas fa-venus-mars text-purple-400"></i>
+                        <span>Showing Male &amp; Female Specialists</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div id="therapist-no-results">No specialists match your search.</div>
+
+                <div class="space-y-3 mb-8">
+                    <!-- Auto-assign option -->
+                    <div class="relative">
+                        <input type="radio" name="therapist_id" id="t-auto" value="auto" class="sr-only therapist-card-radio" checked>
+                        <label for="t-auto" class="therapist-card-label block p-4 rounded-xl border border-white/10 bg-dark-200/40 hover:bg-dark-200/70 cursor-pointer transition-all">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="radio-indicator w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center transition-all">
+                                        <div class="radio-indicator-inner w-2 h-2 rounded-full bg-white opacity-0 transition-opacity"></div>
+                                    </div>
+                                    <div class="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-sm">
+                                        <i class="fas fa-wand-magic-sparkles"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-white font-semibold text-sm flex items-center gap-2">
+                                            Auto-Assign Next Available Specialist
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                                Recommended
+                                            </span>
+                                        </div>
+                                        <div class="text-gray-400 text-xs">
+                                            We'll match you with the best available therapist matching your booking preferences.
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="hidden sm:inline-block text-xs text-green-400 font-medium">
+                                    <i class="fas fa-check-circle mr-1"></i> Ready
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Individual Available Therapists -->
+                    {% for t in available_therapists %}
+                    <div class="relative therapist-item" data-name="{{ t.name|lower }}" data-gender="{{ t.gender }}">
+                        <input type="radio" name="therapist_id" id="t-{{ t.pk }}" value="{{ t.pk }}" class="sr-only therapist-card-radio">
+                        <label for="t-{{ t.pk }}" class="therapist-card-label block p-4 rounded-xl border border-white/10 bg-dark-200/40 hover:bg-dark-200/70 cursor-pointer transition-all">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="radio-indicator w-5 h-5 rounded-full border-2 border-gray-500 flex items-center justify-center transition-all">
+                                        <div class="radio-indicator-inner w-2 h-2 rounded-full bg-white opacity-0 transition-opacity"></div>
+                                    </div>
+                                    <div class="w-10 h-10 rounded-xl {% if t.gender == 'female' %}bg-pink-600/20 border-pink-500/30 text-pink-300{% else %}bg-blue-600/20 border-blue-500/30 text-blue-300{% endif %} border flex items-center justify-center font-bold text-sm">
+                                        {{ t.name|first|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="text-white font-semibold text-sm flex items-center gap-2">
+                                            {{ t.name }}
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold {% if t.gender == 'female' %}bg-pink-500/10 text-pink-300 border border-pink-500/20{% else %}bg-blue-500/10 text-blue-300 border border-blue-500/20{% endif %}">
+                                                {{ t.get_gender_display }}
+                                            </span>
+                                        </div>
+                                        <div class="text-gray-400 text-xs">
+                                            Available at {{ booking.get_time_display }} &bull; Certified Specialist
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="hidden sm:inline-block text-xs text-green-400 font-medium">
+                                    <i class="fas fa-check mr-1"></i> Available
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="flex items-center justify-between pt-6 border-t border-white/10">
+                    <p class="text-gray-400 text-xs">
+                        <i class="fas fa-shield-halved text-purple-400 mr-1"></i> One-time rebooking &bull; Instant confirmation email
+                    </p>
+                    <button type="submit" id="submit-btn-switch" class="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold text-sm transition-all shadow-lg shadow-purple-600/25 cursor-pointer">
+                        <span>Confirm Specialist &amp; Rebook</span>
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- Tab 2: Reschedule to New Date Form -->
+        <div id="tab-content-reschedule" class="hidden glass-panel p-6 sm:p-8 rounded-2xl border border-violet-500/20 shadow-2xl">
+            <div class="flex items-center justify-between pb-5 border-b border-white/10 mb-6">
+                <div>
+                    <h2 class="font-display text-xl font-bold text-white mb-1">Pick a New Date &amp; Time</h2>
+                    <p class="text-gray-400 text-xs sm:text-sm">
+                        Keep your selected services and locked price, and choose a date that suits you best.
+                    </p>
+                </div>
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-300">
+                    <i class="fas fa-calendar-check text-violet-400"></i> Flexible Scheduling
+                </div>
+            </div>
+
+            <form id="form-reschedule-date" method="post" action="{% url 'website:rebooking_submit' token=token %}" onsubmit="return handleFormSubmit(this, 'submit-btn-reschedule')">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="reschedule_date">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                    <!-- New Date -->
+                    <div>
+                        <label for="new_date" class="block text-xs font-semibold text-purple-300 uppercase tracking-wider mb-2">
+                            Select New Date <span class="text-red-400">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="date" id="new_date" name="new_date" required min="{{ min_date }}"
+                                   onchange="loadReschedTherapists(this.value)"
+                                   oninput="loadReschedTherapists(this.value)"
+                                   class="w-full px-4 py-3 rounded-xl bg-dark-200/80 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+                        </div>
+                        <p class="text-gray-500 text-[11px] mt-1.5">Appointments available starting today onwards.</p>
+                    </div>
+
+                    <!-- Therapist Preference -->
+                    <div>
+                        <label for="therapist_preference" class="block text-xs font-semibold text-purple-300 uppercase tracking-wider mb-2">
+                            Therapist Preference
+                        </label>
+                        <select id="therapist_preference" name="therapist_preference"
+                                class="w-full px-4 py-3 rounded-xl bg-dark-200/80 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+                            {% if client_gender == 'female' %}
+                            <option value="female" selected>Female Specialist Only (Matched to your profile)</option>
+                            {% else %}
+                            <option value="random" {% if booking.therapist_preference == 'random' or not booking.therapist_preference %}selected{% endif %}>Any Available Specialist (Male or Female)</option>
+                            <option value="male" {% if booking.therapist_preference == 'male' %}selected{% endif %}>Male Specialist</option>
+                            <option value="female" {% if booking.therapist_preference == 'female' %}selected{% endif %}>Female Specialist</option>
+                            {% endif %}
+                        </select>
+                        {% if client_gender == 'female' %}
+                        <p class="text-gray-500 text-[11px] mt-1.5"><i class="fas fa-shield-alt text-purple-400/60 mr-1"></i>Female clients are paired with female specialists only.</p>
+                        {% else %}
+                        <p class="text-gray-500 text-[11px] mt-1.5"><i class="fas fa-check-circle text-purple-400/60 mr-1"></i>Male clients can choose male or female specialists.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Specific Therapist Option (Optional) -->
+                <div class="mb-6">
+                    <label for="therapist_id_resched" class="block text-xs font-semibold text-purple-300 uppercase tracking-wider mb-2">
+                        Preferred Specialist (Optional)
+                    </label>
+                    <div id="resched-therapist-wrap">
+                        <select id="therapist_id_resched" name="therapist_id"
+                                class="w-full px-4 py-3 rounded-xl bg-dark-200/80 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all">
+                            <option value="auto">Auto-Assign Based on Preference (Recommended)</option>
+                            <option value="" disabled selected>— Select a new date above to view available specialists —</option>
+                        </select>
+                        <p id="resched-therapist-hint" class="text-gray-500 text-[11px] mt-1.5">
+                            <i class="fas fa-info-circle"></i> Pick a date first — the list will auto-update to show only available specialists on that day.
+                        </p>
+                        <div id="resched-closed-notice" class="hidden mt-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs">
+                            <i class="fas fa-door-closed mr-1"></i> The spa is closed on this date. Please choose another day.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Time Slot Grid -->
+                <div class="mb-8">
+                    <label class="block text-xs font-semibold text-purple-300 uppercase tracking-wider mb-3">
+                        Select Preferred Time Slot <span class="text-red-400">*</span>
+                    </label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+                        {% for val, label in time_choices %}
+                        <div class="relative">
+                            <input type="radio" name="new_time" id="time-{{ val }}" value="{{ val }}" required
+                                   class="sr-only time-pill-radio"
+                                   {% if val == booking.time %}checked{% endif %}>
+                            <label for="time-{{ val }}" class="time-pill-label block py-2.5 px-3 rounded-xl border border-white/10 bg-dark-200/50 hover:bg-dark-200/80 text-center text-xs font-medium text-gray-300 cursor-pointer transition-all">
+                                {{ label }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-6 border-t border-white/10">
+                    <p class="text-gray-400 text-xs">
+                        <i class="fas fa-envelope text-violet-400 mr-1"></i> A confirmation email with your new schedule will be sent immediately.
+                    </p>
+                    <button type="submit" id="submit-btn-reschedule" class="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white font-semibold text-sm transition-all shadow-lg shadow-violet-600/25 cursor-pointer">
+                        <span>Reschedule Appointment</span>
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {% endif %}
+
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    /* ── Therapist Filter Logic ─────────────────────────── */
+    function filterTherapists() {
+        const query = (document.getElementById('therapist-search')?.value || '').toLowerCase().trim();
+        const items = document.querySelectorAll('.therapist-item');
+        let visibleCount = 0;
+
+        items.forEach(item => {
+            const nameMatch = !query || item.dataset.name.includes(query);
+            item.style.display = nameMatch ? '' : 'none';
+            if (nameMatch) visibleCount++;
+        });
+
+        const noResults = document.getElementById('therapist-no-results');
+        if (noResults) noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+
+    /* ── Reschedule Tab: Dynamic Therapist Loader ─────────── */
+    const REBOOK_THERAPISTS_URL = "{% url 'website:rebooking_therapists_api' token=token %}";
+    const ORIGINAL_BOOKING_DATE = "{{ booking.date|date:'Y-m-d' }}";
+    let cachedReschedTherapists = [];
+
+    function renderReschedTherapistsList() {
+        const select = document.getElementById('therapist_id_resched');
+        const hint   = document.getElementById('resched-therapist-hint');
+        const prefSelect = document.getElementById('therapist_preference');
+        const selectedPref = prefSelect ? prefSelect.value : 'random';
+        if (!select) return;
+
+        select.innerHTML = '';
+
+        // Auto-assign always first
+        const autoOpt = document.createElement('option');
+        autoOpt.value = 'auto';
+        autoOpt.textContent = 'Auto-Assign Specialist (Recommended)';
+        select.appendChild(autoOpt);
+
+        let filtered = cachedReschedTherapists;
+        if (selectedPref === 'female') {
+            filtered = cachedReschedTherapists.filter(t => t.gender === 'female');
+        } else if (selectedPref === 'male') {
+            filtered = cachedReschedTherapists.filter(t => t.gender === 'male');
+        }
+
+        if (filtered.length === 0) {
+            if (hint) hint.innerHTML = '<i class="fas fa-exclamation-triangle text-amber-400 mr-1"></i> No specialists match this preference on this date.';
+        } else {
+            filtered.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = `${t.name} (${t.gender_display})`;
+                select.appendChild(opt);
+            });
+            const dateInput = document.getElementById('new_date');
+            const dateVal = dateInput ? dateInput.value : '';
+            if (dateVal === ORIGINAL_BOOKING_DATE) {
+                if (hint) hint.innerHTML = `<i class="fas fa-info-circle text-amber-400 mr-1"></i> Original date selected (therapist on leave excluded). ${filtered.length} specialist(s) available.`;
+            } else {
+                if (hint) hint.innerHTML = `<i class="fas fa-check-circle text-green-400 mr-1"></i> ${filtered.length} specialist(s) available on this date.`;
+            }
+        }
+    }
+
+    document.getElementById('therapist_preference')?.addEventListener('change', renderReschedTherapistsList);
+
+    function getSelectedTime() {
+        const checkedTime = document.querySelector('input[name="new_time"]:checked');
+        return checkedTime ? checkedTime.value : '';
+    }
+
+    function loadReschedTherapists(dateVal) {
+        const select = document.getElementById('therapist_id_resched');
+        const hint   = document.getElementById('resched-therapist-hint');
+        const closedNotice = document.getElementById('resched-closed-notice');
+        const submitBtn = document.getElementById('submit-btn-reschedule');
+        if (!dateVal || !select) return;
+
+        // Also pass selected time so the API can check booking conflicts
+        const timeVal = getSelectedTime();
+        let apiUrl = `${REBOOK_THERAPISTS_URL}?date=${encodeURIComponent(dateVal)}`;
+        if (timeVal) apiUrl += `&time=${encodeURIComponent(timeVal)}`;
+
+        // Show loading state
+        select.disabled = true;
+        select.innerHTML = '<option value="auto">Loading available specialists…</option>';
+        if (closedNotice) closedNotice.classList.add('hidden');
+        if (submitBtn) submitBtn.disabled = false;
+
+        fetch(apiUrl)
+            .then(r => r.json())
+            .then(data => {
+                select.disabled = false;
+
+                if (data.closed) {
+                    cachedReschedTherapists = [];
+                    select.innerHTML = '<option value="auto" disabled>Spa is closed on this date</option>';
+                    if (closedNotice) closedNotice.classList.remove('hidden');
+                    if (submitBtn) submitBtn.disabled = true;
+                    if (hint) hint.textContent = '';
+                    return;
+                }
+
+                if (closedNotice) closedNotice.classList.add('hidden');
+                if (submitBtn) submitBtn.disabled = false;
+
+                cachedReschedTherapists = data.therapists || [];
+                renderReschedTherapistsList();
+            })
+            .catch(() => {
+                select.disabled = false;
+                select.innerHTML = '<option value="auto">Auto-Assign (Recommended)</option>';
+                if (hint) hint.innerHTML = '<i class="fas fa-exclamation-circle text-red-400 mr-1"></i> Could not load specialists. Please try again.';
+            });
+    }
+
+    // Reload therapist list when time slot changes (so conflict checks update)
+    document.querySelectorAll('input[name="new_time"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            const dateInput = document.getElementById('new_date');
+            if (dateInput && dateInput.value) loadReschedTherapists(dateInput.value);
+        });
+    });
+
+    function switchRebookTab(tab) {
+        const btnSwitch = document.getElementById('tab-btn-switch');
+        const btnResched = document.getElementById('tab-btn-reschedule');
+        const contentSwitch = document.getElementById('tab-content-switch');
+        const contentResched = document.getElementById('tab-content-reschedule');
+
+        if (tab === 'switch') {
+            btnSwitch.classList.add('active');
+            btnResched.classList.remove('active');
+            if (contentSwitch) contentSwitch.classList.remove('hidden');
+            if (contentResched) contentResched.classList.add('hidden');
+        } else {
+            btnResched.classList.add('active');
+            btnSwitch.classList.remove('active');
+            if (contentSwitch) contentSwitch.classList.add('hidden');
+            if (contentResched) contentResched.classList.remove('hidden');
+        }
+    }
+
+    function handleFormSubmit(form, btnId) {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing Rebooking...';
+            btn.style.opacity = '0.75';
+            btn.style.cursor = 'not-allowed';
+        }
+        return true;
+    }
+</script>
+{% endblock %}
