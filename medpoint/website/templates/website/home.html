@@ -1,7 +1,7 @@
 {% extends 'website/base.html' %}
 {% load static %}
 
-{% block title %}MEDPOINT Massage &amp; Spa - Harmony of Body &amp; Soul{% endblock %}
+{% block title %}{{ site_content.business_legal_name }} - {{ site_content.home_hero_title_accent }}{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
@@ -20,19 +20,17 @@
         <div class="max-w-2xl">
             <div class="flex items-center gap-3 mb-6 animate-fade-in">
                 <div class="w-12 h-px bg-gradient-to-r from-purple-400 to-transparent"></div>
-                <span class="text-purple-300 text-sm tracking-[0.3em] uppercase font-medium">Welcome to MEDPOINT</span>
+                <span class="text-purple-300 text-sm tracking-[0.3em] uppercase font-medium">{{ site_content.home_hero_eyebrow }}</span>
             </div>
             <h1
                 class="font-display text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6 animate-fade-in-up">
-                Harmony of<br>
+                {{ site_content.home_hero_title }}<br>
                 <span
-                    class="bg-gradient-to-r from-purple-400 via-violet-400 to-purple-300 bg-clip-text text-transparent">Body
-                    &amp; Soul</span>
+                    class="bg-gradient-to-r from-purple-400 via-violet-400 to-purple-300 bg-clip-text text-transparent">{{ site_content.home_hero_title_accent }}</span>
             </h1>
             <p class="text-gray-300/90 text-lg sm:text-xl leading-relaxed mb-10 max-w-lg animate-fade-in-up"
                 style="animation-delay:0.2s">
-                Discover the art of relaxation at MEDPOINT Massage &amp; Spa. Our expert therapists deliver premium
-                wellness treatments crafted for your complete rejuvenation.
+                {{ site_content.home_hero_description }}
             </p>
             <div class="flex flex-wrap gap-4 animate-fade-in-up" style="animation-delay:0.4s">
                 <a href="{% url 'website:booking' %}"
@@ -66,23 +64,21 @@
                 <div
                     class="absolute -bottom-6 -right-6 bg-gradient-to-br from-purple-600 to-violet-700 rounded-xl p-6 z-20 shadow-xl">
                     <div class="text-center">
-                        <span class="block text-3xl font-display font-bold text-white">{{ years_experience }}+</span>
-                        <span class="text-purple-200 text-sm">Years of Excellence</span>
+                        <span class="block text-3xl font-display font-bold text-white">{{ site_content.home_stat_years_value|default:0 }}+</span>
+                        <span class="text-purple-200 text-sm">{{ site_content.home_years_badge_label }}</span>
                     </div>
                 </div>
             </div>
             <div>
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-8 h-px bg-purple-500"></div>
-                    <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">About Us</span>
+                    <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">{{ site_content.home_about_label }}</span>
                 </div>
                 <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-6 leading-tight">
-                    A Sanctuary of<br><span class="text-purple-400">Wellness &amp; Beauty</span>
+                    {{ site_content.home_about_title }}
                 </h2>
                 <p class="text-gray-400 leading-relaxed mb-6">
-                    At MEDPOINT Massage &amp; Spa, we believe in the healing power of touch. Our sanctuary is designed
-                    to transport you to a world of tranquility, where every treatment is crafted with care and
-                    precision.
+                    {{ site_content.home_about_description }}
                 </p>
                 <div class="grid grid-cols-2 gap-4 mb-8">
                     <div class="flex items-center gap-3 text-sm"><i
@@ -117,9 +113,8 @@
                 <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Our Services</span>
                 <div class="w-8 h-px bg-purple-500"></div>
             </div>
-            <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">Premium Spa Treatments</h2>
-            <p class="text-gray-400 max-w-xl mx-auto">Indulge in our carefully curated selection of massage and spa
-                treatments designed for your ultimate relaxation.</p>
+            <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">{{ site_content.home_services_title }}</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">{{ site_content.home_services_description }}</p>
         </div>
 
         {% if services %}
@@ -249,26 +244,26 @@
                 <div class="text-center">
                     <span
                         class="block text-4xl sm:text-5xl font-display font-bold bg-gradient-to-b from-white to-purple-300 bg-clip-text text-transparent counter"
-                        data-target="{{ happy_clients_count }}">0</span>
-                    <span class="text-gray-400 text-sm mt-2 block">Happy Clients</span>
+                        data-target="{{ site_content.home_stat_clients_value|default:0 }}">0</span>
+                    <span class="text-gray-400 text-sm mt-2 block">{{ site_content.home_stat_clients_label }}</span>
                 </div>
                 <div class="text-center">
                     <span
                         class="block text-4xl sm:text-5xl font-display font-bold bg-gradient-to-b from-white to-purple-300 bg-clip-text text-transparent counter"
-                        data-target="{{ active_therapists_count|default:0 }}">0</span>
-                    <span class="text-gray-400 text-sm mt-2 block">Expert Therapists</span>
+                        data-target="{{ site_content.home_stat_therapists_value|default:0 }}">0</span>
+                    <span class="text-gray-400 text-sm mt-2 block">{{ site_content.home_stat_therapists_label }}</span>
                 </div>
                 <div class="text-center">
                     <span
                         class="block text-4xl sm:text-5xl font-display font-bold bg-gradient-to-b from-white to-purple-300 bg-clip-text text-transparent counter"
-                        data-target="{{ active_services_count|default:0 }}">0</span>
-                    <span class="text-gray-400 text-sm mt-2 block">Treatments Offered</span>
+                        data-target="{{ site_content.home_stat_treatments_value|default:0 }}">0</span>
+                    <span class="text-gray-400 text-sm mt-2 block">{{ site_content.home_stat_treatments_label }}</span>
                 </div>
                 <div class="text-center">
                     <span
                         class="block text-4xl sm:text-5xl font-display font-bold bg-gradient-to-b from-white to-purple-300 bg-clip-text text-transparent counter"
-                        data-target="{{ years_experience }}">0</span>
-                    <span class="text-gray-400 text-sm mt-2 block">Years Experience</span>
+                        data-target="{{ site_content.home_stat_years_value|default:0 }}">0</span>
+                    <span class="text-gray-400 text-sm mt-2 block">{{ site_content.home_stat_years_label }}</span>
                 </div>
             </div>
         </div>
@@ -296,10 +291,6 @@
             <a href="{% url 'website:booking' %}"
                 class="inline-flex items-center gap-2 px-10 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-full transition-all duration-300 shadow-xl shadow-purple-500/30 hover:shadow-purple-500/50 hover:-translate-y-1 text-lg">
                 <i class="fas fa-calendar-check"></i> Book Appointment
-            </a>
-            <a href="tel:+639123456789"
-                class="inline-flex items-center gap-2 px-10 py-4 border border-white/20 text-white hover:bg-white/5 rounded-full transition-all duration-300 hover:-translate-y-1 text-lg">
-                <i class="fas fa-phone-alt"></i> Call Us
             </a>
         </div>
     </div>
@@ -337,61 +328,6 @@
                 </div>
             </div>
             {% endfor %}
-            {% else %}
-            <div class="bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl p-8">
-                <div class="flex gap-1 mb-4"><i class="fas fa-star text-yellow-400 text-sm"></i><i
-                        class="fas fa-star text-yellow-400 text-sm"></i><i
-                        class="fas fa-star text-yellow-400 text-sm"></i><i
-                        class="fas fa-star text-yellow-400 text-sm"></i><i
-                        class="fas fa-star text-yellow-400 text-sm"></i></div>
-                <p class="text-gray-300 leading-relaxed mb-6 italic">"The best spa experience I've ever had! The
-                    therapists are incredibly skilled and the ambiance is absolutely divine."</p>
-                <div class="flex items-center gap-3">
-                    <div
-                        class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white font-semibold text-sm">
-                        M</div>
-                    <div>
-                        <p class="text-white font-medium text-sm">Maria Santos</p>
-                        <p class="text-purple-400 text-xs">Swedish Massage</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl p-8">
-                <div class="flex gap-1 mb-4"><i class="fas fa-star text-yellow-400 text-sm"></i><i
-                        class="fas fa-star text-yellow-400 text-sm"></i><i
-                        class="fas fa-star text-yellow-400 text-sm"></i><i
-                        class="fas fa-star text-yellow-400 text-sm"></i><i
-                        class="fas fa-star text-yellow-400 text-sm"></i></div>
-                <p class="text-gray-300 leading-relaxed mb-6 italic">"MEDPOINT is my go-to spa. The hot stone therapy
-                    melted all my stress away. Highly recommended!"</p>
-                <div class="flex items-center gap-3">
-                    <div
-                        class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white font-semibold text-sm">
-                        J</div>
-                    <div>
-                        <p class="text-white font-medium text-sm">Juan Dela Cruz</p>
-                        <p class="text-purple-400 text-xs">Hot Stone Therapy</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl p-8">
-                <div class="flex gap-1 mb-4"><i class="fas fa-star text-yellow-400 text-sm"></i><i
-                        class="fas fa-star text-yellow-400 text-sm"></i><i
-                        class="fas fa-star text-yellow-400 text-sm"></i><i
-                        class="fas fa-star text-yellow-400 text-sm"></i><i
-                        class="fas fa-star text-yellow-400 text-sm"></i></div>
-                <p class="text-gray-300 leading-relaxed mb-6 italic">"The facial treatment gave my skin an incredible
-                    glow. The staff are so professional and caring."</p>
-                <div class="flex items-center gap-3">
-                    <div
-                        class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white font-semibold text-sm">
-                        A</div>
-                    <div>
-                        <p class="text-white font-medium text-sm">Angela Reyes</p>
-                        <p class="text-purple-400 text-xs">Luxury Facial</p>
-                    </div>
-                </div>
-            </div>
             {% endif %}
         </div>
     </div>

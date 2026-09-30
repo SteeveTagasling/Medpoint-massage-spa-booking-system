@@ -253,6 +253,31 @@
         display: inline-flex;
         align-items: center;
     }
+    .signatory-input-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        height: 100%;
+        padding: 0 0.55rem;
+        border: 1px solid transparent;
+        border-radius: 7px;
+        background: var(--bg-secondary);
+        transition: var(--transition);
+    }
+    .signatory-input-wrapper:focus-within {
+        border-color: var(--purple-400);
+        box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.15);
+    }
+    .signatory-input-wrapper select {
+        max-width: 230px;
+        border: 0;
+        background: transparent;
+        color: var(--text-primary);
+        font: inherit;
+        font-size: 0.78rem;
+        outline: none;
+        cursor: pointer;
+    }
     .filter-submit-btn {
         background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
         color: #fff;
@@ -316,7 +341,7 @@
 
     /* Print styles */
     @media print {
-        @page { size: portrait; margin: 8mm; }
+        @page { size: portrait; margin: 14mm 12mm; }
         *, *::before, *::after { box-sizing: border-box !important; }
         body {
             background: #fff !important;
@@ -348,8 +373,6 @@
         /* Print visibility toggling */
         .booking-section { display: none !important; }
         .sales-section { display: none !important; }
-
-
         body.print-bookings .booking-section { display: block !important; }
         body.print-bookings .sales-section { display: none !important; }
 
@@ -370,21 +393,29 @@
             display: flex !important;
             justify-content: space-between;
             align-items: flex-start;
-            padding-bottom: 10px;
-            margin-bottom: 4px;
+            padding-bottom: 8px;
+            margin-bottom: 18px;
         }
         .print-logo-left { display: flex; align-items: flex-start; gap: 8px; }
         .print-logo-icon { font-size: 20pt; color: #000 !important; margin-top: 2px; }
-        .print-logo-text { line-height: 1.3; }
-        .print-logo-name { font-size: 11pt; font-weight: 800; letter-spacing: 0.04em; color: #000 !important; }
+        .print-logo-text, .print-date-block { display: grid; grid-template-rows: 18px 18px; align-items: start; }
+        .print-logo-name { font-size: 11pt; font-weight: 800; letter-spacing: 0.04em; color: #000 !important; line-height: 18px; }
         .print-logo-sub  { font-size: 7.5pt; color: #000 !important; margin-top: 1px; }
-        .print-logo-address { font-size: 7.5pt; color: #000 !important; margin-top: 3px; line-height: 1.4; }
+        .print-logo-address { font-size: 7.5pt; color: #000 !important; margin: 0; line-height: 18px; white-space: nowrap; }
         .print-logo-right { text-align: left; }
+        .print-main-title {
+            display: block !important;
+            margin: 0 0 14px 0 !important;
+            color: #000 !important;
+            font-size: 14pt !important;
+            font-weight: 800 !important;
+            text-align: center !important;
+        }
         .print-logo-report-title h2 { font-size: 11pt; font-weight: 700; margin: 0 0 6px 0; color: #000 !important; }
         .print-date-block { font-size: 7.5pt; color: #000 !important; line-height: 1.5; }
         .print-date-label { font-weight: 700; margin-bottom: 2px; color: #000 !important; }
         .print-date-range { padding-left: 1.25rem; }
-        .print-date-row { display: flex; align-items: baseline; gap: 4px; color: #000 !important; }
+        .print-date-row { display: flex; align-items: baseline; gap: 4px; height: 18px; line-height: 18px; color: #000 !important; }
         .print-date-lbl { display: inline-block; width: 28px; text-align: right; color: #000 !important; }
 
         /* General Card adjustments */
@@ -494,7 +525,6 @@
         table.data-table tfoot td,
         table.data-table tfoot td * {
             background-color: #f7f7f7 !important;
-            border-top: 1.5px solid #000 !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             font-weight: 700 !important;
@@ -549,6 +579,29 @@
         .sales-list-table tfoot td.revenue-highlight,
         .sales-list-table tfoot td.commission-highlight { text-align: right !important; padding-right: 6px !important; }
 
+        .service-table th:nth-child(1), .service-table td:nth-child(1) { width: 35%; text-align: left !important; }
+        .service-table th:nth-child(2), .service-table td:nth-child(2) { width: 20%; text-align: left !important; }
+        .service-table th:nth-child(3), .service-table td:nth-child(3) { width: 13%; text-align: center !important; }
+        .service-table th:nth-child(4), .service-table td:nth-child(4) { width: 16%; text-align: right !important; }
+        .service-table th:nth-child(5), .service-table td:nth-child(5) { width: 16%; text-align: right !important; }
+        .staff-table th:nth-child(1), .staff-table td:nth-child(1) { width: 18%; text-align: left !important; }
+        .staff-table th:nth-child(2), .staff-table td:nth-child(2) { width: 18%; text-align: left !important; }
+        .staff-table th:nth-child(3), .staff-table td:nth-child(3) { width: 15%; text-align: center !important; }
+        .staff-table th:nth-child(4), .staff-table td:nth-child(4) { width: 17%; text-align: right !important; }
+        .staff-table th:nth-child(5), .staff-table td:nth-child(5) { width: 15%; text-align: center !important; }
+        .staff-table th:nth-child(6), .staff-table td:nth-child(6) { width: 17%; text-align: right !important; }
+        .staff-table th { font-size: 5.4pt !important; white-space: nowrap !important; overflow: visible !important; padding-left: 2px !important; padding-right: 2px !important; }
+        .promotion-table th, .promotion-table td { font-size: 5.3pt !important; padding: 3px 2px !important; }
+        .promotion-table th:nth-child(1), .promotion-table td:nth-child(1) { width: 12%; }
+        .promotion-table th:nth-child(2), .promotion-table td:nth-child(2) { width: 13%; }
+        .promotion-table th:nth-child(3), .promotion-table td:nth-child(3) { width: 11%; }
+        .promotion-table th:nth-child(4), .promotion-table td:nth-child(4) { width: 9%; }
+        .promotion-table th:nth-child(5), .promotion-table td:nth-child(5) { width: 13%; }
+        .promotion-table th:nth-child(6), .promotion-table td:nth-child(6) { width: 12%; }
+        .promotion-table th:nth-child(7), .promotion-table td:nth-child(7) { width: 9%; }
+        .promotion-table th:nth-child(8), .promotion-table td:nth-child(8) { width: 11%; }
+        .promotion-table th:nth-child(9), .promotion-table td:nth-child(9) { width: 10%; }
+
         /* ── Signature Fields ── */
         .print-signatures { display: flex !important; gap: 60px; margin-top: 32px; }
         .print-sig-block { flex: 1; text-align: center; }
@@ -572,6 +625,35 @@
         .sales-summary-print td { padding: 3px 6px !important; font-size: 8pt !important; border: 1px solid #aaa !important; color: #000 !important; }
         .sales-summary-print td:first-child { font-weight: 700 !important; width: 50% !important; }
         .sales-summary-print td:last-child { width: 50% !important; text-align: center !important; }
+
+        /* Uniform, formal report typography */
+        .card-header-title,
+        .print-summary-title { font-size: 8pt !important; }
+        .summary-table-wrap th,
+        .summary-table-wrap td,
+        .summary-table-wrap td *,
+        .sales-summary-print td,
+        table.data-table th,
+        table.data-table td,
+        table.data-table td *,
+        table.data-table tfoot td,
+        table.data-table tfoot td *,
+        .promotion-table th,
+        .promotion-table td { font-size: 7pt !important; }
+        .print-sig-prep-label,
+        .print-sig-name,
+        .print-sig-role { font-size: 7pt !important; }
+        table.staff-table th { font-size: 5.4pt !important; white-space: nowrap !important; overflow: visible !important; padding-left: 2px !important; padding-right: 2px !important; }
+        .promotion-table th,
+        .promotion-table td { white-space: normal !important; overflow: visible !important; line-height: 1.15 !important; overflow-wrap: anywhere !important; }
+        .promotion-table th { font-size: 4.8pt !important; white-space: nowrap !important; padding: 3px 1px !important; }
+        .promotion-table td,
+        .promotion-table td *,
+        .promotion-table tfoot td,
+        .promotion-table tfoot td * { font-size: 5.2pt !important; }
+        .promotion-table .empty-state { padding: 10px 4px !important; }
+        .promotion-table .empty-state i { display: none !important; }
+        .promotion-table .empty-state p { margin: 0 !important; }
     }
 </style>
 {% endblock %}
@@ -584,24 +666,18 @@
         <div class="print-logo-text">
             <div class="print-logo-name">Medpoint Massage &amp; Spa</div>
             <div class="print-logo-address">
-                <strong>Street Address:</strong><br>
-                Gallares Street, Tagbilaran City, Philippines
+                Gallares Street, Tagbilaran City, Bohol, Philippines
             </div>
         </div>
     </div>
     <div class="print-logo-right">
-        <div class="print-logo-report-title">
-            <h2 id="print-report-title">Booking Report</h2>
-        </div>
         <div class="print-date-block">
-            <div class="print-date-label">Date:</div>
-            <div class="print-date-range">
-                <div class="print-date-row"><span class="print-date-lbl">From:</span> <span>{{ start_date|date:"F d, Y" }}</span></div>
-                <div class="print-date-row"><span class="print-date-lbl">To:</span> <span>{{ end_date|date:"F d, Y" }}</span></div>
-            </div>
+            <div class="print-date-row"><strong>As of:</strong>&nbsp; {{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</div>
+            <div class="print-date-row"><strong>Generated:</strong>&nbsp; {{ generated_date|date:"F d, Y" }}</div>
         </div>
     </div>
 </div>
+<h2 class="print-main-title" id="print-report-title" style="display:none;">Booking Report</h2>
 
 {% if not therapist %}
 <div class="no-profile-alert">
@@ -614,13 +690,13 @@
 <div class="header-row">
     <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
         <div class="period-tabs">
-            <a href="?period=today" class="{% if period == 'today' %}active{% endif %}">
+            <a href="?period=today{% if selected_signatory_id %}&amp;signatory={{ selected_signatory_id }}{% endif %}" class="{% if period == 'today' %}active{% endif %}">
                 <i class="fas fa-sun"></i> Today
             </a>
-            <a href="?period=weekly" class="{% if period == 'weekly' %}active{% endif %}">
+            <a href="?period=weekly{% if selected_signatory_id %}&amp;signatory={{ selected_signatory_id }}{% endif %}" class="{% if period == 'weekly' %}active{% endif %}">
                 <i class="fas fa-calendar-week"></i> This Week
             </a>
-            <a href="?period=monthly" class="{% if period == 'monthly' %}active{% endif %}">
+            <a href="?period=monthly{% if selected_signatory_id %}&amp;signatory={{ selected_signatory_id }}{% endif %}" class="{% if period == 'monthly' %}active{% endif %}">
                 <i class="fas fa-calendar-alt"></i> This Month
             </a>
         </div>
@@ -635,8 +711,18 @@
                 <i class="fas fa-calendar-day" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
                 <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" required title="End Date">
             </div>
+            <div class="signatory-input-wrapper">
+                <i class="fas fa-signature" style="color:var(--purple-400);"></i>
+                <select name="signatory" aria-label="Report signatory" title="Approved by">
+                    {% for signatory in signatories %}
+                    <option value="{{ signatory.pk }}" {% if selected_signatory_id == signatory.pk %}selected{% endif %}>{{ signatory.name }} — {{ signatory.role }}</option>
+                    {% empty %}
+                    <option value="">No signatories available</option>
+                    {% endfor %}
+                </select>
+            </div>
             <button type="submit" class="filter-submit-btn">
-                <i class="fas fa-filter"></i> Filter
+                <i class="fas fa-filter"></i> Apply
             </button>
         </form>
     </div>
@@ -743,7 +829,7 @@
                             {% endif %}
                         </td>
                         <td class="text-center"><span class="status-badge status-{{ b.status }}">{{ b.get_status_display }}</span></td>
-                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ b.total_discounted_price|floatformat:2 }}</td>
+                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ b.total_discounted_price|floatformat:"2g" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -760,7 +846,7 @@
                 <tfoot>
                     <tr>
                         <td colspan="6" style="font-weight: 700; color: #000; text-align: right; padding-right: 12px;">TOTAL REVENUE (Completed)</td>
-                        <td class="revenue-highlight" style="white-space: nowrap; text-align: right; padding-right: 6px;">₱{{ total_revenue|floatformat:2 }}</td>
+                        <td class="revenue-highlight" style="white-space: nowrap; text-align: right; padding-right: 6px;">₱{{ total_revenue|floatformat:"2g" }}</td>
                     </tr>
                 </tfoot>
                 {% endif %}
@@ -790,7 +876,7 @@
                     <div class="metric-icon"><i class="fas fa-coins"></i></div>
                     <div class="metric-info">
                         <div class="metric-label">Total Revenue</div>
-                        <div class="metric-value">₱{{ total_revenue|floatformat:2 }}</div>
+                        <div class="metric-value">₱{{ total_revenue|floatformat:"2g" }}</div>
                         <div class="metric-subtext">
                             <i class="fas fa-arrow-trend-up"></i> Generated Sales
                         </div>
@@ -828,7 +914,7 @@
                     <div class="metric-icon"><i class="fas fa-hand-holding-dollar"></i></div>
                     <div class="metric-info">
                         <div class="metric-label">Commission Earned</div>
-                        <div class="metric-value" style="color: var(--amber-400);">₱{{ commission_earned|floatformat:2 }}</div>
+                        <div class="metric-value" style="color: var(--amber-400);">₱{{ commission_earned|floatformat:"2g" }}</div>
                         <div class="metric-subtext">
                             <i class="fas fa-wallet"></i> Take-home Earnings
                         </div>
@@ -844,107 +930,128 @@
                 <tbody>
                     <tr>
                         <td>Total Revenue</td>
-                        <td class="revenue-highlight text-center">₱{{ total_revenue|floatformat:2 }}</td>
+                        <td class="revenue-highlight text-center">₱{{ total_revenue|floatformat:"2g" }}</td>
                     </tr>
                     <tr>
                         <td>Services Completed</td>
                         <td class="text-center" style="font-weight: 600;">{{ services_rendered }}</td>
                     </tr>
-                    <tr>
-                        <td>Commission Rate</td>
-                        <td class="text-center">
-                            {% if therapist %}
-                            <span class="commission-badge">
-                                <i class="fas fa-percentage"></i> {{ therapist.commission_percentage }}%
-                            </span>
-                            {% else %}
-                            <span style="color: var(--text-muted);">—</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Commission Earned</td>
-                        <td class="commission-highlight text-center" style="font-size: 0.88rem;">₱{{ commission_earned|floatformat:2 }}</td>
-                    </tr>
+                    <tr><td>Online Bookings</td><td class="text-center">{{ online_count }}</td></tr>
+                    <tr><td>Walk-in</td><td class="text-center">{{ walkin_count }}</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Completed Services Detail -->
+    <!-- Regular Priced Services -->
     <div class="card">
         <div class="card-header">
             <span class="card-header-title">
                 <i class="fas fa-list" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
-                Completed Services
+                REGULAR PRICED SERVICES
             </span>
         </div>
         <div class="table-wrapper">
-            <table class="data-table sales-list-table">
-                <colgroup>
-                    <col style="width: 17%;">
-                    <col style="width: 15%;">
-                    <col style="width: 10%;">
-                    <col style="width: 28%;">
-                    <col style="width: 14%;">
-                    <col style="width: 16%;">
-                </colgroup>
+            <table class="data-table service-table">
                 <thead>
                     <tr>
-                        <th class="text-left">Client</th>
-                        <th class="text-center">Date</th>
-                        <th class="text-center">Time</th>
                         <th class="text-left">Service</th>
-                        <th class="text-right">Price</th>
-                        <th class="text-center">Status</th>
+                        <th class="text-left">Category</th>
+                        <th class="text-center">Transaction</th>
+                        <th class="text-right">Unit Price</th>
+                        <th class="text-right">Revenue</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in booking_details %}
+                    {% for item in regular_services %}
                     <tr>
-                        <td class="text-left" style="font-weight: 500; color: var(--text-primary);">{{ item.booking.client_name }}</td>
-                        <td class="text-center" style="font-weight: 500; color: var(--text-primary); white-space: nowrap;">{{ item.booking.date|date:"F d, Y" }}</td>
-                        <td class="text-center" style="white-space: nowrap;">{{ item.booking.get_time_display }}</td>
-                        <td class="text-left">{{ item.booking.service_names }}</td>
-                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ item.price|floatformat:2 }}</td>
-                        <td class="text-center"><span class="status-badge status-{{ item.booking.status }}">{{ item.booking.get_status_display }}</span></td>
+                        <td class="text-left">{{ item.service_name }}</td>
+                        <td class="text-left">{{ item.category }}</td>
+                        <td class="text-center">{{ item.transaction_count }}</td>
+                        <td class="text-right">₱{{ item.unit_price|floatformat:"2g" }}</td>
+                        <td class="text-right revenue-highlight">₱{{ item.revenue|floatformat:"2g" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center">
+                        <td colspan="5" class="text-center">
                             <div class="empty-state">
                                 <i class="fas fa-chart-line"></i>
-                                <p>No completed services for this period</p>
+                                <p>No regular-priced services in this period</p>
                             </div>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
-                {% if booking_details %}
                 <tfoot>
-                    <tr style="border-top: 2px solid var(--border-color);">
-                        <td colspan="4" class="text-right" style="font-weight: 700; color: var(--text-primary);">TOTAL ({{ services_rendered }} services)</td>
-                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ total_revenue|floatformat:2 }}</td>
-                        <td></td>
-                    </tr>
-                    {% if therapist %}
-                    <tr>
-                        <td colspan="4" class="text-right" style="font-weight: 700; color: var(--text-primary);">
-                            <i class="fas fa-coins" style="margin-right: 0.3rem;"></i> YOUR COMMISSION ({{ therapist.commission_percentage }}%)
-                        </td>
-                        <td class="text-right" style="font-weight: 700; color: var(--text-primary); white-space: nowrap;">₱{{ commission_earned|floatformat:2 }}</td>
-                        <td></td>
-                    </tr>
-                    {% endif %}
+                    <tr><td colspan="4" class="text-right"><strong>TOTAL</strong></td><td class="text-right"><strong>₱{{ regular_revenue|floatformat:"2g" }}</strong></td></tr>
                 </tfoot>
-                {% endif %}
+            </table>
+        </div>
+    </div>
+
+    <!-- Discounts and Promotions -->
+    <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+            <span class="card-header-title">
+                <i class="fas fa-tags" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+                PROMOTIONAL / DISCOUNTED SERVICES
+            </span>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table promotion-table">
+                <thead>
+                    <tr>
+                        <th class="text-center">Promo Period</th>
+                        <th class="text-center">Applied Date(s)</th>
+                        <th class="text-left">Service</th>
+                        <th class="text-left">Category</th>
+                        <th class="text-center">Transaction</th>
+                        <th class="text-right">Original Price</th>
+                        <th class="text-center">Discount</th>
+                        <th class="text-right">Promo Price</th>
+                        <th class="text-right">Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for promo in promotional_services %}
+                    <tr>
+                        <td class="text-center" style="white-space:nowrap;">{% if promo.effective_from %}{{ promo.effective_from|date:"M d, Y" }} – {% if promo.effective_to %}{{ promo.effective_to|date:"M d, Y" }}{% else %}Ongoing{% endif %}{% else %}Not recorded{% endif %}</td>
+                        <td class="text-center" style="white-space:nowrap;">{{ promo.applied_from|date:"M d, Y" }}{% if promo.applied_to != promo.applied_from %} – {{ promo.applied_to|date:"M d, Y" }}{% endif %}</td>
+                        <td class="text-left">{{ promo.service_name }}</td>
+                        <td class="text-left">{{ promo.category }}</td>
+                        <td class="text-center">{{ promo.transaction_count }}</td>
+                        <td class="text-right">₱{{ promo.original_price|floatformat:"2g" }}</td>
+                        <td class="text-center">{{ promo.discount_percentage|floatformat:"2g" }}%</td>
+                        <td class="text-right">₱{{ promo.promotional_price|floatformat:"2g" }}</td>
+                        <td class="text-right">₱{{ promo.revenue|floatformat:"2g" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">
+                            <div class="empty-state"><i class="fas fa-tags"></i><p>No discounts or promotions were applied in this period</p></div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot><tr><td colspan="8" class="text-right"><strong>TOTAL</strong></td><td class="text-right"><strong>₱{{ promotional_revenue|floatformat:"2g" }}</strong></td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="card combined-revenue-card" style="margin-top:1.5rem;">
+        <div class="card-header"><span class="card-header-title">COMBINED TOTAL REVENUE</span></div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <tbody>
+                    <tr><td class="text-left"><strong>Regular Priced Services Revenue</strong></td><td class="text-right">₱{{ regular_revenue|floatformat:"2g" }}</td></tr>
+                    <tr><td class="text-left"><strong>Promotional / Discounted Services Revenue</strong></td><td class="text-right">₱{{ promotional_revenue|floatformat:"2g" }}</td></tr>
+                    <tr><td class="text-left"><strong>TOTAL REVENUE</strong></td><td class="text-right"><strong>₱{{ combined_revenue|floatformat:"2g" }}</strong></td></tr>
+                </tbody>
             </table>
         </div>
     </div>
 
 </div>{# end sales-section #}
-
-
 
 <!-- Print-only: Signature Fields -->
 <div class="print-signatures" style="display:none;">
@@ -956,9 +1063,9 @@
     </div>
     <div class="print-sig-block">
         <div class="print-sig-prep-label">Approved by:</div>
-        <div class="print-sig-name">REGENCIA, JOSHUA JAMES DEMECILIO</div>
+        <div class="print-sig-name">{% if selected_signatory %}{{ selected_signatory.name|upper }}{% else %}NO SIGNATORY SELECTED{% endif %}</div>
         <div class="print-sig-line"></div>
-        <div class="print-sig-role">OWNER</div>
+        <div class="print-sig-role">{% if selected_signatory %}{{ selected_signatory.role|upper }}{% else %}&nbsp;{% endif %}</div>
     </div>
 </div>
 

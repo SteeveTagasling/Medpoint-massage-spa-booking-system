@@ -102,7 +102,7 @@
         box-shadow: 0 2px 6px rgba(147, 51, 234, 0.3);
     }
 
-    /* Screen display: only show Sales Report on screen */
+    /* Screen display: show Sales and Staff Performance; booking details are print-only. */
     .booking-section {
         display: none;
     }
@@ -146,6 +146,66 @@
         margin-bottom: 1.5rem;
         flex-wrap: wrap;
         gap: 0.75rem;
+    }
+    .report-filter-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.7rem;
+        min-width: 0;
+    }
+    .report-filter-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+    }
+    .booking-filter-form {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        padding: 0.25rem;
+        border-radius: 12px;
+        transition: var(--transition);
+    }
+    .booking-filter-form.filters-active {
+        background: rgba(168, 85, 247, 0.045);
+        box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.12);
+    }
+    .report-select-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        height: 42px;
+        padding: 3px 0.4rem 3px 0.65rem;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-card);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .report-select-wrap label {
+        color: var(--text-muted);
+        font-size: 0.72rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .report-select-wrap select {
+        height: 32px;
+        min-width: 125px;
+        padding: 0 1.8rem 0 0.65rem;
+        border: 1px solid transparent;
+        border-radius: 7px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font: inherit;
+        font-size: 0.78rem;
+        cursor: pointer;
+        outline: none;
+    }
+    .report-select-wrap select:focus {
+        border-color: var(--purple-400);
+        box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.15);
     }
 
     /* Commission badge */
@@ -236,23 +296,301 @@
     .filter-submit-btn {
         background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
         color: #fff;
-        border: none;
-        border-radius: 7px;
-        padding: 0 1rem;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 10px;
+        padding: 0 1.15rem;
         font-size: 0.8125rem;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 0.4rem;
         transition: var(--transition);
-        box-shadow: 0 2px 6px rgba(168, 85, 247, 0.25);
+        box-shadow: 0 4px 12px rgba(126, 34, 206, 0.24);
         font-family: inherit;
-        height: 100%;
+        height: 42px;
+        min-height: 42px;
+        white-space: nowrap;
     }
     .filter-submit-btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.06);
+        box-shadow: 0 7px 18px rgba(126, 34, 206, 0.34);
+    }
+    .filter-submit-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 7px rgba(126, 34, 206, 0.26);
+    }
+    .filter-submit-btn:focus-visible,
+    .filter-reset-btn:focus-visible {
+        outline: 3px solid rgba(168, 85, 247, 0.24);
+        outline-offset: 2px;
+    }
+    .apply-booking-filters {
+        min-width: 158px;
+        padding-inline: 1.25rem;
+        font-size: 0.84rem;
+        letter-spacing: 0.01em;
+    }
+    .apply-booking-filters i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+        background: rgba(255,255,255,0.16);
+        font-size: 0.7rem;
+    }
+    .active-filter-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 5px;
+        margin-left: 0.15rem;
+        border-radius: 999px;
+        background: #fff;
+        color: var(--purple-600);
+        font-size: 0.68rem;
+        font-weight: 800;
+    }
+    .filter-reset-btn {
+        height: 42px;
+        padding: 0 0.9rem;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: 10px;
+        background: rgba(239, 68, 68, 0.06);
+        color: var(--red-400);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: var(--transition);
+    }
+    .filter-reset-btn:hover {
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.35);
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+    }
+    .add-signatory-btn {
+        width: 42px;
+        height: 42px;
+        border: 1px solid rgba(168, 85, 247, 0.22);
+        border-radius: 10px;
+        background: rgba(168, 85, 247, 0.08);
+        color: var(--purple-400);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .add-signatory-btn:hover {
+        background: rgba(168, 85, 247, 0.15);
+        border-color: rgba(168, 85, 247, 0.4);
+        transform: translateY(-1px);
+    }
+    .signatory-dialog {
+        position: fixed;
+        inset: 0;
+        width: min(560px, calc(100vw - 2rem));
+        max-height: min(720px, calc(100vh - 2rem));
+        margin: auto;
+        padding: 0;
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        background: var(--bg-card);
+        color: var(--text-primary);
+        box-shadow: 0 24px 70px rgba(0,0,0,0.32);
+    }
+    .signatory-dialog::backdrop {
+        background: rgba(15, 8, 28, 0.58);
+        backdrop-filter: blur(3px);
+    }
+    .signatory-dialog-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.2rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .signatory-dialog-header h3 {
+        margin: 0;
+        font-size: 1rem;
+    }
+    .dialog-close-btn {
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        color: var(--text-muted);
+        cursor: pointer;
+    }
+    .signatory-dialog-body {
+        display: grid;
+        gap: 0.9rem;
+        padding: 1.2rem;
+        max-height: calc(100vh - 7rem);
+        overflow-y: auto;
+    }
+    .signatory-dialog-body > form {
+        display: grid;
+        gap: 0.9rem;
+        margin: 0;
+    }
+    .signatory-dialog-body label {
+        display: grid;
+        gap: 0.35rem;
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .signatory-dialog-body input {
+        width: 100%;
+        padding: 0.72rem 0.85rem;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--input-bg);
+        color: var(--text-primary);
+        font: inherit;
+        outline: none;
+    }
+    .signatory-dialog-body input:focus {
+        border-color: var(--purple-400);
+        box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.12);
+    }
+    .signatory-dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.6rem;
+        margin-top: 0.25rem;
+    }
+    .signatory-manager-divider {
+        height: 1px;
+        margin: 0.2rem 0;
+        border: 0;
+        background: var(--border-color);
+    }
+    .signatory-list-title {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .signatory-manager-list {
+        display: grid;
+        gap: 0.55rem;
+    }
+    .signatory-manager-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.75rem 0.8rem;
+        border: 1px solid var(--border-color);
+        border-radius: 11px;
+        background: var(--bg-secondary);
+    }
+    .signatory-manager-info {
+        min-width: 0;
+    }
+    .signatory-manager-name,
+    .signatory-manager-role {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .signatory-manager-name {
+        color: var(--text-primary);
+        font-size: 0.82rem;
+        font-weight: 750;
+    }
+    .signatory-manager-role {
+        margin-top: 0.15rem;
+        color: var(--text-muted);
+        font-size: 0.72rem;
+    }
+    .signatory-manager-actions {
+        display: flex;
+        flex: 0 0 auto;
+        gap: 0.4rem;
+    }
+    .signatory-manager-actions form {
+        margin: 0;
+    }
+    .signatory-action-btn {
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-card);
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .signatory-action-btn.edit:hover {
+        border-color: rgba(168, 85, 247, 0.45);
+        background: rgba(168, 85, 247, 0.1);
+        color: var(--purple-400);
+    }
+    .signatory-action-btn.remove:hover {
+        border-color: rgba(239, 68, 68, 0.38);
+        background: rgba(239, 68, 68, 0.09);
+        color: var(--red-400);
+    }
+    .signatory-empty-state {
+        padding: 1rem;
+        border: 1px dashed var(--border-color);
+        border-radius: 10px;
+        color: var(--text-muted);
+        font-size: 0.78rem;
+        text-align: center;
+    }
+
+    @media (max-width: 1100px) {
+        .header-row,
+        .report-filter-stack,
+        .report-filter-row {
+            width: 100%;
+        }
+        .booking-filter-form {
+            flex: 1 1 100%;
+        }
+    }
+    @media (max-width: 720px) {
+        .period-tabs,
+        .custom-date-filter,
+        .booking-filter-form {
+            width: 100%;
+        }
+        .period-tabs a {
+            flex: 1;
+            justify-content: center;
+            padding-inline: 0.45rem;
+        }
+        .custom-date-filter {
+            height: auto;
+            flex-wrap: wrap;
+        }
+        .date-input-wrapper,
+        .report-select-wrap {
+            flex: 1 1 100%;
+        }
+        .report-select-wrap select {
+            flex: 1;
+        }
+        .filter-submit-btn,
+        .filter-reset-btn {
+            flex: 1 1 140px;
+        }
     }
 
     /* Summary Section Header */
@@ -296,7 +634,7 @@
 
     /* Print styles: viewable and printable, compact & neat */
     @media print {
-        @page { size: portrait; margin: 8mm; }
+        @page { size: portrait; margin: 14mm 12mm; }
         *, *::before, *::after {
             box-sizing: border-box !important;
         }
@@ -328,6 +666,7 @@
         /* Print visibility toggling */
         .booking-section { display: none !important; }
         .sales-section { display: none !important; }
+        .staff-performance-section { display: none !important; }
         body.print-bookings .booking-section { display: block !important; }
         body.print-bookings .sales-section { display: none !important; }
 
@@ -336,32 +675,45 @@
 
         body.print-both .booking-section { display: block !important; }
         body.print-both .sales-section { display: block !important; }
+        body.print-both .staff-performance-section { display: block !important; }
+
+        body.print-staff .booking-section,
+        body.print-staff .sales-section { display: none !important; }
+        body.print-staff .staff-performance-section { display: block !important; }
 
         /* Default print view if triggered without specific class */
-        body:not(.print-bookings):not(.print-both) .sales-section { display: block !important; }
+        body:not(.print-bookings):not(.print-both):not(.print-staff) .sales-section { display: block !important; }
 
         /* ── Print Header (matches image format) ── */
         .print-logo-header {
             display: flex !important;
             justify-content: space-between;
             align-items: flex-start;
-            padding-bottom: 10px;
-            margin-bottom: 4px;
+            padding-bottom: 8px;
+            margin-bottom: 18px;
         }
         .print-logo-left { display: flex; align-items: flex-start; gap: 8px; }
         .print-logo-icon { font-size: 20pt; color: #000 !important; margin-top: 2px; }
-        .print-logo-text { line-height: 1.3; }
-        .print-logo-name { font-size: 11pt; font-weight: 800; letter-spacing: 0.04em; color: #000 !important; }
+        .print-logo-text, .print-date-block { display: grid; grid-template-rows: 18px 18px; align-items: start; }
+        .print-logo-name { font-size: 11pt; font-weight: 800; letter-spacing: 0.04em; color: #000 !important; line-height: 18px; }
         .print-logo-sub  { font-size: 7.5pt; color: #000 !important; margin-top: 1px; }
-        .print-logo-address { font-size: 7.5pt; color: #000 !important; margin-top: 3px; line-height: 1.4; }
+        .print-logo-address { font-size: 7.5pt; color: #000 !important; margin: 0; line-height: 18px; white-space: nowrap; }
         .print-logo-right { text-align: left; }
+        .print-main-title {
+            display: block !important;
+            margin: 0 0 14px 0 !important;
+            color: #000 !important;
+            font-size: 14pt !important;
+            font-weight: 800 !important;
+            text-align: center !important;
+        }
         .print-logo-report-title { }
         .print-logo-report-title h2 { font-size: 11pt; font-weight: 700; margin: 0 0 6px 0; color: #000 !important; }
         .print-date-block { font-size: 7.5pt; color: #000 !important; line-height: 1.5; }
         .print-date-label { font-weight: 700; margin-bottom: 2px; color: #000 !important; }
         .print-date-range { padding-left: 1.25rem; }
-        .print-date-row { display: flex; align-items: baseline; gap: 4px; color: #000 !important; }
-        .print-date-lbl { display: inline-block; width: 28px; text-align: right; color: #000 !important; }
+        .print-date-row { display: flex; align-items: baseline; gap: 4px; height: 18px; line-height: 18px; color: #000 !important; }
+        .print-date-lbl { display: inline-block; width: 42px; text-align: right; color: #000 !important; }
 
         /* General Card adjustments (Remove bloated wrappers) */
         .card { 
@@ -467,7 +819,6 @@
         table.data-table tfoot td,
         table.data-table tfoot td * {
             background-color: #f7f7f7 !important;
-            border-top: 1.5px solid #000 !important;
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important;
             font-weight: 700 !important;
@@ -506,12 +857,13 @@
         .booking-list-table tfoot td:last-child { width: 11% !important; text-align: right !important; white-space: nowrap !important; padding-right: 6px !important; }
 
         /* Specific Column Widths & Alignments for Staff Performance in print */
-        .staff-table th:nth-child(1), .staff-table td:nth-child(1) { width: 20%; text-align: left; padding-left: 5px; }
+        .staff-table th:nth-child(1), .staff-table td:nth-child(1) { width: 18%; text-align: left; padding-left: 5px; }
         .staff-table th:nth-child(2), .staff-table td:nth-child(2) { width: 18%; text-align: left; padding-left: 5px; }
-        .staff-table th:nth-child(3), .staff-table td:nth-child(3) { width: 13%; text-align: center; }
+        .staff-table th:nth-child(3), .staff-table td:nth-child(3) { width: 15%; text-align: center; }
         .staff-table th:nth-child(4), .staff-table td:nth-child(4) { width: 17%; text-align: right; white-space: nowrap; padding-right: 6px; }
-        .staff-table th:nth-child(5), .staff-table td:nth-child(5) { width: 13%; text-align: center; }
-        .staff-table th:nth-child(6), .staff-table td:nth-child(6) { width: 19%; text-align: right; white-space: nowrap; padding-right: 6px; }
+        .staff-table th:nth-child(5), .staff-table td:nth-child(5) { width: 15%; text-align: center; }
+        .staff-table th:nth-child(6), .staff-table td:nth-child(6) { width: 17%; text-align: right; white-space: nowrap; padding-right: 6px; }
+        .staff-table th { font-size: 5.4pt !important; white-space: nowrap !important; overflow: visible !important; padding-left: 2px !important; padding-right: 2px !important; }
 
         /* Specific Column Widths & Alignments for Service Breakdown in print */
         .service-table th:nth-child(1), .service-table td:nth-child(1) { width: 35%; text-align: left; padding-left: 5px; }
@@ -519,6 +871,17 @@
         .service-table th:nth-child(3), .service-table td:nth-child(3) { width: 13%; text-align: center; }
         .service-table th:nth-child(4), .service-table td:nth-child(4) { width: 16%; text-align: right; white-space: nowrap; padding-right: 6px; }
         .service-table th:nth-child(5), .service-table td:nth-child(5) { width: 16%; text-align: right; white-space: nowrap; padding-right: 6px; }
+
+        .promotion-table th, .promotion-table td { font-size: 5.3pt !important; padding: 3px 2px !important; }
+        .promotion-table th:nth-child(1), .promotion-table td:nth-child(1) { width: 12%; }
+        .promotion-table th:nth-child(2), .promotion-table td:nth-child(2) { width: 13%; }
+        .promotion-table th:nth-child(3), .promotion-table td:nth-child(3) { width: 11%; }
+        .promotion-table th:nth-child(4), .promotion-table td:nth-child(4) { width: 9%; }
+        .promotion-table th:nth-child(5), .promotion-table td:nth-child(5) { width: 13%; }
+        .promotion-table th:nth-child(6), .promotion-table td:nth-child(6) { width: 12%; }
+        .promotion-table th:nth-child(7), .promotion-table td:nth-child(7) { width: 9%; }
+        .promotion-table th:nth-child(8), .promotion-table td:nth-child(8) { width: 11%; }
+        .promotion-table th:nth-child(9), .promotion-table td:nth-child(9) { width: 10%; }
 
 
 
@@ -545,6 +908,35 @@
         .sales-summary-print td { padding: 3px 6px !important; font-size: 8pt !important; border: 1px solid #aaa !important; color: #000 !important; }
         .sales-summary-print td:first-child { font-weight: 700 !important; width: 50% !important; }
         .sales-summary-print td:last-child { width: 50% !important; text-align: center !important; }
+
+        /* Uniform, formal report typography */
+        .card-header-title,
+        .print-summary-title { font-size: 8pt !important; }
+        .summary-table-wrap th,
+        .summary-table-wrap td,
+        .summary-table-wrap td *,
+        .sales-summary-print td,
+        table.data-table th,
+        table.data-table td,
+        table.data-table td *,
+        table.data-table tfoot td,
+        table.data-table tfoot td *,
+        .promotion-table th,
+        .promotion-table td { font-size: 7pt !important; }
+        .print-sig-prep-label,
+        .print-sig-name,
+        .print-sig-role { font-size: 7pt !important; }
+        table.staff-table th { font-size: 5.4pt !important; white-space: nowrap !important; overflow: visible !important; padding-left: 2px !important; padding-right: 2px !important; }
+        .promotion-table th,
+        .promotion-table td { white-space: normal !important; overflow: visible !important; line-height: 1.15 !important; overflow-wrap: anywhere !important; }
+        .promotion-table th { font-size: 4.8pt !important; white-space: nowrap !important; padding: 3px 1px !important; }
+        .promotion-table td,
+        .promotion-table td *,
+        .promotion-table tfoot td,
+        .promotion-table tfoot td * { font-size: 5.2pt !important; }
+        .promotion-table .empty-state { padding: 10px 4px !important; }
+        .promotion-table .empty-state i { display: none !important; }
+        .promotion-table .empty-state p { margin: 0 !important; }
     }
 </style>
 {% endblock %}
@@ -557,74 +949,167 @@
         <div class="print-logo-text">
             <div class="print-logo-name">Medpoint Massage &amp; Spa</div>
             <div class="print-logo-address">
-                <strong>Street Address:</strong><br>
-                Gallares Street, Tagbilaran City, Philippines
+                Gallares Street, Tagbilaran City, Bohol, Philippines
             </div>
         </div>
     </div>
     <div class="print-logo-right">
-        <div class="print-logo-report-title">
-            <h2 id="print-report-title">Booking Report</h2>
-        </div>
         <div class="print-date-block">
-            <div class="print-date-label">Date:</div>
-            <div class="print-date-range">
-                <div class="print-date-row"><span class="print-date-lbl">From:</span> <span>{{ start_date|date:"F d, Y" }}</span></div>
-                <div class="print-date-row"><span class="print-date-lbl">To:</span> <span>{{ end_date|date:"F d, Y" }}</span></div>
-            </div>
+            <div class="print-date-row"><strong>As of:</strong>&nbsp; {{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</div>
+            <div class="print-date-row"><strong>Generated:</strong>&nbsp; {{ generated_date|date:"F d, Y" }}</div>
+        </div>
+    </div>
+</div>
+<h2 class="print-main-title" id="print-report-title" style="display:none;">Booking Report</h2>
+
+<!-- Header -->
+<div class="header-row">
+    <div class="report-filter-stack">
+        <!-- Period Tabs -->
+        <div class="period-tabs">
+            <a href="?period=today&amp;status={{ status_filter }}&amp;booking_type={{ booking_type_filter }}{% if selected_signatory_id %}&amp;signatory={{ selected_signatory_id }}{% endif %}" class="{% if period == 'today' %}active{% endif %}">
+                <i class="fas fa-sun"></i> Today
+            </a>
+            <a href="?period=weekly&amp;status={{ status_filter }}&amp;booking_type={{ booking_type_filter }}{% if selected_signatory_id %}&amp;signatory={{ selected_signatory_id }}{% endif %}" class="{% if period == 'weekly' %}active{% endif %}">
+                <i class="fas fa-calendar-week"></i> This Week
+            </a>
+            <a href="?period=monthly&amp;status={{ status_filter }}&amp;booking_type={{ booking_type_filter }}{% if selected_signatory_id %}&amp;signatory={{ selected_signatory_id }}{% endif %}" class="{% if period == 'monthly' %}active{% endif %}">
+                <i class="fas fa-calendar-alt"></i> This Month
+            </a>
+        </div>
+        <div class="report-filter-row">
+            <!-- Date, Status, and Booking Type Filters -->
+            <form method="get" class="booking-filter-form{% if active_filter_count %} filters-active{% endif %}">
+                <div class="custom-date-filter">
+                    <div class="date-input-wrapper">
+                        <i class="fas fa-calendar-day" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
+                        <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" required title="Start Date">
+                    </div>
+                    <span class="date-separator"><i class="fas fa-arrow-right"></i></span>
+                    <div class="date-input-wrapper">
+                        <i class="fas fa-calendar-day" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
+                        <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" required title="End Date">
+                    </div>
+                </div>
+                <div class="report-select-wrap">
+                    <label for="report-status-filter">Status</label>
+                    <select name="status" id="report-status-filter">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                        <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </div>
+                <div class="report-select-wrap">
+                    <label for="report-type-filter">Booking Type</label>
+                    <select name="booking_type" id="report-type-filter">
+                        <option value="all" {% if booking_type_filter == 'all' %}selected{% endif %}>All Types</option>
+                        <option value="walk_in" {% if booking_type_filter == 'walk_in' %}selected{% endif %}>Walk-in</option>
+                        <option value="online" {% if booking_type_filter == 'online' %}selected{% endif %}>Online</option>
+                    </select>
+                </div>
+                <div class="report-select-wrap">
+                    <label for="report-signatory-filter">Approved by</label>
+                    <select name="signatory" id="report-signatory-filter">
+                        {% for signatory in signatories %}
+                        <option value="{{ signatory.pk }}" {% if selected_signatory_id == signatory.pk %}selected{% endif %}>{{ signatory.name }} — {{ signatory.role }}</option>
+                        {% empty %}
+                        <option value="">No signatories added</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="button" class="add-signatory-btn" onclick="openSignatoryDialog()" title="Add signatory" aria-label="Add signatory">
+                    <i class="fas fa-user-plus"></i>
+                </button>
+                <button type="submit" class="filter-submit-btn apply-booking-filters">
+                    <i class="fas fa-filter"></i>
+                    <span>Apply Filters</span>
+                    {% if active_filter_count %}<span class="active-filter-count" title="{{ active_filter_count }} active filter{{ active_filter_count|pluralize }}">{{ active_filter_count }}</span>{% endif %}
+                </button>
+                <!-- Print Dropdown -->
+                <div class="print-dropdown-wrap" id="printDropdownWrap">
+                    <button type="button" class="print-btn" id="printDropdownBtn" onclick="togglePrintDropdown(event)">
+                        <i class="fas fa-print"></i> Print Report <i class="fas fa-chevron-down" style="font-size:0.7rem; margin-left:0.2rem;"></i>
+                    </button>
+                    <div class="print-dropdown" id="printDropdown">
+                        <button type="button" onclick="printReport('bookings')">
+                            <i class="fas fa-calendar-check"></i> Booking
+                        </button>
+                        <button type="button" onclick="printReport('sales')">
+                            <i class="fas fa-chart-line"></i> Sales
+                        </button>
+                        <button type="button" onclick="printReport('staff')">
+                            <i class="fas fa-users"></i> Staff Performance
+                        </button>
+                        <button type="button" onclick="printReport('both')">
+                            <i class="fas fa-layer-group"></i> Business Report
+                        </button>
+                    </div>
+                </div>
+                {% if active_filter_count %}
+                <a href="?{{ filter_reset_query }}" class="filter-reset-btn" title="Clear booking filters">
+                    <i class="fas fa-rotate-left"></i> Reset
+                </a>
+                {% endif %}
+            </form>
         </div>
     </div>
 </div>
 
-<!-- Header -->
-<div class="header-row">
-    <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
-        <!-- Period Tabs -->
-        <div class="period-tabs">
-            <a href="?period=today" class="{% if period == 'today' %}active{% endif %}">
-                <i class="fas fa-sun"></i> Today
-            </a>
-            <a href="?period=weekly" class="{% if period == 'weekly' %}active{% endif %}">
-                <i class="fas fa-calendar-week"></i> This Week
-            </a>
-            <a href="?period=monthly" class="{% if period == 'monthly' %}active{% endif %}">
-                <i class="fas fa-calendar-alt"></i> This Month
-            </a>
-        </div>
-        <!-- Custom Date Filter -->
-        <form method="get" class="custom-date-filter">
-            <div class="date-input-wrapper">
-                <i class="fas fa-calendar-day" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
-                <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" required title="Start Date">
+<dialog class="signatory-dialog" id="signatory-dialog">
+    <div class="signatory-dialog-header">
+        <h3><i class="fas fa-signature" style="color:var(--purple-400);margin-right:0.4rem;"></i><span id="signatory-dialog-title">Manage Report Signatories</span></h3>
+        <button type="button" class="dialog-close-btn" onclick="closeSignatoryDialog()" aria-label="Close"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="signatory-dialog-body">
+        <form method="post" id="signatory-editor-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" id="signatory-form-action" value="add_signatory">
+            <input type="hidden" name="signatory_id" id="signatory-form-id" value="">
+            <label>
+                Full Name
+                <input type="text" name="name" id="signatory-form-name" maxlength="200" placeholder="e.g. Maria Dela Cruz" required autocomplete="name">
+            </label>
+            <label>
+                Role / Position
+                <input type="text" name="role" id="signatory-form-role" maxlength="100" placeholder="e.g. Manager or Owner" required>
+            </label>
+            <div class="signatory-dialog-actions">
+                <button type="button" class="filter-reset-btn" id="signatory-cancel-edit" onclick="resetSignatoryForm()" hidden>Cancel Edit</button>
+                <button type="submit" class="filter-submit-btn" id="signatory-submit-btn"><i class="fas fa-plus"></i><span>Add Signatory</span></button>
             </div>
-            <span class="date-separator"><i class="fas fa-arrow-right"></i></span>
-            <div class="date-input-wrapper">
-                <i class="fas fa-calendar-day" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
-                <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" required title="End Date">
-            </div>
-            <button type="submit" class="filter-submit-btn">
-                <i class="fas fa-filter"></i> Filter
-            </button>
         </form>
-    </div>
-    <!-- Print Dropdown -->
-    <div class="print-dropdown-wrap" id="printDropdownWrap">
-        <button class="print-btn" id="printDropdownBtn" onclick="togglePrintDropdown(event)">
-            <i class="fas fa-print"></i> Print Report <i class="fas fa-chevron-down" style="font-size:0.7rem; margin-left:0.2rem;"></i>
-        </button>
-        <div class="print-dropdown" id="printDropdown">
-            <button type="button" onclick="printReport('bookings')">
-                <i class="fas fa-calendar-check"></i> Booking
-            </button>
-            <button type="button" onclick="printReport('sales')">
-                <i class="fas fa-chart-line"></i> Sales
-            </button>
-            <button type="button" onclick="printReport('both')">
-                <i class="fas fa-layer-group"></i> Business Report
-            </button>
+
+        <hr class="signatory-manager-divider">
+        <p class="signatory-list-title">Saved Signatories</p>
+        <div class="signatory-manager-list">
+            {% for signatory in signatories %}
+            <div class="signatory-manager-item">
+                <div class="signatory-manager-info">
+                    <span class="signatory-manager-name">{{ signatory.name }}</span>
+                    <span class="signatory-manager-role">{{ signatory.role }}</span>
+                </div>
+                <div class="signatory-manager-actions">
+                    <button type="button" class="signatory-action-btn edit" data-id="{{ signatory.pk }}" data-name="{{ signatory.name }}" data-role="{{ signatory.role }}" onclick="editSignatory(this)" title="Edit {{ signatory.name }}" aria-label="Edit {{ signatory.name }}">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                    <form method="post" onsubmit="return confirm('Remove this signatory?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="remove_signatory">
+                        <input type="hidden" name="signatory_id" value="{{ signatory.pk }}">
+                        <button type="submit" class="signatory-action-btn remove" title="Remove {{ signatory.name }}" aria-label="Remove {{ signatory.name }}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+            <div class="signatory-empty-state">No report signatories have been added yet.</div>
+            {% endfor %}
         </div>
     </div>
-</div>
+</dialog>
 
 {# ═══════════ BOOKING SECTION (hidden on screen, only visible when printing Bookings) ═══════════ #}
 <div class="booking-section">
@@ -688,7 +1173,7 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th class="text-center">#</th>
+                        <th class="text-center">BK ID</th>
                         <th class="text-left">Client Name</th>
                         <th class="text-left">Service(s)</th>
                         <th class="text-left">Therapist</th>
@@ -716,7 +1201,7 @@
                             {% endif %}
                         </td>
                         <td class="text-center"><span class="status-badge status-{{ b.status }}">{{ b.get_status_display }}</span></td>
-                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ b.total_discounted_price|floatformat:2 }}</td>
+                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ b.total_discounted_price|floatformat:"2g" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -733,7 +1218,7 @@
                 <tfoot>
                     <tr>
                         <td colspan="8" class="text-right" style="font-weight: 700; color: var(--text-primary);">TOTAL REVENUE (Completed)</td>
-                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ total_revenue|floatformat:2 }}</td>
+                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ total_revenue|floatformat:"2g" }}</td>
                     </tr>
                 </tfoot>
                 {% endif %}
@@ -763,7 +1248,7 @@
                     <div class="metric-icon"><i class="fas fa-coins"></i></div>
                     <div class="metric-info">
                         <div class="metric-label">Total Revenue</div>
-                        <div class="metric-value">₱{{ total_revenue|floatformat:2 }}</div>
+                        <div class="metric-value">₱{{ total_revenue|floatformat:"2g" }}</div>
                         <div class="metric-subtext">
                             <i class="fas fa-arrow-trend-up"></i> Gross Period Sales
                         </div>
@@ -815,7 +1300,7 @@
                 <tbody>
                     <tr>
                         <td>Total Revenue</td>
-                        <td class="revenue-highlight text-center">₱{{ total_revenue|floatformat:2 }}</td>
+                        <td class="revenue-highlight text-center">₱{{ total_revenue|floatformat:"2g" }}</td>
                     </tr>
                     <tr>
                         <td>Services Completed</td>
@@ -834,6 +1319,9 @@
         </div>
     </div>
 
+</div>{# end sales-section before standalone staff performance #}
+
+<div class="staff-performance-section">
     <!-- Staff Performance -->
     <div class="card" style="margin-bottom: 1.5rem;">
         <div class="card-header">
@@ -868,13 +1356,13 @@
                         <td class="text-left" style="color: var(--text-primary); font-weight: 500;">{{ item.therapist.name }}</td>
                         <td class="text-left">{{ item.therapist.title }}</td>
                         <td class="text-center" style="font-weight: 600;">{{ item.services_rendered }}</td>
-                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ item.total_revenue|floatformat:2 }}</td>
+                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ item.total_revenue|floatformat:"2g" }}</td>
                         <td class="text-center">
                             <span class="commission-badge">
                                 <i class="fas fa-percentage"></i> {{ item.commission_rate }}%
                             </span>
                         </td>
-                        <td class="text-right" style="color: var(--text-primary); font-weight: 600; white-space: nowrap;">₱{{ item.commission_earned|floatformat:2 }}</td>
+                        <td class="text-right" style="color: var(--text-primary); font-weight: 600; white-space: nowrap;">₱{{ item.commission_earned|floatformat:"2g" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
@@ -892,9 +1380,9 @@
                     <tr>
                         <td colspan="2" class="text-left" style="font-weight: 700; color: var(--text-primary);">TOTALS</td>
                         <td class="text-center" style="font-weight: 700; color: var(--text-primary);">{{ total_completed }}</td>
-                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ total_revenue|floatformat:2 }}</td>
+                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ total_revenue|floatformat:"2g" }}</td>
                         <td></td>
-                        <td class="text-right" style="font-weight: 700; color: var(--text-primary); white-space: nowrap;">₱{{ total_commission|floatformat:2 }}</td>
+                        <td class="text-right" style="font-weight: 700; color: var(--text-primary); white-space: nowrap;">₱{{ total_commission|floatformat:"2g" }}</td>
                     </tr>
                 </tfoot>
                 {% endif %}
@@ -902,12 +1390,15 @@
         </div>
     </div>
 
-    <!-- Service Breakdown -->
+</div>{# end staff-performance-section #}
+
+<div class="sales-section">
+    <!-- Regular Priced Services -->
     <div class="card">
         <div class="card-header">
             <span class="card-header-title">
                 <i class="fas fa-concierge-bell" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
-                SERVICE BREAKDOWN
+                REGULAR PRICED SERVICES
             </span>
         </div>
         <div class="table-wrapper">
@@ -923,30 +1414,95 @@
                     <tr>
                         <th class="text-left">Service</th>
                         <th class="text-left">Category</th>
-                        <th class="text-center">Times Performed</th>
+                        <th class="text-center">Transaction</th>
                         <th class="text-right">Unit Price</th>
                         <th class="text-right">Revenue</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in service_breakdown %}
+                    {% for item in regular_services %}
                     <tr>
-                        <td class="text-left" style="color: var(--text-primary); font-weight: 500;">{{ item.service.name }}</td>
-                        <td class="text-left">{{ item.service.get_category_display }}</td>
-                        <td class="text-center" style="font-weight: 600;">{{ item.count }}</td>
-                        <td class="text-right" style="white-space: nowrap;">₱{{ item.service.discounted_price|floatformat:2 }}</td>
-                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ item.revenue|floatformat:2 }}</td>
+                        <td class="text-left" style="color: var(--text-primary); font-weight: 500;">{{ item.service_name }}</td>
+                        <td class="text-left">{{ item.category }}</td>
+                        <td class="text-center" style="font-weight: 600;">{{ item.transaction_count }}</td>
+                        <td class="text-right" style="white-space: nowrap;">₱{{ item.unit_price|floatformat:"2g" }}</td>
+                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ item.revenue|floatformat:"2g" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
                         <td colspan="5" class="text-center">
                             <div class="empty-state">
                                 <i class="fas fa-concierge-bell"></i>
-                                <p>No services performed in this period</p>
+                                <p>No regular-priced services in this period</p>
                             </div>
                         </td>
                     </tr>
                     {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="4" class="text-right"><strong>TOTAL</strong></td><td class="text-right"><strong>₱{{ regular_revenue|floatformat:"2g" }}</strong></td></tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- Discounts and Promotions -->
+    <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+            <span class="card-header-title">
+                <i class="fas fa-tags" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
+                PROMOTIONAL / DISCOUNTED SERVICES
+            </span>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table promotion-table">
+                <thead>
+                    <tr>
+                        <th class="text-center">Promo Period</th>
+                        <th class="text-center">Applied Date(s)</th>
+                        <th class="text-left">Service</th>
+                        <th class="text-left">Category</th>
+                        <th class="text-center">Transaction</th>
+                        <th class="text-right">Original Price</th>
+                        <th class="text-center">Discount</th>
+                        <th class="text-right">Promo Price</th>
+                        <th class="text-right">Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for promo in promotional_services %}
+                    <tr>
+                        <td class="text-center" style="white-space:nowrap;">{% if promo.effective_from %}{{ promo.effective_from|date:"M d, Y" }} – {% if promo.effective_to %}{{ promo.effective_to|date:"M d, Y" }}{% else %}Ongoing{% endif %}{% else %}Not recorded{% endif %}</td>
+                        <td class="text-center" style="white-space:nowrap;">{{ promo.applied_from|date:"M d, Y" }}{% if promo.applied_to != promo.applied_from %} – {{ promo.applied_to|date:"M d, Y" }}{% endif %}</td>
+                        <td class="text-left">{{ promo.service_name }}</td>
+                        <td class="text-left">{{ promo.category }}</td>
+                        <td class="text-center">{{ promo.transaction_count }}</td>
+                        <td class="text-right">₱{{ promo.original_price|floatformat:"2g" }}</td>
+                        <td class="text-center">{{ promo.discount_percentage|floatformat:"2g" }}%</td>
+                        <td class="text-right">₱{{ promo.promotional_price|floatformat:"2g" }}</td>
+                        <td class="text-right">₱{{ promo.revenue|floatformat:"2g" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center">
+                            <div class="empty-state"><i class="fas fa-tags"></i><p>No discounts or promotions were applied in this period</p></div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot><tr><td colspan="8" class="text-right"><strong>TOTAL</strong></td><td class="text-right"><strong>₱{{ promotional_revenue|floatformat:"2g" }}</strong></td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="card combined-revenue-card" style="margin-top:1.5rem;">
+        <div class="card-header"><span class="card-header-title">COMBINED TOTAL REVENUE</span></div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <tbody>
+                    <tr><td class="text-left"><strong>Regular Priced Services Revenue</strong></td><td class="text-right">₱{{ regular_revenue|floatformat:"2g" }}</td></tr>
+                    <tr><td class="text-left"><strong>Promotional / Discounted Services Revenue</strong></td><td class="text-right">₱{{ promotional_revenue|floatformat:"2g" }}</td></tr>
+                    <tr><td class="text-left"><strong>TOTAL REVENUE</strong></td><td class="text-right"><strong>₱{{ combined_revenue|floatformat:"2g" }}</strong></td></tr>
                 </tbody>
             </table>
         </div>
@@ -966,13 +1522,46 @@
     </div>
     <div class="print-sig-block">
         <div class="print-sig-prep-label">Approved by:</div>
-        <div class="print-sig-name">REGENCIA, JOSHUA JAMES DEMECILIO</div>
+        <div class="print-sig-name">{% if selected_signatory %}{{ selected_signatory.name|upper }}{% else %}NO SIGNATORY SELECTED{% endif %}</div>
         <div class="print-sig-line"></div>
-        <div class="print-sig-role">OWNER</div>
+        <div class="print-sig-role">{% if selected_signatory %}{{ selected_signatory.role|upper }}{% else %}&nbsp;{% endif %}</div>
     </div>
 </div>
 
 <script>
+function openSignatoryDialog() {
+    var dialog = document.getElementById('signatory-dialog');
+    resetSignatoryForm();
+    if (dialog && typeof dialog.showModal === 'function') dialog.showModal();
+}
+
+function closeSignatoryDialog() {
+    var dialog = document.getElementById('signatory-dialog');
+    if (dialog) dialog.close();
+}
+
+function resetSignatoryForm() {
+    var form = document.getElementById('signatory-editor-form');
+    if (!form) return;
+    form.reset();
+    document.getElementById('signatory-form-action').value = 'add_signatory';
+    document.getElementById('signatory-form-id').value = '';
+    document.getElementById('signatory-dialog-title').textContent = 'Manage Report Signatories';
+    document.getElementById('signatory-cancel-edit').hidden = true;
+    document.getElementById('signatory-submit-btn').innerHTML = '<i class="fas fa-plus"></i><span>Add Signatory</span>';
+}
+
+function editSignatory(button) {
+    document.getElementById('signatory-form-action').value = 'edit_signatory';
+    document.getElementById('signatory-form-id').value = button.dataset.id;
+    document.getElementById('signatory-form-name').value = button.dataset.name;
+    document.getElementById('signatory-form-role').value = button.dataset.role;
+    document.getElementById('signatory-dialog-title').textContent = 'Edit Report Signatory';
+    document.getElementById('signatory-cancel-edit').hidden = false;
+    document.getElementById('signatory-submit-btn').innerHTML = '<i class="fas fa-save"></i><span>Save Changes</span>';
+    document.getElementById('signatory-form-name').focus();
+}
+
 function togglePrintDropdown(e) {
     e.stopPropagation();
     document.getElementById('printDropdown').classList.toggle('open');
@@ -990,13 +1579,16 @@ function printReport(type) {
     if (dropdown) dropdown.classList.remove('open');
     
     var titleEl = document.getElementById('print-report-title');
-    document.body.classList.remove('print-sales', 'print-bookings', 'print-both');
+    document.body.classList.remove('print-sales', 'print-bookings', 'print-both', 'print-staff');
     if (type === 'bookings') {
         if (titleEl) titleEl.textContent = 'Booking Report';
         document.body.classList.add('print-bookings');
     } else if (type === 'both') {
         if (titleEl) titleEl.textContent = 'Business Report';
         document.body.classList.add('print-both');
+    } else if (type === 'staff') {
+        if (titleEl) titleEl.textContent = 'Staff Performance Report';
+        document.body.classList.add('print-staff');
     } else {
         if (titleEl) titleEl.textContent = 'Sales Report';
         document.body.classList.add('print-sales');
@@ -1008,7 +1600,7 @@ function printReport(type) {
 }
 
 window.addEventListener('afterprint', function() {
-    document.body.classList.remove('print-bookings', 'print-sales', 'print-both');
+    document.body.classList.remove('print-bookings', 'print-sales', 'print-both', 'print-staff');
 });
 </script>
 {% endblock %}

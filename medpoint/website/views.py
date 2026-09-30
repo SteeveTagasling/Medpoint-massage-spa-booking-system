@@ -2,16 +2,68 @@ from decimal import Decimal
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.utils import timezone
 
 from .models import (
-    Service, Therapist, Testimonial, GalleryImage,
+    Service, ServiceCategory, Therapist, Testimonial, GalleryImage,
     Booking, BookingNotification, ContactMessage, MessageReply,
     StaffLeave, ClosedDay, StaffSchedule,
 )
-from .forms import BookingForm, ContactForm, FamilyMemberForm
+from .forms import (
+    BookingForm, ContactForm, FamilyMemberForm,
+    DUPLICATE_BOOKING_ERROR, duplicate_booking_exists, validate_phone_number,
+)
 from portals.models import StaffNotification
+
+
+def _booking_catalog_context():
+    """Return active services and a single, ordered category for each booking card."""
+    services_list = list(Service.objects.filter(is_active=True))
+    category_choices = ServiceCategory.choices()
+    category_labels = dict(category_choices)
+    grouped_services = []
+    assigned_service_ids = set()
+
+    for category_code, category_label in category_choices:
+        category_services = []
+        for service in services_list:
+            service_categories = [code.strip() for code in service.category.split(',') if code.strip()]
+            if category_code in service_categories and service.pk not in assigned_service_ids:
+                service.booking_category = category_code
+                service.booking_category_label = category_label
+                category_services.append(service)
+                assigned_service_ids.add(service.pk)
+        if category_services:
+            grouped_services.append({
+                'code': category_code,
+                'label': category_label,
+                'services': category_services,
+            })
+
+    uncategorized_services = []
+    for service in services_list:
+        if service.pk not in assigned_service_ids:
+            first_category = next(
+                (code.strip() for code in service.category.split(',') if code.strip()),
+                'other',
+            )
+            service.booking_category = first_category
+            service.booking_category_label = category_labels.get(first_category, 'Other Services')
+            uncategorized_services.append(service)
+
+    if uncategorized_services:
+        grouped_services.append({
+            'code': 'other',
+            'label': 'Other Services',
+            'services': uncategorized_services,
+        })
+
+    return {
+        'services': services_list,
+        'service_groups': grouped_services,
+    }
 
 
 def _get_site_stats():
@@ -64,9 +116,14 @@ def services(request):
     all_services = Service.objects.filter(is_active=True)
 
     if category:
-        all_services = all_services.filter(category__icontains=category)
+        all_services = all_services.filter(
+            Q(category=category)
+            | Q(category__startswith=f'{category},')
+            | Q(category__endswith=f',{category}')
+            | Q(category__contains=f',{category},')
+        )
 
-    categories = Service.CATEGORY_CHOICES
+    categories = ServiceCategory.choices()
 
     context = {
         'services': all_services,
@@ -97,7 +154,7 @@ def service_detail(request, slug):
 def about(request):
     """About us page."""
     therapists = Therapist.objects.filter(is_active=True)
-    testimonials = Testimonial.objects.filter(is_approved=True)[:6]
+    testimonials = Testimonial.objects.filter(is_featured=True, is_approved=True)[:6]
 
     context = {
         'therapists': therapists,
@@ -118,7 +175,7 @@ def _auto_assign_therapist(booking_obj):
 
     target_date = booking_obj.date
     target_weekday = target_date.weekday()
-    total_duration = sum(s.duration_minutes for s in booking_obj.services.all()) or 60
+    total_duration = booking_obj.total_duration_minutes or 60
 
     # Build base queryset respecting gender rules
     pref = booking_obj.therapist_preference
@@ -181,6 +238,8 @@ def _auto_assign_therapist(booking_obj):
                         is_past_end = True
                 if req_start_time < sched.start_time or is_past_end:
                     continue
+                if sched.booking_overlaps_break(req_start_time, total_duration):
+                    continue
 
             # Check booking conflicts
             has_conflict = False
@@ -194,7 +253,7 @@ def _auto_assign_therapist(booking_obj):
                         target_date,
                         dt.datetime.strptime(tb.time, '%H:%M').time()
                     )
-                    b_dur = sum(s.duration_minutes for s in tb.services.all())
+                    b_dur = tb.total_duration_minutes
                     b_end = b_start + dt.timedelta(minutes=b_dur)
                     if max(req_start_dt, b_start) < min(req_end_dt, b_end):
                         has_conflict = True
@@ -216,7 +275,7 @@ def _create_booking_notifications(booking_obj):
     """Create customer and staff notifications for a new booking."""
     from django.urls import reverse
 
-    services_str = ", ".join(s.name for s in booking_obj.services.all())
+    services_str = booking_obj.service_names
     BookingNotification.objects.create(
         booking=booking_obj,
         notification_type='confirmed',
@@ -254,10 +313,9 @@ def booking(request):
             initial['services'] = [service_id]
         form = BookingForm(initial=initial)
 
-    services_list = Service.objects.filter(is_active=True)
     context = {
         'form': form,
-        'services': services_list,
+        **_booking_catalog_context(),
     }
     return render(request, 'website/booking.html', context)
 
@@ -267,6 +325,7 @@ def _handle_single_booking(request):
     form = BookingForm(request.POST)
     if form.is_valid():
         booking_obj = form.save()
+        booking_obj.lock_current_price()
         _auto_assign_therapist(booking_obj)
 
         from .models import ClosedDay
@@ -288,10 +347,9 @@ def _handle_single_booking(request):
         return redirect('website:verify_booking')
     else:
         messages.error(request, 'Please correct the errors below.')
-        services_list = Service.objects.filter(is_active=True)
         return render(request, 'website/booking.html', {
             'form': form,
-            'services': services_list,
+            **_booking_catalog_context(),
         })
 
 
@@ -314,6 +372,11 @@ def _handle_family_booking(request):
         errors.append('Email address is required.')
     if not client_phone:
         errors.append('Phone number is required.')
+    else:
+        try:
+            validate_phone_number(client_phone)
+        except ValidationError as error:
+            errors.extend(error.messages)
     if not date_str:
         errors.append('Date is required.')
     if not time_val:
@@ -348,6 +411,7 @@ def _handle_family_booking(request):
             'name': POST.get(f'member_{i}_name', ''),
             'gender': POST.get(f'member_{i}_gender', ''),
             'services': POST.getlist(f'member_{i}_services'),
+            'additional_minutes': POST.get(f'member_{i}_additional_minutes', '0'),
             'therapist_preference': POST.get(f'member_{i}_therapist_preference', ''),
             'therapist': POST.get(f'member_{i}_therapist', '') or None,
         })
@@ -356,6 +420,26 @@ def _handle_family_booking(request):
                 for e in field_errors:
                     errors.append(f'Member {i+1} — {e}')
         member_forms.append(mf)
+
+    # A client's name may only occupy one booking at the selected date/time,
+    # regardless of which service or therapist was selected.
+    if booking_date and time_val:
+        submitted_names = set()
+        for i, mf in enumerate(member_forms):
+            if mf.errors:
+                continue
+
+            member_name = mf.cleaned_data.get('name', '')
+            normalized_name = ' '.join(member_name.casefold().split())
+            if normalized_name in submitted_names:
+                errors.append(f'Member {i+1} — {DUPLICATE_BOOKING_ERROR}')
+                continue
+
+            submitted_names.add(normalized_name)
+            if duplicate_booking_exists(member_name, booking_date, time_val):
+                errors.append(
+                    f'Member {i+1} ({member_name}) — {DUPLICATE_BOOKING_ERROR}'
+                )
 
     # --- therapist time-overlap check across the group ---
     if not errors and booking_date and time_val:
@@ -370,10 +454,23 @@ def _handle_family_booking(request):
                 therapist = cd.get('therapist')
                 services = cd.get('services')
                 if therapist and services:
-                    total_duration = sum(s.duration_minutes for s in services)
+                    total_duration = (
+                        sum(s.duration_minutes for s in services)
+                        + cd.get('additional_minutes', 0)
+                    )
                     duration = datetime.timedelta(minutes=total_duration)
                     req_start_dt = datetime.datetime.combine(booking_date, req_start_time)
                     req_end_dt = req_start_dt + duration
+                    closing_dt = datetime.datetime.combine(
+                        booking_date + datetime.timedelta(days=1), datetime.time.min
+                    )
+                    if req_end_dt > closing_dt:
+                        errors.append(
+                            f'{therapist.name} — the selected services and additional time '
+                            'would finish after closing. Please choose less additional time '
+                            'or an earlier appointment.'
+                        )
+                        continue
                     if therapist.pk not in group_therapist_services:
                         group_therapist_services[therapist.pk] = []
                     group_therapist_services[therapist.pk].append((req_start_dt, req_end_dt, therapist.name))
@@ -398,13 +495,21 @@ def _handle_family_booking(request):
                 ).first()
                 if sched:
                     for req_s, req_e, t_name in slots:
-                        if req_start_time < sched.start_time or req_e.time() > sched.end_time:
+                        slot_duration = int((req_e - req_s).total_seconds() // 60)
+                        if not sched.contains_booking(req_s.time(), slot_duration):
                             sched_start_label = sched.start_time.strftime('%I:%M %p')
                             sched_end_label = sched.end_time.strftime('%I:%M %p')
                             errors.append(
                                 f'{t_name} is only available from '
                                 f'{sched_start_label} to {sched_end_label} on this day. '
                                 f'Please choose a time within their schedule.'
+                            )
+                        if sched.booking_overlaps_break(req_s.time(), slot_duration):
+                            errors.append(
+                                f'{t_name} is on break from '
+                                f'{sched.break_start_time.strftime("%I:%M %p")} to '
+                                f'{sched.break_end_time.strftime("%I:%M %p")}. '
+                                'Please choose a time that does not overlap the break.'
                             )
 
             # Check if any therapist in the group is double-booked
@@ -432,7 +537,7 @@ def _handle_family_booking(request):
                                 continue
                             b_start = datetime.datetime.combine(booking_date,
                                 datetime.datetime.strptime(b.time, '%H:%M').time())
-                            b_total_dur = sum(s.duration_minutes for s in b.services.all())
+                            b_total_dur = b.total_duration_minutes
                             b_end = b_start + datetime.timedelta(minutes=b_total_dur)
                             if max(req_s, b_start) < min(req_e, b_end):
                                 errors.append(
@@ -448,10 +553,9 @@ def _handle_family_booking(request):
         for e in errors:
             messages.error(request, e)
         form = BookingForm()  # fresh form for re-render
-        services_list = Service.objects.filter(is_active=True)
         return render(request, 'website/booking.html', {
             'form': form,
-            'services': services_list,
+            **_booking_catalog_context(),
             'family_errors': errors,
             'family_post_data': POST,
         })
@@ -470,24 +574,12 @@ def _handle_family_booking(request):
             therapist=cd.get('therapist'),
             date=booking_date,
             time=time_val,
+            additional_minutes=cd.get('additional_minutes', 0),
             notes=notes,
             status='awaiting_verification',
         )
         booking_obj.services.set(cd['services'])
-        snapshots = []
-        total_lock = Decimal('0')
-        for svc in cd['services']:
-            snapshots.append({
-                'service_id': svc.id,
-                'name': svc.name,
-                'base_price': float(svc.price),
-                'discount_percentage': float(svc.discount_percentage),
-                'discounted_price': float(svc.discounted_price),
-            })
-            total_lock += svc.discounted_price
-        booking_obj.locked_price = total_lock
-        booking_obj.service_prices_snapshot = snapshots
-        booking_obj.save(update_fields=['locked_price', 'service_prices_snapshot'])
+        booking_obj.lock_current_price()
         _auto_assign_therapist(booking_obj)
         _create_booking_notifications(booking_obj)
         created_bookings.append(booking_obj)
@@ -878,6 +970,33 @@ def verify_booking(request):
         
         first_booking = bookings.first()
         if first_booking and first_booking.verification_otp == entered_otp:
+            current_booking_ids = list(bookings.values_list('pk', flat=True))
+            duplicate_names = []
+            submitted_names = set()
+            for booking_obj in bookings:
+                normalized_name = ' '.join(booking_obj.client_name.casefold().split())
+                if (
+                    normalized_name in submitted_names
+                    or duplicate_booking_exists(
+                        booking_obj.client_name,
+                        booking_obj.date,
+                        booking_obj.time,
+                        exclude_booking_ids=current_booking_ids,
+                    )
+                ):
+                    duplicate_names.append(booking_obj.client_name)
+                submitted_names.add(normalized_name)
+
+            if duplicate_names:
+                names = ', '.join(sorted(set(duplicate_names), key=str.casefold))
+                messages.error(
+                    request,
+                    f'Unable to verify this appointment because {names} already has a '
+                    'booking at the selected date and time. Please choose a different '
+                    'date or time.'
+                )
+                return redirect('website:booking')
+
             bookings.update(is_verified=True, verification_otp=None, status='pending')
             
             is_family = len(booking_ids) > 1
@@ -964,21 +1083,31 @@ def get_therapists_by_preference(request):
                         'end': s.end_time.strftime('%H:%M'),
                         'start_time': s.start_time,
                         'end_time': s.end_time,
+                        'break_start': s.break_start_time.strftime('%H:%M') if s.break_start_time else None,
+                        'break_end': s.break_end_time.strftime('%H:%M') if s.break_end_time else None,
+                        'break_start_time': s.break_start_time,
+                        'break_end_time': s.break_end_time,
                     }
 
     overlap_map = {}
     outside_schedule_map = {}  # therapist_id -> True if requested time is outside schedule
+    break_overlap_map = {}
     next_avail_map = {}
     time_str = request.GET.get('time', None)
     service_id = request.GET.get('service_id', None)
+    try:
+        additional_minutes = int(request.GET.get('additional_minutes', 0) or 0)
+    except (TypeError, ValueError):
+        additional_minutes = 0
+    if additional_minutes not in dict(Booking.ADDITIONAL_TIME_CHOICES):
+        additional_minutes = 0
     
     if target_date and time_str and service_id:
-        from .models import Service, Booking
         try:
             req_start_time = datetime.datetime.strptime(time_str, '%H:%M').time()
             svc_ids = [int(x) for x in service_id.split(',') if x]
             services = Service.objects.filter(pk__in=svc_ids)
-            total_duration = sum(s.duration_minutes for s in services)
+            total_duration = sum(s.duration_minutes for s in services) + additional_minutes
             duration = datetime.timedelta(minutes=total_duration)
             req_start_dt = datetime.datetime.combine(target_date, req_start_time)
             req_end_dt = req_start_dt + duration
@@ -1003,6 +1132,13 @@ def get_therapists_by_preference(request):
                     # Booking must start at or after schedule start AND end at or before schedule end
                     if req_start_mins < sched_start_mins or req_end_mins > sched_end_mins:
                         outside_schedule_map[t.pk] = True
+                    break_start = sched.get('break_start_time')
+                    break_end = sched.get('break_end_time')
+                    if break_start and break_end:
+                        break_start_mins = break_start.hour * 60 + break_start.minute
+                        break_end_mins = break_end.hour * 60 + break_end.minute
+                        if req_start_mins < break_end_mins and req_end_mins > break_start_mins:
+                            break_overlap_map[t.pk] = True
             
             existing_bookings = Booking.objects.filter(
                 Q(booking_type='walk_in') | Q(is_verified=True) | Q(status__in=['pending', 'confirmed']),
@@ -1018,7 +1154,7 @@ def get_therapists_by_preference(request):
                     therapist_bookings[b.therapist_id] = []
                 b_start_time = datetime.datetime.strptime(b.time, '%H:%M').time()
                 b_start_dt = datetime.datetime.combine(target_date, b_start_time)
-                b_total_dur = sum(s.duration_minutes for s in b.services.all())
+                b_total_dur = b.total_duration_minutes
                 b_dur = datetime.timedelta(minutes=b_total_dur)
                 b_end_dt = b_start_dt + b_dur
                 therapist_bookings[b.therapist_id].append((b_start_dt, b_end_dt))
@@ -1048,6 +1184,13 @@ def get_therapists_by_preference(request):
                         # For midnight end, any time up to 23:59 is within schedule
                         if sched and sched['end_time'].hour != 0 and test_end.time() > sched['end_time']:
                             continue
+                        if sched and sched.get('break_start_time') and sched.get('break_end_time'):
+                            test_start_mins = test_start.hour * 60 + test_start.minute
+                            test_end_mins = test_start_mins + total_duration
+                            break_start_mins = sched['break_start_time'].hour * 60 + sched['break_start_time'].minute
+                            break_end_mins = sched['break_end_time'].hour * 60 + sched['break_end_time'].minute
+                            if test_start_mins < break_end_mins and test_end_mins > break_start_mins:
+                                continue
                         overlap = False
                         for b_s, b_e in t_bookings:
                             if max(test_start, b_s) < min(test_end, b_e):
@@ -1070,6 +1213,7 @@ def get_therapists_by_preference(request):
         is_off = schedules_map.get(t.pk, False) or is_closed
         is_booked = overlap_map.get(t.pk, False)
         is_outside_schedule = outside_schedule_map.get(t.pk, False)
+        is_on_break = break_overlap_map.get(t.pk, False)
         next_avail = next_avail_map.get(t.pk, None)
         sched = schedule_hours_map.get(t.pk)
         
@@ -1084,10 +1228,15 @@ def get_therapists_by_preference(request):
             'closed_reason': closed_reason,
             'is_booked': is_booked,
             'is_outside_schedule': is_outside_schedule,
+            'is_on_break': is_on_break,
             'next_avail': next_avail,
         }
         if sched:
             entry['schedule_hours'] = f"{sched['start']} - {sched['end']}"
+            if sched.get('break_start') and sched.get('break_end'):
+                break_start_label = sched['break_start_time'].strftime('%I:%M %p').lstrip('0')
+                break_end_label = sched['break_end_time'].strftime('%I:%M %p').lstrip('0')
+                entry['break_hours'] = f"{break_start_label} - {break_end_label}"
         data.append(entry)
     return JsonResponse({'therapists': data})
 
@@ -1330,7 +1479,7 @@ def rebooking_options(request, token):
         return rebooking_submit(request, token)
 
     # Calculate total duration for this booking
-    total_duration = sum(s.duration_minutes for s in booking.services.all())
+    total_duration = booking.total_duration_minutes
     req_time_str = booking.time
     target_date = booking.date
     target_weekday = target_date.weekday()
@@ -1391,6 +1540,8 @@ def rebooking_options(request, token):
                         is_past_end = True
                 if req_start_time < sched.start_time or is_past_end:
                     continue
+                if sched.booking_overlaps_break(req_start_time, total_duration):
+                    continue
 
             has_conflict = False
             if req_start_time:
@@ -1402,7 +1553,7 @@ def rebooking_options(request, token):
                 for tb in t_bookings:
                     try:
                         b_start = datetime.datetime.combine(target_date, datetime.datetime.strptime(tb.time, '%H:%M').time())
-                        b_dur = sum(s.duration_minutes for s in tb.services.all())
+                        b_dur = tb.total_duration_minutes
                         b_end = b_start + datetime.timedelta(minutes=b_dur)
                         if max(req_start_dt, b_start) < min(req_end_dt, b_end):
                             has_conflict = True
@@ -1495,7 +1646,7 @@ def rebooking_therapists_api(request, token):
 
     # Parse requested time and compute end time for conflict checking
     time_str = request.GET.get('time', '').strip()
-    total_duration = sum(s.duration_minutes for s in booking.services.all()) or 60
+    total_duration = booking.total_duration_minutes or 60
     req_start_time = None
     req_start_dt = None
     req_end_dt = None
@@ -1528,6 +1679,8 @@ def rebooking_therapists_api(request, token):
                         is_past_end = True
                 if req_start_time < sched.start_time or is_past_end:
                     continue
+                if sched.booking_overlaps_break(req_start_time, total_duration):
+                    continue
 
             # Check booking conflicts
             has_conflict = False
@@ -1541,7 +1694,7 @@ def rebooking_therapists_api(request, token):
                         target_date,
                         datetime.datetime.strptime(tb.time, '%H:%M').time()
                     )
-                    b_dur = sum(s.duration_minutes for s in tb.services.all())
+                    b_dur = tb.total_duration_minutes
                     b_end = b_start + datetime.timedelta(minutes=b_dur)
                     if max(req_start_dt, b_start) < min(req_end_dt, b_end):
                         has_conflict = True
@@ -1641,6 +1794,7 @@ def rebooking_submit(request, token):
             therapist=chosen_therapist,
             date=booking.date,
             time=booking.time,
+            additional_minutes=booking.additional_minutes,
             notes=booking.notes or '',
             status='pending',
             is_verified=True,
@@ -1732,6 +1886,7 @@ def rebooking_submit(request, token):
             therapist=chosen_therapist,
             date=new_date,
             time=new_time_str,
+            additional_minutes=booking.additional_minutes,
             notes=booking.notes or '',
             status='pending',
             is_verified=True,

@@ -251,7 +251,7 @@
         padding: 0.65rem 0.9rem;
         border-radius: 10px;
         border: 1.5px solid var(--border-color);
-        background: rgba(0, 0, 0, 0.25);
+        background: var(--input-bg);
         color: var(--text-primary);
         font-size: 0.85rem;
         outline: none;
@@ -316,42 +316,111 @@
         opacity: 0.92;
         transform: translateY(-1px);
     }
+
+    /* Leave request workspace */
+    .leave-dashboard { max-width: 1480px; margin: 0 auto; }
+    .leave-toolbar { display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; margin-bottom:1rem; padding:1rem; background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; }
+    .leave-filters { display:flex; align-items:flex-end; gap:.75rem; flex-wrap:wrap; }
+    .leave-filter-field { display:flex; flex-direction:column; gap:.35rem; }
+    .leave-filter-field label { color:var(--text-muted); font-size:.68rem; font-weight:750; letter-spacing:.06em; text-transform:uppercase; }
+    .leave-filter-field .filter-select { min-width:190px; height:42px; padding:.55rem 2.25rem .55rem .8rem; border-radius:10px; }
+    .leave-reset-filter { display:inline-flex; align-items:center; gap:.4rem; min-height:42px; padding:.6rem .85rem; color:var(--text-secondary); background:transparent; border:1px solid var(--border-color); border-radius:10px; font-size:.76rem; font-weight:650; text-decoration:none; transition:var(--transition); }
+    .leave-reset-filter:hover { color:var(--purple-400); border-color:var(--border-hover); background:var(--sidebar-hover-bg); }
+    .leave-result-count { color:var(--text-muted); font-size:.75rem; white-space:nowrap; padding-bottom:.7rem; }
+
+    .leave-summary-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.8rem; margin-bottom:1rem; }
+    .leave-summary-card { display:flex; align-items:center; gap:.75rem; min-width:0; padding:.85rem 1rem; background:var(--bg-card); border:1px solid var(--border-color); border-radius:13px; text-decoration:none; transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
+    .leave-summary-card:hover { transform:translateY(-2px); border-color:var(--border-hover); box-shadow:0 10px 24px rgba(28,16,48,.07); }
+    .leave-summary-card.active { border-color:var(--purple-400); box-shadow:0 0 0 3px rgba(168,85,247,.1); }
+    .leave-summary-icon { width:38px; height:38px; flex:none; display:grid; place-items:center; border-radius:10px; }
+    .leave-summary-card.total .leave-summary-icon { color:var(--purple-400); background:rgba(168,85,247,.11); }
+    .leave-summary-card.pending .leave-summary-icon { color:var(--amber-400); background:rgba(245,158,11,.11); }
+    .leave-summary-card.approved .leave-summary-icon { color:var(--green-400); background:rgba(34,197,94,.11); }
+    .leave-summary-card.rejected .leave-summary-icon { color:var(--red-400); background:rgba(239,68,68,.1); }
+    .leave-summary-copy { min-width:0; }
+    .leave-summary-value { display:block; color:var(--text-primary); font-size:1.15rem; font-weight:800; line-height:1.1; }
+    .leave-summary-label { display:block; margin-top:.15rem; color:var(--text-muted); font-size:.7rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    .leave-card { overflow:hidden; border-radius:15px; }
+    .leave-card .card-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.15rem; }
+    .leave-card-subtitle { color:var(--text-muted); font-size:.7rem; }
+    .leave-card .data-table tbody tr { transition:var(--transition); }
+    .leave-card .data-table tbody tr:hover { background:var(--table-row-hover); }
+    .leave-staff { display:flex; align-items:center; gap:.65rem; min-width:170px; }
+    .leave-avatar { width:34px; height:34px; flex:none; display:grid; place-items:center; color:#fff; background:linear-gradient(135deg,var(--purple-600),var(--violet-600)); border-radius:10px; font-size:.75rem; font-weight:800; }
+    .leave-staff-name { color:var(--text-primary); font-size:.82rem; font-weight:700; }
+    .leave-staff-role { margin-top:.1rem; color:var(--text-muted); font-size:.67rem; }
+    .leave-date-range { display:flex; align-items:flex-start; gap:.55rem; min-width:210px; }
+    .leave-date-range > i { margin-top:.18rem; color:var(--purple-400); font-size:.76rem; }
+    .leave-date-primary { color:var(--text-primary); font-size:.8rem; font-weight:650; }
+    .leave-date-duration { margin-top:.18rem; color:var(--text-muted); font-size:.67rem; }
+    .leave-reason { display:inline-block; max-width:240px; padding:.28rem .55rem; color:var(--text-secondary); background:var(--bg-primary); border:1px solid var(--border-color); border-radius:7px; font-size:.73rem; line-height:1.35; }
+    .leave-submitted { color:var(--text-secondary); font-size:.75rem; }
+    .leave-submitted small { display:block; margin-top:.12rem; color:var(--text-muted); font-size:.64rem; }
+    .leave-status-stack { display:flex; flex-direction:column; align-items:flex-start; gap:.3rem; }
+    .leave-impact { display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:6px; font-size:.65rem; font-weight:650; line-height:1.35; }
+    .leave-impact.warning { color:var(--amber-400); background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.24); }
+    .leave-impact.danger { color:var(--red-400); background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.22); }
+    .leave-actions { display:flex; align-items:center; gap:.38rem; flex-wrap:wrap; min-width:135px; }
+    .leave-no-action { color:var(--text-muted); font-size:.7rem; }
+    .leave-empty-row td { padding:2.5rem 1rem!important; }
+
+    @media(max-width:1100px){
+        .leave-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .leave-card .table-wrapper{overflow:visible}.leave-card .data-table,.leave-card .data-table tbody{display:block}.leave-card .data-table thead{display:none}.leave-card .data-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem 1rem;margin:.75rem;padding:1rem;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-secondary)}.leave-card .data-table td{display:block;padding:0!important;border:0!important;min-width:0}.leave-card .data-table td::before{content:attr(data-label);display:block;margin-bottom:.32rem;color:var(--text-muted);font-size:.61rem;font-weight:750;letter-spacing:.07em;text-transform:uppercase}.leave-card .data-table tr.leave-empty-row{display:block}.leave-card .data-table tr.leave-empty-row td{width:100%}.leave-actions{min-width:0}
+    }
+    @media(max-width:720px){
+        .leave-toolbar{align-items:stretch;flex-direction:column}.leave-filters{display:grid;grid-template-columns:1fr 1fr}.leave-filter-field .filter-select{width:100%;min-width:0}.leave-result-count{padding:0}.leave-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media(max-width:520px){
+        .leave-filters{grid-template-columns:1fr}.leave-reset-filter{justify-content:center}.leave-summary-grid{grid-template-columns:1fr 1fr;gap:.55rem}.leave-summary-card{padding:.72rem}.leave-summary-icon{width:34px;height:34px}.leave-card .data-table tr{grid-template-columns:1fr}.leave-actions .btn-sm,.leave-actions form{flex:1}.leave-actions form .btn-sm{width:100%;justify-content:center}
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-
-<div class="header-actions">
-    <form method="get" action="{% url 'portals:admin_leave_list' %}" style="display: flex; gap: 0.5rem; align-items: center;">
-        <select id="leave-therapist-filter" name="therapist" class="filter-select" onchange="this.form.submit()">
-            <option value="">All Staff</option>
-            {% for t in therapists %}
-            <option value="{{ t.pk }}">{{ t.name }}</option>
-            {% endfor %}
-        </select>
-        <select id="leave-status-filter" name="status" class="filter-select" onchange="this.form.submit()">
-            <option value="">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-        </select>
+<div class="leave-dashboard">
+<div class="leave-toolbar">
+    <form method="get" action="{% url 'portals:admin_leave_list' %}" class="leave-filters">
+        <div class="leave-filter-field">
+            <label for="leave-therapist-filter">Staff member</label>
+            <select id="leave-therapist-filter" name="therapist" class="filter-select" onchange="this.form.submit()">
+                <option value="">All Staff</option>
+                {% for t in therapists %}
+                <option value="{{ t.pk }}" {% if therapist_filter == t.pk|stringformat:"s" %}selected{% endif %}>{{ t.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="leave-filter-field">
+            <label for="leave-status-filter">Request status</label>
+            <select id="leave-status-filter" name="status" class="filter-select" onchange="this.form.submit()">
+                <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+                <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+            </select>
+        </div>
+        {% if therapist_filter or status_filter %}
+        <a href="{% url 'portals:admin_leave_list' %}" class="leave-reset-filter"><i class="fas fa-rotate-left"></i> Clear Filters</a>
+        {% endif %}
     </form>
+    <div class="leave-result-count">Showing <strong>{{ filtered_count }}</strong> of {{ total_count }} request{{ total_count|pluralize }}</div>
 </div>
 
-<div class="summary-row">
-    <div class="summary-chip" style="background: linear-gradient(135deg, rgba(251,191,36,0.1), rgba(245,158,11,0.1)); border-color: rgba(251,191,36,0.2);">
-        <i class="fas fa-hourglass-half" style="color: var(--amber-500); font-size: 1.1rem;"></i>
-        <span style="color: var(--amber-600); font-weight: 600; font-size: 0.9rem;">Pending Requests</span>
-        <span style="color: var(--amber-600); background: rgba(251,191,36,0.2); padding: 0.1rem 0.6rem; border-radius: 9999px; margin-left: 0.5rem; font-size: 0.9rem;">{{ pending_count }}</span>
-    </div>
+<div class="leave-summary-grid">
+    <a href="?{% if therapist_filter %}therapist={{ therapist_filter }}{% endif %}" class="leave-summary-card total {% if not status_filter %}active{% endif %}" title="Show all leave requests"><div class="leave-summary-icon"><i class="fas fa-calendar-days"></i></div><div class="leave-summary-copy"><span class="leave-summary-value">{{ total_count }}</span><span class="leave-summary-label">Total requests</span></div></a>
+    <a href="?status=pending{% if therapist_filter %}&amp;therapist={{ therapist_filter }}{% endif %}" class="leave-summary-card pending {% if status_filter == 'pending' %}active{% endif %}" title="Show requests awaiting review"><div class="leave-summary-icon"><i class="fas fa-hourglass-half"></i></div><div class="leave-summary-copy"><span class="leave-summary-value">{{ pending_count }}</span><span class="leave-summary-label">Awaiting review</span></div></a>
+    <a href="?status=approved{% if therapist_filter %}&amp;therapist={{ therapist_filter }}{% endif %}" class="leave-summary-card approved {% if status_filter == 'approved' %}active{% endif %}" title="Show approved requests"><div class="leave-summary-icon"><i class="fas fa-circle-check"></i></div><div class="leave-summary-copy"><span class="leave-summary-value">{{ approved_count }}</span><span class="leave-summary-label">Approved</span></div></a>
+    <a href="?status=rejected{% if therapist_filter %}&amp;therapist={{ therapist_filter }}{% endif %}" class="leave-summary-card rejected {% if status_filter == 'rejected' %}active{% endif %}" title="Show rejected requests"><div class="leave-summary-icon"><i class="fas fa-circle-xmark"></i></div><div class="leave-summary-copy"><span class="leave-summary-value">{{ rejected_count }}</span><span class="leave-summary-label">Rejected</span></div></a>
 </div>
 
-<div class="card">
+<div class="card leave-card">
     <div class="card-header">
         <span class="card-header-title">
             <i class="fas fa-plane-departure" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
             Staff Leave Requests
         </span>
+        <span class="leave-card-subtitle">Review pending applications and view request history</span>
     </div>
     <div class="table-wrapper">
         <table class="data-table">
@@ -368,41 +437,39 @@
             <tbody>
                 {% for l in leaves %}
                 <tr>
-                    <td style="font-weight: 500; color: var(--text-primary);">{{ l.therapist.name }}</td>
-                    <td>
-                        <span style="color: var(--text-primary); font-weight: 500;">{{ l.start_date|date:"M j, Y" }}</span>
-                        <span style="color: var(--text-muted); font-size: 0.8rem;"> — </span>
-                        <span style="color: var(--text-primary); font-weight: 500;">{{ l.end_date|date:"M j, Y" }}</span>
+                    <td data-label="Staff member">
+                        <div class="leave-staff">
+                            <div class="leave-avatar">{{ l.therapist.name|make_list|first|upper }}</div>
+                            <div><div class="leave-staff-name">{{ l.therapist.name }}</div><div class="leave-staff-role">{{ l.therapist.title|default:"Therapist" }}</div></div>
+                        </div>
                     </td>
-                    <td style="color: var(--text-secondary);">
-                        {% if l.reason %}{{ l.reason }}{% else %}<span style="color: var(--text-muted);">—</span>{% endif %}
+                    <td data-label="Leave period">
+                        <div class="leave-date-range"><i class="far fa-calendar"></i><div>
+                            <div class="leave-date-primary">{% if l.start_date == l.end_date %}{{ l.start_date|date:"M j, Y" }}{% else %}{{ l.start_date|date:"M j" }} – {{ l.end_date|date:"M j, Y" }}{% endif %}</div>
+                            <div class="leave-date-duration">{{ l.duration_days }} day{{ l.duration_days|pluralize }}{% if l.is_past %} · Ended{% endif %}</div>
+                        </div></div>
                     </td>
-                    <td style="color: var(--text-muted); font-size: 0.8rem;">{{ l.created_at|date:"M j, Y" }}</td>
-                    <td>
+                    <td data-label="Reason"><span class="leave-reason">{% if l.reason %}{{ l.reason }}{% else %}No reason provided{% endif %}</span></td>
+                    <td data-label="Submitted"><div class="leave-submitted">{{ l.created_at|date:"M j, Y" }}<small>{{ l.created_at|timesince }} ago</small></div></td>
+                    <td data-label="Status">
+                        <div class="leave-status-stack">
                         {% if l.status == "pending" %}
                         <span class="leave-status-pending"><i class="fas fa-hourglass-half"></i> Pending</span>
                         {% if l.affected_count > 0 %}
-                        <div style="margin-top: 4px;">
-                            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25);" title="{{ l.affected_count }} active booking(s) during this leave will be auto-cancelled and clients sent rebooking links upon approval">
-                                <i class="fas fa-exclamation-triangle"></i> {{ l.affected_count }} booking{{ l.affected_count|pluralize }} affected
-                            </span>
-                        </div>
+                        <span class="leave-impact warning" title="{{ l.affected_count }} active booking(s) during this leave will be auto-cancelled and clients sent rebooking links upon approval"><i class="fas fa-exclamation-triangle"></i> {{ l.affected_count }} booking{{ l.affected_count|pluralize }} affected</span>
                         {% endif %}
                         {% elif l.status == "approved" %}
                         <span class="leave-status-approved"><i class="fas fa-check-circle"></i> Approved</span>
                         {% if l.cancelled_count > 0 %}
-                        <div style="margin-top: 4px;">
-                            <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25);" title="{{ l.cancelled_count }} booking(s) during this leave were auto-cancelled with client rebooking links sent">
-                                <i class="fas fa-calendar-times"></i> {{ l.cancelled_count }} booking{{ l.cancelled_count|pluralize }} auto-cancelled
-                            </span>
-                        </div>
+                        <span class="leave-impact danger" title="{{ l.cancelled_count }} booking(s) during this leave were auto-cancelled with client rebooking links sent"><i class="fas fa-calendar-times"></i> {{ l.cancelled_count }} booking{{ l.cancelled_count|pluralize }} auto-cancelled</span>
                         {% endif %}
                         {% elif l.status == "rejected" %}
                         <span class="leave-status-rejected"><i class="fas fa-times-circle"></i> Rejected</span>
                         {% endif %}
+                        </div>
                     </td>
-                    <td>
-                        <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
+                    <td data-label="Actions">
+                        <div class="leave-actions">
                             {% if l.status == "pending" %}
                             {% if not l.is_past %}
                             <button type="button"
@@ -429,7 +496,7 @@
                                 </button>
                             </form>
                             {% else %}
-                            <span style="color: var(--text-muted); font-size: 0.85rem;" title="{% if l.is_past %}Leave period has already ended{% else %}Cannot revoke: bookings were affected{% endif %}">—</span>
+                            <span class="leave-no-action" title="{% if l.is_past %}Leave period has already ended{% else %}Cannot revoke: bookings were affected{% endif %}">{% if l.is_past %}Leave ended{% else %}Locked{% endif %}</span>
                             {% endif %}
                             {% elif l.status == "rejected" %}
                             {% if not l.is_past %}
@@ -440,15 +507,15 @@
                                 <i class="fas fa-check"></i> Approve
                             </button>
                             {% else %}
-                            <span style="color: var(--text-muted); font-size: 0.85rem;" title="Leave period has already ended">—</span>
+                            <span class="leave-no-action" title="Leave period has already ended">Leave ended</span>
                             {% endif %}
                             {% endif %}
                         </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr>
-                    <td colspan="6">
+                <tr class="leave-empty-row">
+                    <td colspan="6" data-label="">
                         <div class="empty-state">
                             <i class="fas fa-calendar-check"></i>
                             <p>No leave requests found</p>
@@ -459,6 +526,7 @@
             </tbody>
         </table>
     </div>
+</div>
 </div>
 
 <script>

@@ -1,11 +1,114 @@
 import uuid
+from decimal import Decimal
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
+
+
+class SiteContent(models.Model):
+    """Admin-maintained copy and business information shown to clients."""
+
+    INPUT_TYPES = [
+        ('text', 'Short text'),
+        ('textarea', 'Long text'),
+        ('email', 'Email'),
+        ('phone', 'Phone'),
+        ('number', 'Number'),
+        ('url', 'URL'),
+    ]
+
+    key = models.SlugField(max_length=100, unique=True)
+    group = models.CharField(max_length=80, db_index=True)
+    label = models.CharField(max_length=150)
+    value = models.TextField(blank=True)
+    default_value = models.TextField(blank=True)
+    input_type = models.CharField(max_length=20, choices=INPUT_TYPES, default='text')
+    help_text = models.CharField(max_length=255, blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='updated_site_content',
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['sort_order', 'id']
+        verbose_name = 'Website content'
+        verbose_name_plural = 'Website content'
+
+    def __str__(self):
+        return f'{self.group}: {self.label}'
+
+
+class WebsitePolicyItem(models.Model):
+    """Admin-managed ordered content for booking and legal policy sections."""
+
+    SECTION_BOOKING = 'booking_policy'
+    SECTION_PRIVACY = 'privacy_policy'
+    SECTION_TERMS = 'terms_conditions'
+    SECTION_CHOICES = [
+        (SECTION_BOOKING, 'Booking Policy'),
+        (SECTION_PRIVACY, 'Privacy Policy'),
+        (SECTION_TERMS, 'Terms & Conditions'),
+    ]
+
+    section = models.CharField(max_length=30, choices=SECTION_CHOICES, db_index=True)
+    title = models.CharField(max_length=160, blank=True)
+    body = models.TextField()
+    sort_order = models.PositiveIntegerField(default=0)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='updated_website_policy_items',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['section', 'sort_order', 'id']
+        indexes = [models.Index(fields=['section', 'sort_order'])]
+
+    def __str__(self):
+        return self.title or f'{self.get_section_display()} item {self.pk}'
+
+
+class ServiceCategory(models.Model):
+    """Admin-managed grouping used throughout the service catalog and booking forms."""
+
+    name = models.CharField(max_length=100, unique=True)
+    code = models.SlugField(max_length=100, unique=True)
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name_plural = 'Service categories'
+
+    def __str__(self):
+        return self.name
+
+    @classmethod
+    def choices(cls, include_inactive=False):
+        queryset = cls.objects.all()
+        if not include_inactive:
+            queryset = queryset.filter(is_active=True)
+        return list(queryset.values_list('code', 'name'))
 
 
 class Service(models.Model):
     """Spa service/treatment model."""
     CATEGORY_CHOICES = [
+        ('ordinary_room', 'Ordinary Rooms'),
+        ('shower_room', 'Shower Rooms'),
+        ('sauna_room', 'Sauna Rooms'),
+        ('promo_package', 'Promo Packages'),
         ('massage', 'Massage'),
         ('facial', 'Facial'),
         ('body', 'Body Treatment'),
@@ -144,7 +247,9 @@ class Service(models.Model):
         if not self.category:
             return ""
         codes = self.category.split(',')
-        displays = dict(self.CATEGORY_CHOICES)
+        displays = dict(ServiceCategory.objects.filter(code__in=codes).values_list('code', 'name'))
+        # Preserve readable labels for any legacy value until it is migrated.
+        displays = {**dict(self.CATEGORY_CHOICES), **displays}
         return ', '.join(str(displays.get(c.strip(), c.strip())) for c in codes if c.strip())
 
 
@@ -225,6 +330,14 @@ class StaffSchedule(models.Model):
     day_of_week = models.IntegerField(choices=DAY_CHOICES)
     start_time = models.TimeField()
     end_time = models.TimeField()
+    break_start_time = models.TimeField(
+        null=True, blank=True,
+        help_text="Optional start of the staff member's break",
+    )
+    break_end_time = models.TimeField(
+        null=True, blank=True,
+        help_text="Optional end of the staff member's break",
+    )
     is_available = models.BooleanField(default=True, help_text="Toggle availability for this slot")
     notes = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -236,6 +349,40 @@ class StaffSchedule(models.Model):
 
     def __str__(self):
         return f"{self.therapist.name} — {self.get_day_of_week_display()} {self.start_time:%H:%M}-{self.end_time:%H:%M}"
+
+    @property
+    def has_break(self):
+        return bool(self.break_start_time and self.break_end_time)
+
+    def contains_booking(self, booking_start_time, duration_minutes):
+        """Return whether a booking fits completely inside this shift.
+
+        A stored end time of 00:00 represents midnight at the *end* of the
+        scheduled day, rather than midnight at its beginning.  Comparing
+        ``datetime.time`` values directly therefore rejects valid daytime
+        appointments for shifts such as 11:00 AM–12:00 AM.
+        """
+        if not self.is_available or not booking_start_time:
+            return False
+
+        shift_start = self.start_time.hour * 60 + self.start_time.minute
+        shift_end = self.end_time.hour * 60 + self.end_time.minute
+        if shift_end == 0:
+            shift_end = 24 * 60
+
+        booking_start = booking_start_time.hour * 60 + booking_start_time.minute
+        booking_end = booking_start + int(duration_minutes or 0)
+        return booking_start >= shift_start and booking_end <= shift_end
+
+    def booking_overlaps_break(self, booking_start_time, duration_minutes):
+        """Return True when an appointment overlaps this schedule's break."""
+        if not self.is_available or not self.has_break or not booking_start_time:
+            return False
+        booking_start = booking_start_time.hour * 60 + booking_start_time.minute
+        booking_end = booking_start + int(duration_minutes or 0)
+        break_start = self.break_start_time.hour * 60 + self.break_start_time.minute
+        break_end = self.break_end_time.hour * 60 + self.break_end_time.minute
+        return booking_start < break_end and booking_end > break_start
 
 
 class StaffLeave(models.Model):
@@ -278,6 +425,20 @@ class Testimonial(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(is_approved=True) | models.Q(is_featured=False),
+                name='testimonial_featured_requires_approval',
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        """An unapproved testimonial must never remain featured."""
+        if not self.is_approved:
+            self.is_featured = False
+            if kwargs.get('update_fields') is not None:
+                kwargs['update_fields'] = set(kwargs['update_fields']) | {'is_featured'}
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.client_name} - {self.rating}★"
@@ -341,6 +502,14 @@ class Booking(models.Model):
         ('random', 'Any / Random'),
     ]
 
+    ADDITIONAL_TIME_CHOICES = [
+        (0, 'No additional time'),
+        (30, '30 minutes (+₱200.00)'),
+        (60, '60 minutes (+₱400.00)'),
+        (90, '90 minutes (+₱600.00)'),
+        (120, '120 minutes (+₱800.00)'),
+    ]
+
     booking_type = models.CharField(max_length=10, choices=BOOKING_TYPE_CHOICES, default='online')
     client_name = models.CharField(max_length=200)
     client_email = models.EmailField()
@@ -357,6 +526,11 @@ class Booking(models.Model):
     therapist = models.ForeignKey(Therapist, on_delete=models.SET_NULL, null=True, blank=True)
     date = models.DateField()
     time = models.CharField(max_length=5, choices=TIME_CHOICES)
+    additional_minutes = models.PositiveIntegerField(
+        choices=ADDITIONAL_TIME_CHOICES,
+        default=0,
+        help_text="Optional massage extension charged at ₱200 per 30 minutes",
+    )
     notes = models.TextField(blank=True)
     status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='awaiting_verification')
     is_verified = models.BooleanField(default=False, help_text="True if client verified their email OTP")
@@ -386,17 +560,56 @@ class Booking(models.Model):
 
     @property
     def service_names(self):
-        return ", ".join(s.name for s in self.services.all())
+        names = [service.name for service in self.services.all()]
+        if self.additional_minutes:
+            names.append(f'Additional Massage Time ({self.additional_minutes} min)')
+        return ", ".join(names)
         
     @property
     def total_discounted_price(self):
         if self.locked_price is not None:
             return self.locked_price
-        return sum(s.discounted_price for s in self.services.all())
+        return sum(s.discounted_price for s in self.services.all()) + self.additional_time_fee
+
+    @property
+    def additional_time_fee(self):
+        return Decimal(self.additional_minutes // 30 * 200)
         
     @property
     def total_duration_minutes(self):
-        return sum(s.duration_minutes for s in self.services.all())
+        return sum(s.duration_minutes for s in self.services.all()) + self.additional_minutes
+
+    def lock_current_price(self):
+        """Lock service and optional extension pricing at booking time."""
+        snapshots = []
+        total = Decimal('0')
+        for service in self.services.all():
+            snapshots.append({
+                'service_id': service.id,
+                'name': service.name,
+                'base_price': float(service.price),
+                'discount_percentage': float(service.discount_percentage),
+                'discounted_price': float(service.discounted_price),
+            })
+            total += service.discounted_price
+
+        if self.additional_minutes:
+            fee = self.additional_time_fee
+            snapshots.append({
+                'service_id': None,
+                'name': f'Additional Massage Time ({self.additional_minutes} min)',
+                'category_label': 'Add-on',
+                'base_price': float(fee),
+                'discount_percentage': 0.0,
+                'discounted_price': float(fee),
+                'is_addon': True,
+                'duration_minutes': self.additional_minutes,
+            })
+            total += fee
+
+        self.locked_price = total
+        self.service_prices_snapshot = snapshots
+        self.save(update_fields=['locked_price', 'service_prices_snapshot'])
 
 
 class BookingNotification(models.Model):
@@ -454,7 +667,7 @@ class MessageReply(models.Model):
     sender_name = models.CharField(max_length=200, blank=True)
     sender_email = models.EmailField(blank=True)
     body = models.TextField()
-    email_message_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    email_message_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

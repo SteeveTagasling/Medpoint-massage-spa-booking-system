@@ -342,3 +342,29 @@
 
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const startDate = document.getElementById('id_start_date');
+    const endDate = document.getElementById('id_end_date');
+    if (!startDate || !endDate) return;
+
+    const today = new Date();
+    const localToday = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, '0'),
+        String(today.getDate()).padStart(2, '0')
+    ].join('-');
+    startDate.min = localToday;
+    endDate.min = startDate.value || localToday;
+
+    startDate.addEventListener('change', function () {
+        endDate.min = this.value || localToday;
+        if (endDate.value && this.value && endDate.value < this.value) {
+            endDate.value = this.value;
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,7 +1,7 @@
 {% extends 'website/base.html' %}
 {% load static %}
 
-{% block title %}About Us - MEDPOINT Massage &amp; Spa{% endblock %}
+{% block title %}About Us - {{ site_content.business_legal_name }}{% endblock %}
 
 {% block content %}
 <!-- Page Hero -->
@@ -9,13 +9,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div class="flex items-center gap-3 mb-4 animate-fade-in">
             <div class="w-8 h-px bg-purple-500"></div>
-            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Our Story</span>
+            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">{{ site_content.about_hero_label }}</span>
         </div>
         <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in-up">
-            About <span class="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">MEDPOINT</span>
+            {{ site_content.about_hero_title }}
         </h1>
         <p class="text-gray-400 text-lg max-w-xl animate-fade-in-up" style="animation-delay:0.2s">
-            A sanctuary where ancient healing traditions meet modern wellness excellence.
+            {{ site_content.about_hero_description }}
         </p>
         <div class="flex items-center gap-2 mt-6 text-sm animate-fade-in" style="animation-delay:0.3s">
             <a href="{% url 'website:home' %}" class="text-gray-500 hover:text-purple-400 transition-colors">Home</a>
@@ -35,24 +35,24 @@
                 <img src="{% static 'website/images/about.png' %}" alt="About MEDPOINT" class="rounded-2xl w-full h-[500px] object-cover relative z-10 shadow-2xl shadow-purple-500/10">
                 <div class="absolute -bottom-6 -right-6 bg-gradient-to-br from-purple-600 to-violet-700 rounded-xl p-6 z-20 shadow-xl">
                     <div class="text-center">
-                        <span class="block text-3xl font-display font-bold text-white">{{ years_experience }}+</span>
-                        <span class="text-purple-200 text-sm">Years of Excellence</span>
+                        <span class="block text-3xl font-display font-bold text-white">{{ site_content.home_stat_years_value|default:0 }}+</span>
+                        <span class="text-purple-200 text-sm">{{ site_content.home_years_badge_label }}</span>
                     </div>
                 </div>
             </div>
             <div class="scroll-reveal-right">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-8 h-px bg-purple-500"></div>
-                    <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Our Journey</span>
+                    <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">{{ site_content.about_story_label }}</span>
                 </div>
                 <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-6 leading-tight">
-                    Where Wellness<br>Meets <span class="text-purple-400">Excellence</span>
+                    {{ site_content.about_story_title }}
                 </h2>
                 <p class="text-gray-400 leading-relaxed mb-6">
-                    Founded with a passion for holistic wellness, MEDPOINT Massage & Spa has grown into one of the most trusted names in premium spa services. Our journey began with a simple vision: to create a sanctuary where every guest feels renewed, refreshed, and rejuvenated.
+                    {{ site_content.about_story_1 }}
                 </p>
                 <p class="text-gray-400 leading-relaxed mb-8">
-                    Today, we continue to uphold the highest standards of service, using only premium products and employing licensed, experienced therapists who are dedicated to your well-being. Every visit to MEDPOINT is a transformative experience that nurtures both body and soul.
+                    {{ site_content.about_story_2 }}
                 </p>
                 <div class="grid grid-cols-2 gap-6">
                     <div class="text-center p-4 bg-dark-100/50 border border-purple-500/10 rounded-xl">
@@ -84,11 +84,11 @@
         <div class="text-center mb-16 scroll-reveal">
             <div class="flex items-center justify-center gap-3 mb-4">
                 <div class="w-8 h-px bg-purple-500"></div>
-                <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Why Choose Us</span>
+                <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">{{ site_content.about_values_label }}</span>
                 <div class="w-8 h-px bg-purple-500"></div>
             </div>
-            <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">Our Core Values</h2>
-            <p class="text-gray-400 max-w-xl mx-auto">What sets us apart in delivering exceptional wellness experiences.</p>
+            <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">{{ site_content.about_values_title }}</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">{{ site_content.about_values_description }}</p>
         </div>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -97,28 +97,28 @@
                     <i class="fas fa-heart text-2xl text-purple-400"></i>
                 </div>
                 <h3 class="font-display text-lg font-semibold text-white mb-3">Passion</h3>
-                <p class="text-gray-400 text-sm leading-relaxed">We are passionate about helping you achieve holistic wellness and inner peace.</p>
+                <p class="text-gray-400 text-sm leading-relaxed">{{ site_content.about_passion_text }}</p>
             </div>
             <div class="text-center p-8 bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-200">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-5">
                     <i class="fas fa-award text-2xl text-purple-400"></i>
                 </div>
                 <h3 class="font-display text-lg font-semibold text-white mb-3">Excellence</h3>
-                <p class="text-gray-400 text-sm leading-relaxed">Every treatment is delivered with the highest standards of quality and care.</p>
+                <p class="text-gray-400 text-sm leading-relaxed">{{ site_content.about_excellence_text }}</p>
             </div>
             <div class="text-center p-8 bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-300">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-5">
                     <i class="fas fa-shield-alt text-2xl text-purple-400"></i>
                 </div>
                 <h3 class="font-display text-lg font-semibold text-white mb-3">Trust</h3>
-                <p class="text-gray-400 text-sm leading-relaxed">Your safety and comfort are our top priorities in everything we do.</p>
+                <p class="text-gray-400 text-sm leading-relaxed">{{ site_content.about_trust_text }}</p>
             </div>
             <div class="text-center p-8 bg-dark-100/50 backdrop-blur-sm border border-purple-500/10 rounded-2xl hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-400">
                 <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-5">
                     <i class="fas fa-hands text-2xl text-purple-400"></i>
                 </div>
                 <h3 class="font-display text-lg font-semibold text-white mb-3">Care</h3>
-                <p class="text-gray-400 text-sm leading-relaxed">Every guest is treated with genuine warmth and personalized attention.</p>
+                <p class="text-gray-400 text-sm leading-relaxed">{{ site_content.about_care_text }}</p>
             </div>
         </div>
     </div>
@@ -133,8 +133,8 @@
                 <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Our Team</span>
                 <div class="w-8 h-px bg-purple-500"></div>
             </div>
-            <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">Meet Our Therapists</h2>
-            <p class="text-gray-400 max-w-xl mx-auto">Our licensed professionals bring years of expertise and genuine care to every session.</p>
+            <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">{{ site_content.about_team_title }}</h2>
+            <p class="text-gray-400 max-w-xl mx-auto">{{ site_content.about_team_description }}</p>
         </div>
 
         {% if therapists %}
@@ -226,8 +226,8 @@
 <section class="py-20 relative overflow-hidden">
     <div class="absolute inset-0 bg-gradient-to-r from-purple-900/20 via-violet-900/15 to-purple-900/20"></div>
     <div class="relative z-10 max-w-3xl mx-auto px-4 text-center scroll-reveal">
-        <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">Experience the MEDPOINT Difference</h2>
-        <p class="text-gray-400 mb-8">Book your session today and discover why thousands trust us with their wellness journey.</p>
+        <h2 class="font-display text-3xl sm:text-4xl font-bold text-white mb-4">{{ site_content.about_cta_title }}</h2>
+        <p class="text-gray-400 mb-8">{{ site_content.about_cta_description }}</p>
         <a href="{% url 'website:booking' %}" class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-full transition-all duration-300 shadow-xl shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-1">
             <i class="fas fa-calendar-check"></i> Book Appointment
         </a>

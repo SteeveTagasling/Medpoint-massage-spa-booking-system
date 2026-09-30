@@ -1,0 +1,150 @@
+{% extends "portals/base.html" %}
+
+{% block title %}Service Categories{% endblock %}
+{% block page_title %}Service Categories{% endblock %}
+{% block page_subtitle %}Add, edit, arrange, and remove service categories{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-page { max-width: 1180px; margin: 0 auto; }
+    .category-back {
+        display: inline-flex; align-items: center; gap: .5rem; margin-bottom: 1.25rem;
+        color: var(--text-secondary); text-decoration: none; font-size: .86rem; font-weight: 650;
+    }
+    .category-back:hover { color: var(--purple-500); }
+    .category-layout { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+    .category-card {
+        background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px;
+        box-shadow: var(--card-shadow); overflow: hidden;
+    }
+    .category-card-head { padding: 1.15rem 1.3rem; border-bottom: 1px solid var(--border-color); }
+    .category-card-head h2 { margin: 0; font-size: 1rem; color: var(--text-primary); display: flex; gap: .55rem; align-items: center; }
+    .category-card-head h2 i { color: var(--purple-500); }
+    .category-card-head p { margin: .35rem 0 0; color: var(--text-muted); font-size: .78rem; line-height: 1.5; }
+    .category-form { padding: 1.3rem; }
+    .field-group { margin-bottom: 1rem; }
+    .field-label { display: block; margin-bottom: .4rem; color: var(--text-primary); font-size: .78rem; font-weight: 700; }
+    .portal-input {
+        width: 100%; box-sizing: border-box; padding: .72rem .85rem; border-radius: 10px;
+        border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary);
+        font: inherit; font-size: .86rem; outline: none;
+    }
+    .portal-input:focus { border-color: var(--purple-400); box-shadow: 0 0 0 3px rgba(147, 51, 234, .1); }
+    .field-help { display: block; margin-top: .35rem; color: var(--text-muted); font-size: .71rem; line-height: 1.45; }
+    .field-error { display: block; margin-top: .35rem; color: #dc2626; font-size: .73rem; }
+    .toggle-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        padding: .75rem .85rem; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-secondary);
+    }
+    .toggle-row label { color: var(--text-primary); font-size: .8rem; font-weight: 650; }
+    .toggle-row input { width: 18px; height: 18px; accent-color: var(--purple-600); }
+    .form-actions { display: flex; gap: .65rem; margin-top: 1.2rem; }
+    .btn-save, .btn-cancel, .category-action {
+        display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border-radius: 9px;
+        padding: .62rem .9rem; font: inherit; font-size: .77rem; font-weight: 700; text-decoration: none; cursor: pointer;
+    }
+    .btn-save { flex: 1; border: 0; color: white; background: linear-gradient(135deg, var(--purple-600), var(--violet-600)); }
+    .btn-cancel { border: 1px solid var(--border-color); color: var(--text-secondary); background: var(--bg-secondary); }
+    .category-list { padding: .5rem 1.2rem 1.2rem; }
+    .category-row {
+        display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: center;
+        padding: 1rem .2rem; border-bottom: 1px solid var(--border-color);
+    }
+    .category-row:last-child { border-bottom: 0; }
+    .category-name-line { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; }
+    .category-name { color: var(--text-primary); font-size: .9rem; font-weight: 750; }
+    .category-code { color: var(--text-muted); font-size: .7rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .category-meta { margin-top: .35rem; color: var(--text-muted); font-size: .73rem; display: flex; gap: .8rem; flex-wrap: wrap; }
+    .status-pill { padding: .18rem .5rem; border-radius: 999px; font-size: .66rem; font-weight: 750; }
+    .status-pill.active { background: rgba(16,185,129,.12); color: #059669; }
+    .status-pill.inactive { background: rgba(100,116,139,.12); color: #64748b; }
+    .category-actions { display: flex; gap: .45rem; }
+    .category-action { border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); padding: .45rem .65rem; }
+    .category-action:hover { border-color: var(--purple-400); color: var(--purple-500); }
+    .category-action.delete { border-color: rgba(239,68,68,.25); color: #dc2626; }
+    .category-action.delete:disabled { opacity: .42; cursor: not-allowed; }
+    .empty-category { padding: 2.5rem 1rem; text-align: center; color: var(--text-muted); }
+    @media (max-width: 850px) { .category-layout { grid-template-columns: 1fr; } }
+    @media (max-width: 560px) {
+        .category-row { grid-template-columns: 1fr; }
+        .category-actions { width: 100%; }
+        .category-action { flex: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="category-page">
+    <a class="category-back" href="{% url 'portals:service_list' %}"><i class="fas fa-arrow-left"></i> Back to Services</a>
+    <div class="category-layout">
+        <section class="category-card">
+            <div class="category-card-head">
+                <h2><i class="fas fa-{% if editing_category %}pen{% else %}plus{% endif %}"></i> {% if editing_category %}Edit Category{% else %}Add Category{% endif %}</h2>
+                <p>Categories appear automatically on the client Services page, Book Now, and Walk-in Booking.</p>
+            </div>
+            <form method="post" class="category-form">
+                {% csrf_token %}
+                <div class="field-group">
+                    <label class="field-label" for="{{ form.name.id_for_label }}">Category name</label>
+                    {{ form.name }}
+                    {% for error in form.name.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="{{ form.code.id_for_label }}">Category code</label>
+                    {{ form.code }}
+                    <span class="field-help">{{ form.code.help_text }}</span>
+                    {% for error in form.code.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+                </div>
+                <div class="field-group">
+                    <label class="field-label" for="{{ form.order.id_for_label }}">Display order</label>
+                    {{ form.order }}
+                    <span class="field-help">{{ form.order.help_text }}</span>
+                    {% for error in form.order.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+                </div>
+                <div class="toggle-row">
+                    <label for="{{ form.is_active.id_for_label }}">Visible in service selectors</label>
+                    {{ form.is_active }}
+                </div>
+                {% for error in form.non_field_errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+                <div class="form-actions">
+                    {% if editing_category %}<a class="btn-cancel" href="{% url 'portals:service_category_list' %}">Cancel</a>{% endif %}
+                    <button class="btn-save" type="submit"><i class="fas fa-save"></i> {% if editing_category %}Save Changes{% else %}Add Category{% endif %}</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="category-card">
+            <div class="category-card-head">
+                <h2><i class="fas fa-layer-group"></i> Current Categories</h2>
+                <p>Edit a category at any time. A category must have no assigned services before it can be removed.</p>
+            </div>
+            <div class="category-list">
+                {% for category in categories %}
+                <div class="category-row">
+                    <div>
+                        <div class="category-name-line">
+                            <span class="category-name">{{ category.name }}</span>
+                            <span class="status-pill {% if category.is_active %}active{% else %}inactive{% endif %}">{% if category.is_active %}Active{% else %}Hidden{% endif %}</span>
+                        </div>
+                        <div class="category-meta">
+                            <span class="category-code">{{ category.code }}</span>
+                            <span><i class="fas fa-concierge-bell"></i> {{ category.service_count }} service{{ category.service_count|pluralize }}</span>
+                            <span><i class="fas fa-sort"></i> Order {{ category.order }}</span>
+                        </div>
+                    </div>
+                    <div class="category-actions">
+                        <a class="category-action" href="{% url 'portals:service_category_edit' category.pk %}"><i class="fas fa-pen"></i> Edit</a>
+                        <form method="post" action="{% url 'portals:service_category_delete' category.pk %}" onsubmit="return confirm('Remove this category?');">
+                            {% csrf_token %}
+                            <button class="category-action delete" type="submit" {% if category.service_count %}disabled title="Edit assigned services before removing this category"{% endif %}><i class="fas fa-trash"></i> Remove</button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-category"><i class="fas fa-layer-group"></i><p>No categories yet.</p></div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

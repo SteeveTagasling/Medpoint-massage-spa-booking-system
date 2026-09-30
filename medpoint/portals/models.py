@@ -9,6 +9,29 @@ class AdminProfile(models.Model):
         return f"{self.user.username} - Admin Profile"
 
 
+class ReportSignatory(models.Model):
+    """Admin-managed approvers available on printable reports."""
+
+    name = models.CharField(max_length=200)
+    role = models.CharField(max_length=100, help_text="For example: Manager or Owner")
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_report_signatories',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['role', 'name']
+        verbose_name_plural = 'Report signatories'
+
+    def __str__(self):
+        return f"{self.name} — {self.role}"
+
+
 class StaffNotification(models.Model):
     """Notifications for admin and staff portal users."""
     TYPE_CHOICES = [

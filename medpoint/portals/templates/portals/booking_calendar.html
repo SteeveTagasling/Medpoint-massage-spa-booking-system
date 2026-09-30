@@ -361,42 +361,226 @@
         border: 1px solid rgba(248, 113, 113, 0.3);
     }
     .action-cell { display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; }
+
+    /* Refined schedule dashboard */
+    .calendar-dashboard { max-width: 1600px; margin: 0 auto; }
+    .calendar-overview {
+        border: 1px solid var(--border-color);
+        border-radius: 18px;
+        background: var(--bg-card);
+        padding: 1.15rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 12px 30px rgba(28, 16, 48, 0.04);
+    }
+    .calendar-header { margin-bottom: 1rem; }
+    .calendar-nav { gap: 0.6rem; }
+    .calendar-month-block { min-width: 200px; text-align: center; }
+    .calendar-month-label { display: block; min-width: 0; font-size: 1.35rem; line-height: 1.25; }
+    .calendar-month-caption { display: block; margin-top: 0.15rem; color: var(--text-muted); font-size: 0.72rem; }
+    .calendar-nav-btn { width: 40px; height: 40px; background: var(--bg-secondary); }
+    .calendar-today-btn {
+        width: auto;
+        padding: 0 0.85rem;
+        gap: 0.4rem;
+        font-weight: 700;
+        font-size: 0.76rem;
+    }
+    .view-toggle { padding: 0.2rem; gap: 0.15rem; background: var(--bg-secondary); border-radius: 12px; }
+    .view-toggle a { border: 0; border-radius: 9px; padding: 0.55rem 0.85rem; font-weight: 700; }
+    .calendar-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+    .calendar-stat {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 76px;
+        padding: 0.85rem;
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        background: var(--bg-secondary);
+    }
+    .calendar-stat-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        background: rgba(168, 85, 247, 0.12);
+        color: var(--purple-400);
+    }
+    .calendar-stat.confirmed .calendar-stat-icon { background: rgba(96,165,250,0.13); color: var(--blue-400); }
+    .calendar-stat.completed .calendar-stat-icon { background: rgba(34,197,94,0.13); color: var(--green-400); }
+    .calendar-stat.attention .calendar-stat-icon { background: rgba(251,191,36,0.14); color: var(--amber-400); }
+    .calendar-stat-value { display: block; color: var(--text-primary); font-size: 1.25rem; font-weight: 800; line-height: 1; }
+    .calendar-stat-label { display: block; margin-top: 0.3rem; color: var(--text-muted); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; }
+    .calendar-panel {
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        border-radius: 18px;
+        background: var(--bg-card);
+        box-shadow: 0 12px 30px rgba(28, 16, 48, 0.04);
+    }
+    .calendar-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.9rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .calendar-panel-title { color: var(--text-primary); font-size: 0.9rem; font-weight: 800; }
+    .calendar-panel-title i { color: var(--purple-400); margin-right: 0.45rem; }
+    .calendar-panel-meta { color: var(--text-muted); font-size: 0.72rem; }
+    .calendar-legend { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+    .calendar-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.55rem;
+        border-radius: 999px;
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        font-size: 0.67rem;
+        font-weight: 700;
+    }
+    .calendar-legend-item i { font-size: 0.45rem; }
+    .calendar-legend-item.pending i { color: var(--amber-400); }
+    .calendar-legend-item.confirmed i { color: var(--blue-400); }
+    .calendar-legend-item.completed i { color: var(--green-400); }
+    .calendar-legend-item.cancelled i { color: var(--red-400); }
+    .calendar-legend-item.leave i { color: var(--purple-400); }
+    .calendar-legend-item.closed i { color: var(--red-400); }
+    .calendar-scroll { overflow-x: auto; }
+    .calendar-grid { min-width: 840px; border: 0; border-radius: 0; margin: 0; }
+    .calendar-day-header { position: sticky; top: 0; z-index: 3; }
+    .calendar-cell { min-height: 138px; padding: 0.55rem; }
+    .calendar-cell.has-schedule:hover { background: rgba(168, 85, 247, 0.055); }
+    .calendar-cell.has-schedule::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--purple-400);
+        opacity: 0.6;
+    }
+    .day-number-row { display: flex; align-items: center; justify-content: space-between; min-height: 26px; margin-bottom: 0.35rem; }
+    .day-item-count { color: var(--text-muted); font-size: 0.6rem; font-weight: 700; }
+    .calendar-booking { display: flex; padding: 0.28rem 0.42rem; border-radius: 6px; font-size: 0.65rem; }
+    .calendar-booking.cal-awaiting_verification { background: rgba(251,191,36,0.15); color: var(--amber-400); }
+    .booking-count-dot { display: none !important; }
+    .calendar-list-card { border: 0; border-radius: 0; margin: 0; box-shadow: none; }
+    .calendar-list-card .card-header { display: none; }
+    .calendar-list-card .table-wrapper { border-radius: 0; }
+    .calendar-list-card .data-table tbody tr:hover { background: var(--table-row-hover); }
+    .calendar-list-client { color: var(--text-primary); font-weight: 700; }
+    .calendar-list-client small { display: block; color: var(--text-muted); font-size: 0.68rem; font-weight: 500; margin-top: 0.15rem; }
+    .modal-container { border-radius: 18px; box-shadow: 0 24px 70px rgba(0,0,0,0.32); }
+    .modal-header h3, .modal-booking-client { color: var(--text-primary); }
+    .modal-close:hover { color: var(--text-primary); }
+
+    @media (max-width: 1050px) {
+        .calendar-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .calendar-panel-head { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 680px) {
+        .calendar-overview { padding: 0.85rem; border-radius: 15px; }
+        .calendar-header { align-items: stretch; }
+        .calendar-nav { width: 100%; justify-content: space-between; }
+        .calendar-month-block { min-width: 0; flex: 1; }
+        .calendar-month-label { font-size: 1.1rem; }
+        .view-toggle { width: 100%; }
+        .view-toggle a { flex: 1; justify-content: center; }
+        .calendar-stats { gap: 0.55rem; }
+        .calendar-stat { min-height: 68px; padding: 0.7rem; }
+        .calendar-stat-icon { width: 34px; height: 34px; }
+        .calendar-stat-value { font-size: 1.05rem; }
+        .calendar-panel { border-radius: 15px; }
+        .calendar-panel-head { padding: 0.8rem; }
+        .calendar-list-card .data-table thead { display: none; }
+        .calendar-list-card .data-table, .calendar-list-card .data-table tbody, .calendar-list-card .data-table tr, .calendar-list-card .data-table td { display: block; width: 100%; }
+        .calendar-list-card .data-table tr { padding: 0.85rem; border-bottom: 1px solid var(--border-color); }
+        .calendar-list-card .data-table td { display: flex; justify-content: space-between; gap: 1rem; padding: 0.38rem 0; border: 0; text-align: right; }
+        .calendar-list-card .data-table td::before { content: attr(data-label); color: var(--text-muted); font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; }
+        .calendar-list-card .data-table td[data-label="Client"] { display: block; text-align: left; padding-bottom: 0.65rem; }
+        .calendar-list-card .data-table td[data-label="Client"]::before { display: none; }
+        .calendar-list-card .action-cell { justify-content: flex-end; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Calendar Header -->
-<div class="calendar-header">
-    <div class="calendar-nav">
-        <a href="?year={{ prev_year }}&month={{ prev_month }}&view={{ view_mode }}" class="calendar-nav-btn">
-            <i class="fas fa-chevron-left"></i>
-        </a>
-        <span class="calendar-month-label">{{ month_name }} {{ year }}</span>
-        <a href="?year={{ next_year }}&month={{ next_month }}&view={{ view_mode }}" class="calendar-nav-btn">
-            <i class="fas fa-chevron-right"></i>
-        </a>
+<div class="calendar-dashboard">
+<section class="calendar-overview" aria-label="Calendar controls and monthly summary">
+    <div class="calendar-header">
+        <div class="calendar-nav">
+            <a href="?year={{ prev_year }}&month={{ prev_month }}&view={{ view_mode }}" class="calendar-nav-btn" title="Previous month" aria-label="Previous month">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <div class="calendar-month-block">
+                <span class="calendar-month-label">{{ month_name }} {{ year }}</span>
+                <span class="calendar-month-caption">{{ calendar_active_days }} scheduled day{{ calendar_active_days|pluralize }} · {{ calendar_leave_days }} leave day{{ calendar_leave_days|pluralize }}</span>
+            </div>
+            <a href="?year={{ next_year }}&month={{ next_month }}&view={{ view_mode }}" class="calendar-nav-btn" title="Next month" aria-label="Next month">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            <a href="?year={{ today.year }}&month={{ today.month }}&view={{ view_mode }}" class="calendar-nav-btn calendar-today-btn" title="Go to current month">
+                <i class="far fa-calendar-check"></i> Today
+            </a>
+        </div>
+        <div class="view-toggle" aria-label="Calendar display mode">
+            <a href="?year={{ year }}&month={{ month }}&view=calendar" class="{% if view_mode == 'calendar' %}active{% endif %}">
+                <i class="fas fa-calendar-days"></i> Calendar
+            </a>
+            <a href="?year={{ year }}&month={{ month }}&view=list" class="{% if view_mode == 'list' %}active{% endif %}">
+                <i class="fas fa-list"></i> List
+            </a>
+        </div>
     </div>
-    <div class="view-toggle">
-        <a href="?year={{ year }}&month={{ month }}&view=calendar" class="{% if view_mode == 'calendar' %}active{% endif %}">
-            <i class="fas fa-th"></i> Calendar
-        </a>
-        <a href="?year={{ year }}&month={{ month }}&view=list" class="{% if view_mode == 'list' %}active{% endif %}">
-            <i class="fas fa-list"></i> List
-        </a>
+    <div class="calendar-stats">
+        <div class="calendar-stat">
+            <span class="calendar-stat-icon"><i class="fas fa-calendar-day"></i></span>
+            <span><strong class="calendar-stat-value">{{ calendar_total_count }}</strong><span class="calendar-stat-label">Monthly bookings</span></span>
+        </div>
+        <div class="calendar-stat confirmed">
+            <span class="calendar-stat-icon"><i class="fas fa-circle-check"></i></span>
+            <span><strong class="calendar-stat-value">{{ calendar_confirmed_count }}</strong><span class="calendar-stat-label">Confirmed</span></span>
+        </div>
+        <div class="calendar-stat completed">
+            <span class="calendar-stat-icon"><i class="fas fa-check-double"></i></span>
+            <span><strong class="calendar-stat-value">{{ calendar_completed_count }}</strong><span class="calendar-stat-label">Completed</span></span>
+        </div>
+        <div class="calendar-stat attention">
+            <span class="calendar-stat-icon"><i class="fas fa-hourglass-half"></i></span>
+            <span><strong class="calendar-stat-value">{{ calendar_pending_count }}</strong><span class="calendar-stat-label">Needs attention</span></span>
+        </div>
     </div>
-</div>
+</section>
 
 {% if view_mode == 'calendar' %}
-<!-- Calendar Legend -->
-<div style="display: flex; gap: 1.25rem; margin-bottom: 1rem; flex-wrap: wrap; font-size: 0.75rem; font-weight: 600; background: var(--bg-card); padding: 0.75rem 1.25rem; border: 1px solid var(--border-color); border-radius: 10px;">
-    <span style="display: inline-flex; align-items: center; gap: 0.3rem; color: var(--amber-400);"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> Pending <span id="legend-count-pending" style="opacity: 0.7; font-weight: 500; font-size: 0.7rem; margin-left: 0.15rem;"></span></span>
-    <span style="display: inline-flex; align-items: center; gap: 0.3rem; color: var(--blue-400);"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> Confirmed <span id="legend-count-confirmed" style="opacity: 0.7; font-weight: 500; font-size: 0.7rem; margin-left: 0.15rem;"></span></span>
-    <span style="display: inline-flex; align-items: center; gap: 0.3rem; color: var(--green-400);"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> Completed <span id="legend-count-completed" style="opacity: 0.7; font-weight: 500; font-size: 0.7rem; margin-left: 0.15rem;"></span></span>
-    <span style="display: inline-flex; align-items: center; gap: 0.3rem; color: var(--red-400);"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> Cancelled <span id="legend-count-cancelled" style="opacity: 0.7; font-weight: 500; font-size: 0.7rem; margin-left: 0.15rem;"></span></span>
+<section class="calendar-panel">
+<div class="calendar-panel-head">
+    <div>
+        <div class="calendar-panel-title"><i class="fas fa-calendar-week"></i> Monthly Schedule</div>
+        <div class="calendar-panel-meta">Select a scheduled day to review its bookings and staff leaves.</div>
+    </div>
+    <div class="calendar-legend" aria-label="Calendar legend">
+        <span class="calendar-legend-item pending"><i class="fas fa-circle"></i> Pending {{ calendar_pending_count }}</span>
+        <span class="calendar-legend-item confirmed"><i class="fas fa-circle"></i> Confirmed {{ calendar_confirmed_count }}</span>
+        <span class="calendar-legend-item completed"><i class="fas fa-circle"></i> Completed {{ calendar_completed_count }}</span>
+        <span class="calendar-legend-item cancelled"><i class="fas fa-circle"></i> Cancelled {{ calendar_cancelled_count }}</span>
+        <span class="calendar-legend-item leave"><i class="fas fa-plane-departure"></i> Staff leave</span>
+        {% if calendar_closed_count %}<span class="calendar-legend-item closed"><i class="fas fa-store-slash"></i> Closed {{ calendar_closed_count }}</span>{% endif %}
+    </div>
 </div>
-
-<!-- Calendar View -->
-<div class="calendar-grid">
+<div class="calendar-scroll">
+<div class="calendar-grid" role="grid" aria-label="{{ month_name }} {{ year }} booking calendar">
     <!-- Day Headers -->
     {% for day_name in weekday_names %}
     <div class="calendar-day-header">{{ day_name }}</div>
@@ -406,43 +590,36 @@
     {% for week in month_days %}
         {% for day in week %}
             {% if day == 0 %}
-            <div class="calendar-cell empty"></div>
+            <div class="calendar-cell empty" aria-hidden="true"></div>
             {% else %}
-            <div class="calendar-cell {% if day == today.day and month == today.month and year == today.year %}today{% endif %} {% if day in closed_days %}closed-day{% endif %}">
-                <div class="day-number">{{ day }}</div>
+            <div class="calendar-cell {% if day == today.day and month == today.month and year == today.year %}today{% endif %} {% if day in closed_days %}closed-day{% endif %}" data-calendar-day="{{ day }}">
+                <div class="day-number-row"><div class="day-number">{{ day }}</div><span class="day-item-count" data-day-count="{{ day }}"></span></div>
                 {% if request.session.portal_role == 'admin' %}
                     {% if day in closed_days %}
-                        <button class="holiday-btn remove-holiday" onclick="toggleHoliday({{ year }}, {{ month }}, {{ day }}, 'remove')" title="Remove Holiday"><i class="fas fa-times"></i> Re-open</button>
+                        <button type="button" class="holiday-btn remove-holiday" onclick="toggleHoliday({{ year }}, {{ month }}, {{ day }}, 'remove')" title="Remove Holiday"><i class="fas fa-times"></i> Re-open</button>
                     {% else %}
-                        <button class="holiday-btn" onclick="toggleHoliday({{ year }}, {{ month }}, {{ day }}, 'add')" title="Mark as Holiday"><i class="fas fa-umbrella-beach"></i> Close Spa</button>
+                        <button type="button" class="holiday-btn" onclick="toggleHoliday({{ year }}, {{ month }}, {{ day }}, 'add')" title="Mark as Holiday"><i class="fas fa-umbrella-beach"></i> Close Spa</button>
                     {% endif %}
                 {% endif %}
-                {% with day_bookings=bookings_by_date %}
-                {% for b in day_bookings|default_if_none:"" %}
-                {% endfor %}
-                {% endwith %}
-
-                {% for booking in bookings_by_date|default:"" %}
-                {% endfor %}
-
-                <!-- Render bookings for this day -->
-                {% if bookings_by_date %}
-                    {% with bookings_for_day=bookings_by_date %}
-                    {% endwith %}
-                {% endif %}
-
                 <div class="calendar-day-bookings" data-day="{{ day }}">
                 </div>
-                <span class="booking-count-dot" style="display:none;"></span>
             </div>
             {% endif %}
         {% endfor %}
     {% endfor %}
 </div>
+</div>
+</section>
 
 {% else %}
-<!-- List View -->
-<div class="card">
+<section class="calendar-panel">
+<div class="calendar-panel-head">
+    <div>
+        <div class="calendar-panel-title"><i class="fas fa-list"></i> Booking List</div>
+        <div class="calendar-panel-meta">{{ calendar_total_count }} booking{{ calendar_total_count|pluralize }} for {{ month_name }} {{ year }}</div>
+    </div>
+</div>
+<div class="card calendar-list-card">
     <div class="card-header">
         <span class="card-header-title">
             <i class="fas fa-list" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
@@ -453,7 +630,7 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th>BK ID</th>
                     <th>Client</th>
                     <th>Email</th>
                     <th>Service</th>
@@ -468,22 +645,22 @@
             <tbody>
                 {% for booking in list_bookings %}
                 <tr id="booking-row-{{ booking.pk }}">
-                    <td style="color: var(--text-muted);">{{ booking.pk }}</td>
-                    <td style="color: var(--text-primary); font-weight: 500;">{{ booking.client_name }}</td>
-                    <td>{{ booking.client_email }}</td>
-                    <td>{{ booking.service_names }}</td>
-                    <td>{{ booking.therapist.name|default:"—" }}</td>
-                    <td>
+                    <td data-label="BK ID" style="color: var(--text-muted);">{{ booking.pk }}</td>
+                    <td data-label="Client"><div class="calendar-list-client">{{ booking.client_name }}<small>{{ booking.client_email }}</small></div></td>
+                    <td data-label="Email">{{ booking.client_email }}</td>
+                    <td data-label="Service">{{ booking.service_names }}</td>
+                    <td data-label="Therapist">{{ booking.therapist.name|default:"—" }}</td>
+                    <td data-label="Type">
                         <span class="booking-type-badge booking-type-{{ booking.booking_type }}">
                             {{ booking.get_booking_type_display }}
                         </span>
                     </td>
-                    <td>{{ booking.date|date:"M d, Y" }}</td>
-                    <td>{{ booking.get_time_display }}</td>
-                    <td>
+                    <td data-label="Date">{{ booking.date|date:"M d, Y" }}</td>
+                    <td data-label="Time">{{ booking.get_time_display }}</td>
+                    <td data-label="Status">
                         <span class="status status-{{ booking.status }}" id="status-badge-{{ booking.pk }}">{{ booking.get_status_display }}</span>
                     </td>
-                    <td>
+                    <td data-label="Action">
                         <div class="action-cell" id="action-cell-{{ booking.pk }}" data-status="{{ booking.status }}">
                             {% if booking.status == 'pending' %}
                                 <button class="action-btn btn-confirm"
@@ -521,14 +698,16 @@
         </table>
     </div>
 </div>
+</section>
 {% endif %}
+</div>
 
 <!-- Day Summary Modal -->
-<div id="daySummaryModal" class="modal-overlay">
+<div id="daySummaryModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalDateLabel">
     <div class="modal-container">
         <div class="modal-header">
             <h3 id="modalDateLabel">Bookings Summary</h3>
-            <button class="modal-close" onclick="closeDaySummaryModal()"><i class="fas fa-times"></i></button>
+            <button type="button" class="modal-close" onclick="closeDaySummaryModal()" aria-label="Close day summary"><i class="fas fa-times"></i></button>
         </div>
         <div class="modal-body" id="modalBookingsList">
             <!-- Bookings will be dynamically inserted here -->
@@ -551,7 +730,7 @@
             dayBookings.forEach(b => {
                 let statusColor = 'var(--text-muted)';
                 let statusBg = 'rgba(255,255,255,0.1)';
-                if (b.status === 'pending') { statusColor = 'var(--amber-400)'; statusBg = 'rgba(251, 191, 36, 0.15)'; }
+                if (b.status === 'pending' || b.status === 'awaiting_verification') { statusColor = 'var(--amber-400)'; statusBg = 'rgba(251, 191, 36, 0.15)'; }
                 if (b.status === 'confirmed') { statusColor = 'var(--blue-400)'; statusBg = 'rgba(96, 165, 250, 0.15)'; }
                 if (b.status === 'completed') { statusColor = 'var(--green-400)'; statusBg = 'rgba(34, 197, 94, 0.15)'; }
                 if (b.status === 'cancelled') { statusColor = 'var(--red-400)'; statusBg = 'rgba(239, 68, 68, 0.1)'; }
@@ -560,7 +739,7 @@
                     <div class="modal-booking-item">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.25rem;">
                             <div class="modal-booking-client">${b.client}</div>
-                            <div class="modal-booking-status" style="color: ${statusColor}; background: ${statusBg};">${b.status.toUpperCase()}</div>
+                            <div class="modal-booking-status" style="color: ${statusColor}; background: ${statusBg};">${b.status.replaceAll('_', ' ').toUpperCase()}</div>
                         </div>
                         <div class="modal-booking-time"><i class="far fa-clock" style="margin-right: 0.3rem;"></i>${b.time}</div>
                         <div class="modal-booking-service"><i class="fas fa-spa" style="margin-right: 0.3rem; color: var(--text-muted);"></i>${b.service}</div>
@@ -602,6 +781,9 @@
             closeDaySummaryModal();
         }
     });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeDaySummaryModal();
+    });
 
     // Populate calendar bookings from context
     (function() {
@@ -637,16 +819,26 @@
             const day = parseInt(container.getAttribute('data-day'));
             const dayBookings = allBookings.filter(b => b.day === day);
             const dayLeaves = allLeaves.filter(l => l.day === day);
-            const dotEl = container.parentElement.querySelector('.booking-count-dot');
+            const cellEl = container.parentElement;
+            const countEl = cellEl.querySelector('[data-day-count]');
+            const totalItems = dayBookings.length + dayLeaves.length;
 
-            if ((dayBookings.length > 0 || dayLeaves.length > 0) && dotEl) {
-                dotEl.style.display = '';
-                
-                // Make the entire cell clickable for the summary if there are bookings/leaves
-                container.parentElement.style.cursor = 'pointer';
-                container.parentElement.addEventListener('click', function(e) {
+            if (totalItems > 0) {
+                cellEl.classList.add('has-schedule');
+                if (countEl) countEl.textContent = `${totalItems} item${totalItems > 1 ? 's' : ''}`;
+                cellEl.style.cursor = 'pointer';
+                cellEl.setAttribute('tabindex', '0');
+                cellEl.setAttribute('role', 'button');
+                cellEl.setAttribute('aria-label', `View ${totalItems} schedule item${totalItems > 1 ? 's' : ''} for day ${day}`);
+                cellEl.addEventListener('click', function(e) {
                     // Don't trigger if they clicked a holiday button
                     if (!e.target.closest('.holiday-btn')) {
+                        openDaySummaryModal(day, dayBookings, dayLeaves);
+                    }
+                });
+                cellEl.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
                         openDaySummaryModal(day, dayBookings, dayLeaves);
                     }
                 });
@@ -675,7 +867,6 @@
                 });
             }
 
-            const totalItems = dayBookings.length + dayLeaves.length;
             if (totalItems > maxShow) {
                 const more = document.createElement('div');
                 more.className = 'more-bookings';

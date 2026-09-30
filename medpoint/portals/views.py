@@ -4,21 +4,24 @@ from decimal import Decimal
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.db.models import Count, Sum, Q, F
+from django.db.models import Count, Sum, Q, F, Case, When, Value, IntegerField
 from django.utils import timezone
 from django.conf import settings
+from django.db import transaction
 
 from website.models import (
-    Service, Therapist, Testimonial, GalleryImage,
+    Service, ServiceCategory, Therapist, Testimonial, GalleryImage,
     Booking, ContactMessage, MessageReply, StaffSchedule, StaffLeave,
-    ServicePriceHistory,
+    ServicePriceHistory, SiteContent, WebsitePolicyItem,
 )
-from .forms import ServiceForm, TherapistForm, WalkInBookingForm, StaffScheduleForm, AdminSettingsForm, AdminUserForm, StaffSettingsForm, BulkStaffScheduleForm, StaffLeaveForm, StaffLeaveRequestForm
-from .models import AdminProfile, StaffNotification
+from website.site_content import SITE_CONTENT_FIELDS
+from .forms import ServiceForm, ServiceCategoryForm, TherapistForm, WalkInBookingForm, StaffScheduleForm, AdminSettingsForm, AdminUserForm, StaffSettingsForm, BulkStaffScheduleForm, StaffLeaveForm, StaffLeaveRequestForm
+from .models import AdminProfile, ReportSignatory, StaffNotification
 
 
 # ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -28,10 +31,22 @@ def portal_login(request):
     if request.user.is_authenticated:
         return redirect('portals:dashboard')
 
+    login_context = {
+        'submitted_username': '',
+        'selected_role': 'admin',
+        'next_url': request.GET.get('next', ''),
+    }
+
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        role = request.POST.get('role', 'staff')
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        role = request.POST.get('role', 'admin')
+        next_url = request.POST.get('next') or request.GET.get('next', '')
+        login_context.update({
+            'submitted_username': username,
+            'selected_role': role,
+            'next_url': next_url,
+        })
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
@@ -42,19 +57,20 @@ def portal_login(request):
             else:
                 login(request, user)
                 request.session['portal_role'] = role
-                
-                remember_me = request.POST.get('remember_me')
-                if not remember_me:
-                    request.session.set_expiry(0) # Expire on browser close
-                else:
-                    request.session.set_expiry(1209600) # Persist for 2 weeks
-                
-                next_url = request.GET.get('next', 'portals:dashboard')
-                return redirect(next_url)
+                request.session.set_expiry(0)
+                request.session.modified = True
+
+                if next_url and url_has_allowed_host_and_scheme(
+                    next_url,
+                    allowed_hosts={request.get_host()},
+                    require_https=request.is_secure(),
+                ):
+                    return redirect(next_url)
+                return redirect('portals:dashboard')
         else:
             messages.error(request, 'Invalid username or password.')
 
-    return render(request, 'portals/login.html')
+    return render(request, 'portals/login.html', login_context)
 
 
 @login_required(login_url='portals:login')
@@ -77,6 +93,138 @@ def _require_admin(request):
         messages.error(request, 'Admin access required for this action.')
         return redirect('portals:dashboard')
     return None
+
+
+@login_required(login_url='portals:login')
+def website_maintenance(request):
+    """Admin-only editor for client-facing website content."""
+    if not _is_admin(request):
+        messages.error(request, 'Admin access is required to maintain website content.')
+        return redirect('portals:dashboard')
+
+    # Keep the editable registry synchronized with fields supported by templates.
+    for sort_order, definition in enumerate(SITE_CONTENT_FIELDS):
+        defaults = {
+            'group': definition['group'],
+            'label': definition['label'],
+            'value': definition['value'],
+            'default_value': definition['value'],
+            'input_type': definition.get('input_type', 'text'),
+            'help_text': definition.get('help_text', ''),
+            'sort_order': sort_order,
+        }
+        item, created = SiteContent.objects.get_or_create(key=definition['key'], defaults=defaults)
+        if not created:
+            metadata = {
+                'group': defaults['group'],
+                'label': defaults['label'],
+                'default_value': defaults['default_value'],
+                'input_type': defaults['input_type'],
+                'help_text': defaults['help_text'],
+                'sort_order': defaults['sort_order'],
+            }
+            changed = [field for field, value in metadata.items() if getattr(item, field) != value]
+            if changed:
+                for field in changed:
+                    setattr(item, field, metadata[field])
+                item.save(update_fields=changed)
+
+    content_items = list(SiteContent.objects.all())
+    policy_items = list(WebsitePolicyItem.objects.all())
+
+    if request.method == 'POST':
+        action = request.POST.get('action', 'save')
+
+        if action.startswith('delete_policy:'):
+            item_id = action.partition(':')[2]
+            item = get_object_or_404(WebsitePolicyItem, pk=item_id)
+            section = item.section
+            label = item.title or 'Policy item'
+            item.delete()
+            messages.success(request, f'{label} was deleted.')
+            return redirect(f"{reverse('portals:website_maintenance')}?section={section}")
+
+        if action.startswith('add_policy:'):
+            section = action.partition(':')[2]
+            valid_sections = dict(WebsitePolicyItem.SECTION_CHOICES)
+            title = request.POST.get(f'new_policy_title_{section}', '').strip()
+            body = request.POST.get(f'new_policy_body_{section}', '').strip()
+            if section not in valid_sections:
+                messages.error(request, 'Invalid website content section.')
+            elif not body:
+                messages.error(request, 'Enter the content before adding the item.')
+            else:
+                last_item = WebsitePolicyItem.objects.filter(section=section).order_by('-sort_order', '-pk').first()
+                WebsitePolicyItem.objects.create(
+                    section=section,
+                    title=title,
+                    body=body,
+                    sort_order=(last_item.sort_order + 10) if last_item else 10,
+                    updated_by=request.user,
+                )
+                messages.success(request, f'New {valid_sections[section]} content was added.')
+            return redirect(f"{reverse('portals:website_maintenance')}?section={section}")
+
+        with transaction.atomic():
+            changed_count = 0
+            for item in content_items:
+                field_name = f'content_{item.pk}'
+                if field_name not in request.POST:
+                    continue
+                new_value = request.POST.get(field_name, '').strip()
+                if item.value != new_value:
+                    item.value = new_value
+                    item.updated_by = request.user
+                    item.save(update_fields=['value', 'updated_by', 'updated_at'])
+                    changed_count += 1
+            for item in policy_items:
+                new_title = request.POST.get(f'policy_title_{item.pk}', item.title).strip()
+                new_body = request.POST.get(f'policy_body_{item.pk}', item.body).strip()
+                try:
+                    new_order = max(0, int(request.POST.get(f'policy_order_{item.pk}', item.sort_order)))
+                except (TypeError, ValueError):
+                    new_order = item.sort_order
+                changed_fields = []
+                for field, value in (
+                    ('title', new_title),
+                    ('body', new_body),
+                    ('sort_order', new_order),
+                ):
+                    if getattr(item, field) != value:
+                        setattr(item, field, value)
+                        changed_fields.append(field)
+                if changed_fields:
+                    item.updated_by = request.user
+                    item.save(update_fields=[*changed_fields, 'updated_by', 'updated_at'])
+                    changed_count += 1
+        if changed_count:
+            messages.success(request, f'Website content updated successfully ({changed_count} field(s) changed).')
+        else:
+            messages.info(request, 'No website content changes were detected.')
+        return redirect('portals:website_maintenance')
+
+    grouped_content = []
+    current_group = None
+    for item in content_items:
+        if item.group != current_group:
+            grouped_content.append({'name': item.group, 'items': []})
+            current_group = item.group
+        grouped_content[-1]['items'].append(item)
+
+    policy_groups = []
+    for section, name in WebsitePolicyItem.SECTION_CHOICES:
+        policy_groups.append({
+            'section': section,
+            'name': name,
+            'items': [item for item in policy_items if item.section == section],
+        })
+
+    return render(request, 'portals/website_maintenance.html', {
+        'grouped_content': grouped_content,
+        'policy_groups': policy_groups,
+        'requested_section': request.GET.get('section', ''),
+        'page_title': 'Website Maintenance',
+    })
 
 
 def _get_staff_therapist(request):
@@ -131,6 +279,224 @@ def _get_date_range(request):
         end = today
         label = today.strftime('%B %d, %Y')
     return start, end, label
+
+
+def _get_report_signatory_context(request):
+    """Return active report signatories and the currently selected approver."""
+    signatories = ReportSignatory.objects.filter(is_active=True)
+    selected_signatory = None
+    selected_id = request.GET.get('signatory', '').strip()
+    if selected_id.isdigit():
+        selected_signatory = signatories.filter(pk=int(selected_id)).first()
+    if selected_signatory is None:
+        selected_signatory = signatories.first()
+
+    return {
+        'signatories': signatories,
+        'selected_signatory': selected_signatory,
+        'selected_signatory_id': selected_signatory.pk if selected_signatory else '',
+    }
+
+
+def _get_applied_discount_rows(bookings):
+    """Build chronological promotion rows from prices locked on each booking."""
+    booking_list = list(bookings)
+    service_ids = {
+        snapshot.get('service_id')
+        for booking in booking_list
+        for snapshot in _get_booking_report_snapshots(booking)
+        if snapshot.get('service_id') and Decimal(str(snapshot.get('discount_percentage', 0))) > 0
+    }
+    histories_by_service = {}
+    services_by_id = {
+        service.pk: service
+        for service in Service.objects.filter(pk__in=service_ids)
+    }
+    if service_ids:
+        histories = ServicePriceHistory.objects.filter(
+            service_id__in=service_ids,
+            discount_percentage__gt=0,
+        ).select_related('service').order_by('effective_from', 'created_at')
+        for history in histories:
+            histories_by_service.setdefault(history.service_id, []).append(history)
+
+    rows = []
+    for booking in booking_list:
+        for snapshot in _get_booking_report_snapshots(booking):
+            discount = Decimal(str(snapshot.get('discount_percentage', 0)))
+            base_price = Decimal(str(snapshot.get('base_price', 0)))
+            discounted_price = Decimal(str(snapshot.get('discounted_price', base_price)))
+            if discount <= 0 or discounted_price >= base_price:
+                continue
+
+            service_id = snapshot.get('service_id')
+            matching_history = next((
+                history for history in histories_by_service.get(service_id, [])
+                if history.discount_percentage == discount
+                and history.effective_from <= booking.date
+                and (history.effective_to is None or history.effective_to >= booking.date)
+            ), None)
+            service = services_by_id.get(service_id)
+            rows.append({
+                'booking': booking,
+                'service_name': snapshot.get('name', 'Service'),
+                'category': service.get_category_display if service else '—',
+                'promotion_name': (
+                    matching_history.notes
+                    if matching_history and matching_history.notes
+                    else f'{discount:g}% Discount'
+                ),
+                'discount_percentage': discount,
+                'discount_amount': base_price - discounted_price,
+                'base_price': base_price,
+                'promotional_price': discounted_price,
+                'effective_from': matching_history.effective_from if matching_history else None,
+                'effective_to': matching_history.effective_to if matching_history else None,
+                'applied_date': booking.date,
+            })
+
+    rows.sort(key=lambda row: (row['applied_date'], row['booking'].time, row['service_name']))
+    return rows
+
+
+def _get_report_service_tables(bookings):
+    """Return regular and promotional sales tables from locked booking prices."""
+    booking_list = list(bookings)
+    promotion_details = _get_applied_discount_rows(booking_list)
+    service_ids = {
+        snapshot.get('service_id')
+        for booking in booking_list
+        for snapshot in _get_booking_report_snapshots(booking)
+        if snapshot.get('service_id')
+    }
+    services_by_id = {
+        service.pk: service
+        for service in Service.objects.filter(pk__in=service_ids)
+    }
+
+    regular_groups = {}
+    for booking in booking_list:
+        for snapshot in _get_booking_report_snapshots(booking):
+            base_price = Decimal(str(snapshot.get('base_price', 0)))
+            sale_price = Decimal(str(snapshot.get('discounted_price', base_price)))
+            discount = Decimal(str(snapshot.get('discount_percentage', 0)))
+            if discount > 0 and sale_price < base_price:
+                continue
+            service = services_by_id.get(snapshot.get('service_id'))
+            key = (
+                snapshot.get('name', 'Service'),
+                service.get_category_display if service else snapshot.get('category_label', '—'),
+                sale_price,
+            )
+            row = regular_groups.setdefault(key, {
+                'service_name': key[0],
+                'category': key[1],
+                'transaction_count': 0,
+                'unit_price': sale_price,
+                'revenue': Decimal('0'),
+            })
+            row['transaction_count'] += 1
+            row['revenue'] += sale_price
+
+    promotional_groups = {}
+    for detail in promotion_details:
+        key = (
+            detail['effective_from'], detail['effective_to'],
+            detail['service_name'], detail['category'],
+            detail['base_price'], detail['discount_percentage'],
+            detail['promotional_price'], detail['promotion_name'],
+        )
+        row = promotional_groups.setdefault(key, {
+            'effective_from': detail['effective_from'],
+            'effective_to': detail['effective_to'],
+            'service_name': detail['service_name'],
+            'category': detail['category'],
+            'original_price': detail['base_price'],
+            'discount_percentage': detail['discount_percentage'],
+            'promotional_price': detail['promotional_price'],
+            'promotion_name': detail['promotion_name'],
+            'applied_from': detail['applied_date'],
+            'applied_to': detail['applied_date'],
+            'transaction_count': 0,
+            'revenue': Decimal('0'),
+        })
+        row['transaction_count'] += 1
+        row['revenue'] += detail['promotional_price']
+        row['applied_from'] = min(row['applied_from'], detail['applied_date'])
+        row['applied_to'] = max(row['applied_to'], detail['applied_date'])
+
+    regular_services = sorted(regular_groups.values(), key=lambda row: row['service_name'])
+    promotional_services = sorted(
+        promotional_groups.values(),
+        key=lambda row: (row['effective_from'] or date.min, row['service_name']),
+    )
+    regular_revenue = sum((row['revenue'] for row in regular_services), Decimal('0'))
+    promotional_revenue = sum((row['revenue'] for row in promotional_services), Decimal('0'))
+    return {
+        'discount_promotions': promotion_details,
+        'regular_services': regular_services,
+        'promotional_services': promotional_services,
+        'regular_revenue': regular_revenue,
+        'promotional_revenue': promotional_revenue,
+        'combined_revenue': regular_revenue + promotional_revenue,
+    }
+
+
+def _get_booking_report_snapshots(booking):
+    """Return locked prices, with a safe fallback for legacy bookings.
+
+    Older bookings may have services and a valid total but no JSON price
+    snapshot. Reports must not count those bookings while showing zero revenue.
+    The fallback is calculated without mutating historical booking records.
+    """
+    saved_snapshots = booking.service_prices_snapshot or []
+    if saved_snapshots:
+        return saved_snapshots
+
+    snapshots = []
+    for service in booking.services.all():
+        snapshots.append({
+            'service_id': service.pk,
+            'name': service.name,
+            'category_label': service.get_category_display,
+            'base_price': Decimal(str(service.price)),
+            'discount_percentage': Decimal(str(service.discount_percentage)),
+            'discounted_price': Decimal(str(service.discounted_price)),
+        })
+
+    if booking.additional_minutes:
+        fee = booking.additional_time_fee
+        snapshots.append({
+            'service_id': None,
+            'name': f'Additional Massage Time ({booking.additional_minutes} min)',
+            'category_label': 'Add-on',
+            'base_price': fee,
+            'discount_percentage': Decimal('0'),
+            'discounted_price': fee,
+            'is_addon': True,
+        })
+
+    # If a legacy booking has a locked total but no item snapshots, preserve
+    # that exact total by proportionally allocating it across its items.
+    current_total = sum(
+        (Decimal(str(item.get('discounted_price', 0))) for item in snapshots),
+        Decimal('0'),
+    )
+    if booking.locked_price is not None and snapshots and current_total > 0:
+        target_total = Decimal(str(booking.locked_price))
+        factor = target_total / current_total
+        allocated = Decimal('0')
+        for index, item in enumerate(snapshots):
+            base_price = Decimal(str(item.get('base_price', 0))) * factor
+            sale_price = Decimal(str(item.get('discounted_price', 0))) * factor
+            if index == len(snapshots) - 1:
+                sale_price = target_total - allocated
+            else:
+                allocated += sale_price
+            item['base_price'] = base_price
+            item['discounted_price'] = sale_price
+
+    return snapshots
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -447,6 +813,13 @@ def booking_update_status(request, pk):
             booking.status = new_status
             booking.save()
 
+            # Legacy and imported bookings may predate price snapshots. Lock
+            # their service prices before they enter financial reports.
+            if new_status in {'confirmed', 'completed'} and (
+                not booking.service_prices_snapshot or booking.locked_price is None
+            ):
+                booking.lock_current_price()
+
             if booking.therapist:
                 from django.urls import reverse
                 StaffNotification.objects.create(
@@ -462,7 +835,6 @@ def booking_update_status(request, pk):
             if new_status == 'confirmed' and old_status != 'confirmed' and booking.client_email:
                 try:
                     from django.core.mail import send_mail
-                    from django.conf import settings
 
                     therapist_name = booking.therapist.name if booking.therapist else 'To be assigned'
                     time_display = dict(booking.TIME_CHOICES).get(booking.time, booking.time)
@@ -602,7 +974,6 @@ def booking_update_status(request, pk):
             if new_status == 'completed' and old_status != 'completed' and booking.client_email:
                 try:
                     from django.core.mail import send_mail
-                    from django.conf import settings
 
                     therapist_name = booking.therapist.name if booking.therapist else 'Our therapist'
                     time_display = dict(booking.TIME_CHOICES).get(booking.time, booking.time)
@@ -734,7 +1105,6 @@ def booking_update_status(request, pk):
             if new_status == 'cancelled' and old_status != 'cancelled' and booking.client_email:
                 try:
                     from django.core.mail import send_mail
-                    from django.conf import settings
 
                     therapist_name = booking.therapist.name if booking.therapist else 'To be assigned'
                     time_display = dict(booking.TIME_CHOICES).get(booking.time, booking.time)
@@ -867,6 +1237,57 @@ def booking_update_status(request, pk):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+def _walkin_service_catalog_context():
+    """Group active walk-in services using the same categories as Book Now."""
+    services_list = list(Service.objects.filter(is_active=True))
+    category_choices = ServiceCategory.choices()
+    category_labels = dict(category_choices)
+    service_groups = []
+    assigned_service_ids = set()
+
+    for category_code, category_label in category_choices:
+        category_services = []
+        for service in services_list:
+            categories = [code.strip() for code in service.category.split(',') if code.strip()]
+            if category_code in categories and service.pk not in assigned_service_ids:
+                service.booking_category = category_code
+                service.booking_category_label = category_label
+                category_services.append(service)
+                assigned_service_ids.add(service.pk)
+
+        if category_services:
+            service_groups.append({
+                'code': category_code,
+                'label': category_label,
+                'services': category_services,
+            })
+
+    uncategorized_services = []
+    for service in services_list:
+        if service.pk not in assigned_service_ids:
+            first_category = next(
+                (code.strip() for code in service.category.split(',') if code.strip()),
+                'other',
+            )
+            service.booking_category = first_category
+            service.booking_category_label = category_labels.get(
+                first_category, 'Other Services'
+            )
+            uncategorized_services.append(service)
+
+    if uncategorized_services:
+        service_groups.append({
+            'code': 'other',
+            'label': 'Other Services',
+            'services': uncategorized_services,
+        })
+
+    return {
+        'services_list': services_list,
+        'service_groups': service_groups,
+    }
+
+
 @login_required(login_url='portals:login')
 def booking_create_walkin(request):
     if not request.user.is_staff:
@@ -875,22 +1296,7 @@ def booking_create_walkin(request):
         form = WalkInBookingForm(request.POST)
         if form.is_valid():
             booking_obj = form.save()
-
-            # Snapshot service prices at time of booking
-            snapshots = []
-            total_lock = Decimal('0')
-            for svc in booking_obj.services.all():
-                snapshots.append({
-                    'service_id': svc.id,
-                    'name': svc.name,
-                    'base_price': float(svc.price),
-                    'discount_percentage': float(svc.discount_percentage),
-                    'discounted_price': float(svc.discounted_price),
-                })
-                total_lock += svc.discounted_price
-            booking_obj.locked_price = total_lock
-            booking_obj.service_prices_snapshot = snapshots
-            booking_obj.save(update_fields=['locked_price', 'service_prices_snapshot'])
+            booking_obj.lock_current_price()
 
             # Auto-assign therapist if preference is set but no specific therapist chosen
             if not booking_obj.therapist and booking_obj.therapist_preference != 'random':
@@ -969,12 +1375,11 @@ def booking_create_walkin(request):
     else:
         form = WalkInBookingForm(initial={
             'date': timezone.localtime(timezone.now()).date(),
-            'status': 'confirmed',
         })
     staff_therapist = _get_staff_therapist(request) if _is_staff_only(request) else None
     return render(request, 'portals/booking_walkin.html', {
         'form': form,
-        'services_list': Service.objects.filter(is_active=True),
+        **_walkin_service_catalog_context(),
         'current_therapist_id': staff_therapist.id if staff_therapist else None,
     })
 
@@ -1065,14 +1470,34 @@ def service_list(request):
     if not request.user.is_staff:
         return redirect('portals:login')
     # Both admin and staff can manage services
+    search_query = request.GET.get('q', '').strip()
     category_filter = request.GET.get('category', '')
     services = Service.objects.all()
+    if search_query:
+        matching_category_codes = ServiceCategory.objects.filter(
+            Q(name__icontains=search_query) | Q(code__icontains=search_query)
+        ).values_list('code', flat=True)
+        category_query = Q()
+        for code in matching_category_codes:
+            category_query |= Q(category__icontains=code)
+        services = services.filter(
+            Q(name__icontains=search_query)
+            | Q(description__icontains=search_query)
+            | Q(short_description__icontains=search_query)
+            | category_query
+        )
     if category_filter:
-        services = services.filter(category__icontains=category_filter)
+        services = services.filter(
+            Q(category=category_filter)
+            | Q(category__startswith=f'{category_filter},')
+            | Q(category__endswith=f',{category_filter}')
+            | Q(category__contains=f',{category_filter},')
+        )
     context = {
         'services': services,
-        'categories': Service.CATEGORY_CHOICES,
+        'categories': ServiceCategory.choices(include_inactive=True),
         'category_filter': category_filter,
+        'search_query': search_query,
     }
     return render(request, 'portals/service_list.html', context)
 
@@ -1162,6 +1587,81 @@ def service_delete(request, pk):
     return redirect('portals:service_list')
 
 
+@login_required(login_url='portals:login')
+def service_category_list(request, pk=None):
+    """Create, view, and edit categories used by all service selectors."""
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
+
+    category = get_object_or_404(ServiceCategory, pk=pk) if pk else None
+    old_code = category.code if category else None
+
+    if request.method == 'POST':
+        form = ServiceCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            with transaction.atomic():
+                saved_category = form.save()
+                if old_code and old_code != saved_category.code:
+                    for service in Service.objects.all().only('pk', 'category'):
+                        codes = [code.strip() for code in service.category.split(',') if code.strip()]
+                        if old_code in codes:
+                            service.category = ','.join(
+                                saved_category.code if code == old_code else code for code in codes
+                            )
+                            service.save(update_fields=['category'])
+            action = 'updated' if category else 'added'
+            messages.success(request, f'Category "{saved_category.name}" {action} successfully.')
+            return redirect('portals:service_category_list')
+        messages.error(request, 'Please correct the category details below.')
+    else:
+        form = ServiceCategoryForm(instance=category)
+
+    services = list(Service.objects.all().only('category'))
+    category_rows = []
+    for item in ServiceCategory.objects.all():
+        item.service_count = sum(
+            item.code in [code.strip() for code in service.category.split(',') if code.strip()]
+            for service in services
+        )
+        category_rows.append(item)
+
+    return render(request, 'portals/service_categories.html', {
+        'form': form,
+        'editing_category': category,
+        'categories': category_rows,
+    })
+
+
+@login_required(login_url='portals:login')
+def service_category_delete(request, pk):
+    """Delete an unused category without orphaning existing services."""
+    if not request.user.is_staff:
+        return redirect('portals:login')
+    check = _require_admin(request)
+    if check:
+        return check
+    category = get_object_or_404(ServiceCategory, pk=pk)
+    if request.method == 'POST':
+        in_use = any(
+            category.code in [code.strip() for code in service.category.split(',') if code.strip()]
+            for service in Service.objects.all().only('category')
+        )
+        if in_use:
+            messages.error(
+                request,
+                f'"{category.name}" cannot be removed while services are assigned to it. '
+                'Edit those services first, then remove the category.'
+            )
+        else:
+            name = category.name
+            category.delete()
+            messages.success(request, f'Category "{name}" removed successfully.')
+    return redirect('portals:service_category_list')
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  THERAPIST / STAFF MANAGEMENT (CRUD)
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1173,8 +1673,21 @@ def therapist_list(request):
     check = _require_admin(request)
     if check:
         return check
+    search_query = request.GET.get('q', '').strip()
     therapists = Therapist.objects.all()
-    return render(request, 'portals/therapist_list.html', {'therapists': therapists})
+    if search_query:
+        therapists = therapists.filter(
+            Q(name__icontains=search_query)
+            | Q(title__icontains=search_query)
+            | Q(email__icontains=search_query)
+            | Q(phone__icontains=search_query)
+            | Q(specialties__name__icontains=search_query)
+            | Q(user__username__icontains=search_query)
+        ).distinct()
+    return render(request, 'portals/therapist_list.html', {
+        'therapists': therapists,
+        'search_query': search_query,
+    })
 
 
 @login_required(login_url='portals:login')
@@ -1356,7 +1869,10 @@ def schedule_list(request):
     day_map = dict(StaffSchedule.DAY_CHOICES)
     
     for s in schedules:
-        key = (s.therapist_id, s.start_time, s.end_time, s.is_available, s.notes)
+        key = (
+            s.therapist_id, s.start_time, s.end_time,
+            s.break_start_time, s.break_end_time, s.is_available, s.notes,
+        )
         if key not in group_map:
             group_data = {
                 'ids': [str(s.pk)],
@@ -1365,6 +1881,9 @@ def schedule_list(request):
                 'day_ints': [s.day_of_week],
                 'start_time': s.start_time,
                 'end_time': s.end_time,
+                'break_start_time': s.break_start_time,
+                'break_end_time': s.break_end_time,
+                'has_break': s.has_break,
                 'is_available': s.is_available,
                 'notes': s.notes,
                 'primary_pk': s.pk,
@@ -1389,6 +1908,9 @@ def schedule_list(request):
         'therapists': therapists,
         'therapist_filter': therapist_filter,
         'status_filter': status_filter,
+        'visible_schedule_count': len(grouped_schedules),
+        'visible_staff_count': len({group['therapist'].pk for group in grouped_schedules}),
+        'visible_break_count': sum(1 for group in grouped_schedules if group['has_break']),
     }
     return render(request, 'portals/schedule_list.html', context)
 
@@ -1408,6 +1930,8 @@ def schedule_create(request):
             is_available = form.cleaned_data.get('is_available', True)
             start_time = form.cleaned_data['start_time']
             end_time = form.cleaned_data['end_time']
+            break_start_time = form.cleaned_data.get('break_start_time')
+            break_end_time = form.cleaned_data.get('break_end_time')
             notes = form.cleaned_data.get('notes', '')
 
             for day_index in range(7):
@@ -1418,6 +1942,8 @@ def schedule_create(request):
                         defaults={
                             'start_time': start_time,
                             'end_time': end_time,
+                            'break_start_time': break_start_time,
+                            'break_end_time': break_end_time,
                             'is_available': is_available,
                             'notes': notes,
                         }
@@ -1451,7 +1977,6 @@ def _send_leave_cancellation_email(booking, leave, rebook_url):
     """Send a premium HTML email to a client whose booking was cancelled due to staff leave."""
     import logging
     from django.core.mail import send_mail
-    from django.conf import settings
 
     therapist_name = booking.therapist.name if booking.therapist else 'Your therapist'
     time_display = dict(booking.TIME_CHOICES).get(booking.time, booking.time)
@@ -1798,19 +2323,31 @@ def admin_leave_list(request):
     status_filter = request.GET.get('status', '')
     therapist_filter = request.GET.get('therapist', '')
 
-    leaves = StaffLeave.objects.select_related('therapist').all().order_by('-created_at')
+    leaves = StaffLeave.objects.select_related('therapist').annotate(
+        review_priority=Case(
+            When(status=StaffLeave.STATUS_PENDING, then=Value(0)),
+            default=Value(1),
+            output_field=IntegerField(),
+        )
+    ).order_by('review_priority', '-created_at')
     if status_filter:
         leaves = leaves.filter(status=status_filter)
     if therapist_filter:
         leaves = leaves.filter(therapist_id=therapist_filter)
 
     therapists = Therapist.objects.filter(is_active=True)
-    pending_count = StaffLeave.objects.filter(status=StaffLeave.STATUS_PENDING).count()
+    leave_counts = StaffLeave.objects.aggregate(
+        total=Count('pk'),
+        pending=Count('pk', filter=Q(status=StaffLeave.STATUS_PENDING)),
+        approved=Count('pk', filter=Q(status=StaffLeave.STATUS_APPROVED)),
+        rejected=Count('pk', filter=Q(status=StaffLeave.STATUS_REJECTED)),
+    )
 
     today = timezone.localdate()
     leaves_list = list(leaves)
     for l in leaves_list:
         l.is_past = l.end_date < today
+        l.duration_days = (l.end_date - l.start_date).days + 1
         if l.status == StaffLeave.STATUS_APPROVED:
             l.cancelled_count = Booking.objects.filter(
                 therapist=l.therapist,
@@ -1842,7 +2379,11 @@ def admin_leave_list(request):
         'status_filter': status_filter,
         'therapist_filter': therapist_filter,
         'status_choices': StaffLeave.STATUS_CHOICES,
-        'pending_count': pending_count,
+        'pending_count': leave_counts['pending'],
+        'approved_count': leave_counts['approved'],
+        'rejected_count': leave_counts['rejected'],
+        'total_count': leave_counts['total'],
+        'filtered_count': len(leaves_list),
     }
     return render(request, 'portals/admin_leave_list.html', context)
 
@@ -1951,6 +2492,8 @@ def schedule_edit(request, pk):
             is_available = form.cleaned_data.get('is_available', True)
             start_time = form.cleaned_data['start_time']
             end_time = form.cleaned_data['end_time']
+            break_start_time = form.cleaned_data.get('break_start_time')
+            break_end_time = form.cleaned_data.get('break_end_time')
             notes = form.cleaned_data.get('notes', '')
 
             previous_days = [s.day_of_week for s in schedules]
@@ -1964,6 +2507,8 @@ def schedule_edit(request, pk):
                         defaults={
                             'start_time': start_time,
                             'end_time': end_time,
+                            'break_start_time': break_start_time,
+                            'break_end_time': break_end_time,
                             'is_available': is_available,
                             'notes': notes,
                         }
@@ -1977,6 +2522,8 @@ def schedule_edit(request, pk):
                         defaults={
                             'start_time': datetime.time(0, 0),
                             'end_time': datetime.time(0, 0),
+                            'break_start_time': None,
+                            'break_end_time': None,
                             'is_available': False,
                             'notes': "Day off",
                         }
@@ -1994,6 +2541,9 @@ def schedule_edit(request, pk):
             'day_of_week': initial_days,
             'start_time': first_schedule.start_time,
             'end_time': first_schedule.end_time,
+            'has_break': first_schedule.has_break,
+            'break_start_time': first_schedule.break_start_time,
+            'break_end_time': first_schedule.break_end_time,
             'is_available': first_schedule.is_available,
             'notes': first_schedule.notes,
         })
@@ -2038,7 +2588,7 @@ def booking_calendar(request):
     if not request.user.is_staff:
         return redirect('portals:login')
 
-    today = timezone.now().date()
+    today = timezone.localdate()
     year = int(request.GET.get('year', today.year))
     month = int(request.GET.get('month', today.month))
     view_mode = request.GET.get('view', 'calendar')
@@ -2054,6 +2604,9 @@ def booking_calendar(request):
     # For staff role, only show their bookings
     bookings_qs = Booking.objects.select_related('therapist').prefetch_related('services').filter(
         date__gte=month_start, date__lte=month_end
+    ).exclude(
+        date__lt=today,
+        status__in=['pending', 'awaiting_verification'],
     )
     if _is_staff_only(request):
         therapist = _get_staff_therapist(request)
@@ -2062,6 +2615,13 @@ def booking_calendar(request):
         else:
             bookings_qs = bookings_qs.none()
 
+    calendar_counts = bookings_qs.aggregate(
+        total=Count('pk'),
+        pending=Count('pk', filter=Q(status__in=['pending', 'awaiting_verification'])),
+        confirmed=Count('pk', filter=Q(status='confirmed')),
+        completed=Count('pk', filter=Q(status='completed')),
+        cancelled=Count('pk', filter=Q(status='cancelled')),
+    )
     bookings = bookings_qs.order_by('date', 'time')
 
     cal = calendar.Calendar(firstweekday=0)
@@ -2115,6 +2675,14 @@ def booking_calendar(request):
         'list_bookings': bookings if view_mode == 'list' else None,
         'weekday_names': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
         'closed_days': closed_days,
+        'calendar_total_count': calendar_counts['total'],
+        'calendar_pending_count': calendar_counts['pending'],
+        'calendar_confirmed_count': calendar_counts['confirmed'],
+        'calendar_completed_count': calendar_counts['completed'],
+        'calendar_cancelled_count': calendar_counts['cancelled'],
+        'calendar_active_days': len(bookings_by_date),
+        'calendar_leave_days': len(leaves_by_date),
+        'calendar_closed_count': len(closed_days),
     }
     return render(request, 'portals/booking_calendar.html', context)
 
@@ -2153,20 +2721,100 @@ def admin_reports(request):
     if check:
         return check
 
+    if request.method == 'POST' and request.POST.get('action') in {
+        'add_signatory', 'edit_signatory', 'remove_signatory'
+    }:
+        action = request.POST.get('action')
+        query = request.GET.copy()
+
+        if action == 'remove_signatory':
+            signatory = get_object_or_404(
+                ReportSignatory,
+                pk=request.POST.get('signatory_id'),
+                is_active=True,
+            )
+            signatory.is_active = False
+            signatory.save(update_fields=['is_active'])
+            if query.get('signatory') == str(signatory.pk):
+                query.pop('signatory', None)
+            messages.success(request, f'{signatory.name} was removed from report signatories.')
+            redirect_url = reverse('portals:admin_reports')
+            if query:
+                redirect_url = f'{redirect_url}?{query.urlencode()}'
+            return redirect(redirect_url)
+
+        signatory_name = request.POST.get('name', '').strip()
+        signatory_role = request.POST.get('role', '').strip()
+        signatory = None
+        if action == 'edit_signatory':
+            signatory = get_object_or_404(
+                ReportSignatory,
+                pk=request.POST.get('signatory_id'),
+                is_active=True,
+            )
+
+        if not signatory_name or not signatory_role:
+            messages.error(request, 'Signatory name and role are required.')
+        elif ReportSignatory.objects.filter(
+            name__iexact=signatory_name,
+            role__iexact=signatory_role,
+            is_active=True,
+        ).exclude(pk=signatory.pk if signatory else None).exists():
+            messages.error(request, 'This signatory already exists.')
+        elif signatory:
+            signatory.name = signatory_name
+            signatory.role = signatory_role
+            signatory.save(update_fields=['name', 'role'])
+            messages.success(request, f'{signatory.name} was updated successfully.')
+            query['signatory'] = str(signatory.pk)
+            return redirect(f"{reverse('portals:admin_reports')}?{query.urlencode()}")
+        else:
+            signatory = ReportSignatory.objects.create(
+                name=signatory_name,
+                role=signatory_role,
+                created_by=request.user,
+            )
+            messages.success(request, f'{signatory.name} was added as a report signatory.')
+            query['signatory'] = str(signatory.pk)
+            return redirect(f"{reverse('portals:admin_reports')}?{query.urlencode()}")
+
+        return redirect(
+            f"{reverse('portals:admin_reports')}?{request.GET.urlencode()}"
+            if request.GET
+            else reverse('portals:admin_reports')
+        )
+
     report_type = request.GET.get('report_type', 'bookings')  # 'bookings' or 'sales'
     period = request.GET.get('period', 'today')
     if request.GET.get('start_date') and request.GET.get('end_date'):
         period = 'custom'
-        messages.success(request, "Report filtered by custom date range.")
     start_date, end_date, period_label = _get_date_range(request)
 
-    # All completed bookings in period (walk-in OR verified online only)
-    completed = Booking.objects.filter(
+    status_filter = request.GET.get('status', 'all')
+    booking_type_filter = request.GET.get('booking_type', 'all')
+    valid_statuses = {'all', 'confirmed', 'pending', 'completed', 'cancelled'}
+    valid_booking_types = {'all', 'walk_in', 'online'}
+    if status_filter not in valid_statuses:
+        status_filter = 'all'
+    if booking_type_filter not in valid_booking_types:
+        booking_type_filter = 'all'
+
+    # Base report data: walk-ins and verified online bookings within the date range.
+    filtered_bookings = Booking.objects.filter(
         Q(booking_type='walk_in') | Q(is_verified=True),
-        status='completed',
         date__gte=start_date,
         date__lte=end_date,
-    ).select_related('therapist').prefetch_related('services')
+    )
+    if status_filter != 'all':
+        filtered_bookings = filtered_bookings.filter(status=status_filter)
+    if booking_type_filter != 'all':
+        filtered_bookings = filtered_bookings.filter(booking_type=booking_type_filter)
+
+    # Revenue and performance calculations only use completed bookings from
+    # the already-filtered report dataset.
+    completed = filtered_bookings.filter(status='completed').select_related(
+        'therapist'
+    ).prefetch_related('services')
 
     # Revenue — sum across all services per booking (M2M)
     total_revenue = Decimal('0')
@@ -2177,11 +2825,9 @@ def admin_reports(request):
     total_completed = completed.count()
 
     # ── Booking Report: all bookings in period ──
-    all_bookings_in_period = Booking.objects.filter(
-        Q(booking_type='walk_in') | Q(is_verified=True),
-        date__gte=start_date,
-        date__lte=end_date,
-    ).select_related('therapist').prefetch_related('services').order_by('-date', '-created_at')
+    all_bookings_in_period = filtered_bookings.select_related(
+        'therapist'
+    ).prefetch_related('services').order_by('date', 'time', 'created_at')
 
     total_bookings_period = all_bookings_in_period.count()
 
@@ -2222,6 +2868,24 @@ def admin_reports(request):
                 'revenue': svc_revenue,
             })
     service_breakdown.sort(key=lambda x: x['count'], reverse=True)
+    report_service_tables = _get_report_service_tables(
+        completed.order_by('date', 'time', 'created_at')
+    )
+    total_revenue = report_service_tables['combined_revenue']
+
+    from urllib.parse import urlencode
+    if period == 'custom':
+        filter_reset_params = {
+            'start_date': start_date.isoformat(),
+            'end_date': end_date.isoformat(),
+        }
+    else:
+        filter_reset_params = {'period': period}
+    active_filter_count = int(status_filter != 'all') + int(booking_type_filter != 'all')
+    signatory_context = _get_report_signatory_context(request)
+    selected_signatory_id = signatory_context['selected_signatory_id']
+    if selected_signatory_id:
+        filter_reset_params['signatory'] = selected_signatory_id
 
     context = {
         'report_type': report_type,
@@ -2236,8 +2900,27 @@ def admin_reports(request):
         'all_bookings_in_period': all_bookings_in_period,
         'staff_data': staff_data,
         'service_breakdown': service_breakdown,
+        **report_service_tables,
+        'generated_date': timezone.localdate(),
         'online_count': online_count,
         'walkin_count': walkin_count,
+        'status_filter': status_filter,
+        'booking_type_filter': booking_type_filter,
+        'status_filter_label': {
+            'all': 'All',
+            'confirmed': 'Confirmed',
+            'pending': 'Pending',
+            'completed': 'Completed',
+            'cancelled': 'Cancelled',
+        }[status_filter],
+        'booking_type_filter_label': {
+            'all': 'All Types',
+            'walk_in': 'Walk-in',
+            'online': 'Online',
+        }[booking_type_filter],
+        'active_filter_count': active_filter_count,
+        'filter_reset_query': urlencode(filter_reset_params),
+        **signatory_context,
     }
     return render(request, 'portals/admin_reports.html', context)
 
@@ -2800,10 +3483,12 @@ def staff_my_schedule(request):
     booked_slots = {}
     for b in my_bookings:
         booked_slots.setdefault(b.date.day, []).append({
+            'id': b.pk,
             'time': b.get_time_display(),
             'time_raw': b.time,
             'service': b.service_names,
             'client': b.client_name,
+            'phone': b.client_phone,
             'status': b.status,
         })
 
@@ -2872,6 +3557,7 @@ def staff_my_reports(request):
     total_bookings_period = 0
     online_count = 0
     walkin_count = 0
+    report_service_tables = _get_report_service_tables([])
 
     if therapist:
         # All bookings in period for this therapist (for the Bookings section)
@@ -2880,7 +3566,7 @@ def staff_my_reports(request):
             therapist=therapist,
             date__gte=start_date,
             date__lte=end_date,
-        ).prefetch_related('services').order_by('-date', '-created_at')
+        ).prefetch_related('services').order_by('date', 'time', 'created_at')
 
         all_bookings_in_period = all_bookings_qs
         total_bookings_period = all_bookings_qs.count()
@@ -2900,6 +3586,8 @@ def staff_my_reports(request):
             })
         if therapist.commission_percentage:
             commission_earned = total_revenue * (therapist.commission_percentage / Decimal('100'))
+        report_service_tables = _get_report_service_tables(completed)
+        total_revenue = report_service_tables['combined_revenue']
 
     context = {
         'therapist': therapist,
@@ -2915,6 +3603,9 @@ def staff_my_reports(request):
         'total_bookings_period': total_bookings_period,
         'online_count': online_count,
         'walkin_count': walkin_count,
+        **report_service_tables,
+        'generated_date': timezone.localdate(),
+        **_get_report_signatory_context(request),
     }
     return render(request, 'portals/staff_my_reports.html', context)
 
@@ -3026,7 +3717,6 @@ def message_reply(request, pk):
             from django.core.mail import EmailMultiAlternatives
             from django.template.loader import render_to_string
             from django.utils.html import strip_tags
-            from django.conf import settings
             import logging
 
             context = {
@@ -3219,8 +3909,12 @@ def testimonial_toggle_featured(request, pk):
         if check:
             return JsonResponse({'error': 'Unauthorized'}, status=403)
         t = get_object_or_404(Testimonial, pk=pk)
+        if not t.is_featured and not t.is_approved:
+            return JsonResponse({
+                'error': 'Approve this testimonial before marking it as Featured.'
+            }, status=400)
         t.is_featured = not t.is_featured
-        t.save()
+        t.save(update_fields=['is_featured'])
         return JsonResponse({'success': True, 'is_featured': t.is_featured})
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
@@ -3233,8 +3927,14 @@ def testimonial_toggle_approved(request, pk):
             return JsonResponse({'error': 'Unauthorized'}, status=403)
         t = get_object_or_404(Testimonial, pk=pk)
         t.is_approved = not t.is_approved
-        t.save()
-        return JsonResponse({'success': True, 'is_approved': t.is_approved})
+        if not t.is_approved:
+            t.is_featured = False
+        t.save(update_fields=['is_approved', 'is_featured'])
+        return JsonResponse({
+            'success': True,
+            'is_approved': t.is_approved,
+            'is_featured': t.is_featured,
+        })
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 

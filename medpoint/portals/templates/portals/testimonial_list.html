@@ -39,7 +39,10 @@
                         <span style="font-size: 0.8rem;">{{ testimonial.content|truncatewords:15 }}</span>
                     </td>
                     <td>
-                        <button class="btn-icon toggle-btn featured-btn" data-url="{% url 'portals:testimonial_toggle_featured' testimonial.pk %}" title="Toggle Featured">
+                        <button class="btn-icon toggle-btn featured-btn"
+                            data-url="{% url 'portals:testimonial_toggle_featured' testimonial.pk %}"
+                            title="{% if testimonial.is_approved %}Toggle Featured{% else %}Approve this testimonial before featuring it{% endif %}"
+                            {% if not testimonial.is_approved %}disabled{% endif %}>
                             {% if testimonial.is_featured %}
                             <i class="fas fa-star" style="color: var(--amber-400);"></i>
                             {% else %}
@@ -88,6 +91,13 @@
 }
 .btn-icon:hover {
     transform: scale(1.15);
+}
+.btn-icon:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+}
+.btn-icon:disabled:hover {
+    transform: none;
 }
 </style>
 
@@ -142,6 +152,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.innerHTML = data.is_approved 
                         ? '<i class="fas fa-check-circle" style="color: var(--green-400);"></i>'
                         : '<i class="fas fa-times-circle" style="color: var(--red-400);"></i>';
+                    const featuredButton = this.closest('tr').querySelector('.featured-btn');
+                    if (featuredButton) {
+                        featuredButton.disabled = !data.is_approved;
+                        featuredButton.title = data.is_approved
+                            ? 'Toggle Featured'
+                            : 'Approve this testimonial before featuring it';
+                        featuredButton.innerHTML = data.is_featured
+                            ? '<i class="fas fa-star" style="color: var(--amber-400);"></i>'
+                            : '<i class="far fa-star" style="color: var(--text-muted); opacity: 0.5;"></i>';
+                    }
                 } else if (data.error) {
                     alert(data.error);
                 }

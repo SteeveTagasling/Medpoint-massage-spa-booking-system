@@ -1,0 +1,327 @@
+{% extends 'portals/base.html' %}
+
+{% block title %}Website Maintenance — MEDPOINT{% endblock %}
+{% block page_title %}Website Maintenance{% endblock %}
+{% block page_subtitle %}Manage client-facing information and website content{% endblock %}
+
+{% block extra_css %}
+<style>
+    .maintenance-shell { width:100%; max-width:1440px; margin:0 auto; }
+    .maintenance-overview { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.15rem; margin-bottom:1rem; background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; }
+    .maintenance-overview-copy { display:flex; align-items:center; gap:.85rem; min-width:0; }
+    .maintenance-overview-icon { width:42px; height:42px; flex:none; display:grid; place-items:center; border-radius:11px; color:var(--purple-400); background:rgba(168,85,247,.11); }
+    .maintenance-overview h2 { color:var(--text-primary); font-size:.98rem; margin:0 0 .18rem; }
+    .maintenance-overview p { color:var(--text-muted); font-size:.78rem; line-height:1.45; margin:0; }
+    .maintenance-actions { display:flex; gap:.6rem; flex:none; }
+    .maintenance-btn { display:inline-flex; align-items:center; justify-content:center; gap:.45rem; min-height:40px; padding:.62rem .95rem; border-radius:10px; border:1px solid transparent; font-size:.8rem; font-weight:700; text-decoration:none; cursor:pointer; transition:var(--transition); }
+    .maintenance-btn.secondary { color:var(--purple-400); background:var(--bg-secondary); border-color:var(--border-color); }
+    .maintenance-btn.primary { color:#fff; background:linear-gradient(135deg,var(--purple-600),var(--violet-600)); box-shadow:0 7px 16px rgba(126,34,206,.18); }
+    .maintenance-btn:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; transform:none; }
+    .maintenance-btn:not(:disabled):hover { transform:translateY(-1px); border-color:var(--border-hover); }
+    .maintenance-search { position:relative; margin-bottom:1rem; }
+    .maintenance-search > i { position:absolute; left:.9rem; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.85rem; }
+    .maintenance-search input { width:100%; height:44px; padding:0 5.7rem 0 2.55rem; color:var(--text-primary); background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:11px; outline:none; font:inherit; font-size:.84rem; }
+    .maintenance-search input:focus { border-color:var(--purple-500); box-shadow:0 0 0 3px rgba(168,85,247,.1); }
+    .maintenance-search kbd { position:absolute; right:.8rem; top:50%; transform:translateY(-50%); padding:.2rem .42rem; color:var(--text-muted); background:var(--bg-primary); border:1px solid var(--border-color); border-radius:5px; font-size:.67rem; }
+    #maintenance-form { container-type:inline-size; }
+    .maintenance-workspace { display:grid; grid-template-columns:clamp(235px,22%,275px) minmax(0,1fr); gap:1rem; align-items:start; }
+    .maintenance-nav { position:sticky; top:84px; max-height:calc(100dvh - 115px); overflow-y:auto; scrollbar-width:thin; padding:.55rem; background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; }
+    .maintenance-nav-label { padding:.55rem .65rem .45rem; color:var(--text-muted); font-size:.67rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+    .section-tab { width:100%; display:flex; align-items:center; gap:.65rem; padding:.67rem .7rem; margin:.08rem 0; color:var(--text-secondary); background:transparent; border:0; border-radius:9px; text-align:left; cursor:pointer; transition:var(--transition); }
+    .section-tab > i { width:19px; color:var(--text-muted); text-align:center; }
+    .section-tab span { flex:1; min-width:0; white-space:normal; overflow-wrap:anywhere; line-height:1.25; font-size:.78rem; font-weight:650; }
+    .section-tab small { min-width:23px; padding:.12rem .35rem; color:var(--text-muted); background:var(--bg-primary); border-radius:99px; font-size:.65rem; text-align:center; }
+    .section-tab:hover { color:var(--text-primary); background:var(--sidebar-hover-bg); }
+    .section-tab.active { color:var(--purple-400); background:var(--sidebar-active-bg); box-shadow:inset 3px 0 0 var(--purple-500); }
+    .section-tab.active > i, .section-tab.active small { color:var(--purple-400); }
+    .maintenance-editor { min-width:0; }
+    .maintenance-group { display:none; overflow:hidden; background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; }
+    .maintenance-group.active { display:block; animation:maintenanceFade .18s ease; }
+    @keyframes maintenanceFade { from{opacity:.4;transform:translateY(3px)} to{opacity:1;transform:none} }
+    .maintenance-group-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.15rem; border-bottom:1px solid var(--border-color); }
+    .maintenance-group-title { display:flex; align-items:center; gap:.7rem; }
+    .maintenance-group-title i { width:34px; height:34px; display:grid; place-items:center; color:var(--purple-400); background:rgba(168,85,247,.1); border-radius:9px; }
+    .maintenance-group-head h2 { margin:0; color:var(--text-primary); font-size:.98rem; }
+    .maintenance-group-head p { margin:.16rem 0 0; color:var(--text-muted); font-size:.72rem; }
+    .maintenance-group-count { color:var(--text-muted); font-size:.7rem; white-space:nowrap; }
+    .maintenance-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; padding:.35rem 1.15rem 1rem; }
+    .maintenance-field { position:relative; padding:.85rem 0; }
+    .maintenance-field:nth-child(odd):not(.full) { padding-right:.65rem; }
+    .maintenance-field:nth-child(even):not(.full) { padding-left:.65rem; }
+    .maintenance-field.full { grid-column:1/-1; }
+    .maintenance-field.is-dirty::before { content:''; position:absolute; top:1.08rem; right:.12rem; width:6px; height:6px; background:#f59e0b; border-radius:50%; box-shadow:0 0 0 3px rgba(245,158,11,.12); }
+    .maintenance-field label { display:block; padding-right:1rem; margin-bottom:.38rem; color:var(--text-secondary); font-size:.76rem; font-weight:750; }
+    .maintenance-field input, .maintenance-field textarea { width:100%; color:var(--text-primary); background:var(--input-bg); border:1px solid var(--border-color); border-radius:9px; padding:.65rem .75rem; outline:none; font:inherit; font-size:.82rem; transition:var(--transition); }
+    .maintenance-field input { min-height:41px; }
+    .maintenance-field textarea { min-height:82px; resize:vertical; line-height:1.48; }
+    .maintenance-field input:focus, .maintenance-field textarea:focus { background:var(--bg-secondary); border-color:var(--purple-500); box-shadow:0 0 0 3px rgba(168,85,247,.09); }
+    .maintenance-meta { display:flex; align-items:flex-start; justify-content:space-between; gap:.65rem; margin-top:.32rem; }
+    .maintenance-help { color:var(--text-muted); font-size:.66rem; line-height:1.35; }
+    .reset-field { flex:none; padding:0; color:var(--text-muted); background:transparent; border:0; font-size:.65rem; font-weight:700; cursor:pointer; }
+    .reset-field:hover { color:var(--purple-400); }
+    .search-empty { display:none; padding:3.5rem 1rem; color:var(--text-muted); background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; text-align:center; }
+    .search-empty i { display:block; margin-bottom:.7rem; font-size:1.5rem; color:var(--purple-400); opacity:.7; }
+    .save-dock { position:sticky; bottom:12px; z-index:20; display:flex; align-items:center; justify-content:space-between; gap:1rem; margin:1rem 0 .3rem; padding:.7rem .8rem .7rem 1rem; background:var(--bg-secondary); border:1px solid var(--border-hover); border-radius:12px; box-shadow:0 12px 30px rgba(16,8,27,.18); opacity:0; visibility:hidden; transform:translateY(12px); transition:var(--transition); }
+    .save-dock.visible { opacity:1; visibility:visible; transform:none; }
+    .save-status { display:flex; align-items:center; gap:.6rem; color:var(--text-secondary); font-size:.76rem; }
+    .save-status i { color:#f59e0b; }
+    .save-dock-actions { display:flex; gap:.5rem; }
+    .policy-list { display:grid; gap:.8rem; padding:1rem; }
+    .policy-item { padding:1rem; border:1px solid var(--border-color); border-radius:12px; background:var(--bg-secondary); }
+    .policy-item-head { display:flex; align-items:center; justify-content:space-between; gap:.8rem; margin-bottom:.8rem; }
+    .policy-item-number { display:inline-flex; align-items:center; gap:.45rem; color:var(--text-secondary); font-size:.76rem; font-weight:800; }
+    .policy-item-number i { color:var(--purple-400); }
+    .policy-item-actions { display:flex; align-items:center; gap:.55rem; }
+    .policy-order { display:flex; align-items:center; gap:.35rem; color:var(--text-muted); font-size:.65rem; font-weight:700; }
+    .policy-order input { width:65px; min-height:32px; padding:.3rem .45rem; color:var(--text-primary); background:var(--input-bg); border:1px solid var(--border-color); border-radius:7px; font:inherit; }
+    .policy-delete { display:inline-flex; align-items:center; gap:.35rem; min-height:32px; padding:.38rem .58rem; color:var(--red-400); background:rgba(239,68,68,.07); border:1px solid rgba(239,68,68,.2); border-radius:8px; font-size:.68rem; font-weight:750; cursor:pointer; }
+    .policy-delete:hover { background:rgba(239,68,68,.14); }
+    .policy-fields { display:grid; grid-template-columns:minmax(180px,.35fr) minmax(0,1fr); gap:.7rem; }
+    .policy-field label { display:block; margin-bottom:.35rem; color:var(--text-secondary); font-size:.7rem; font-weight:750; }
+    .policy-field input,.policy-field textarea { width:100%; padding:.65rem .72rem; color:var(--text-primary); background:var(--input-bg); border:1px solid var(--border-color); border-radius:9px; outline:none; font:inherit; font-size:.8rem; }
+    .policy-field textarea { min-height:78px; resize:vertical; line-height:1.45; }
+    .policy-field input:focus,.policy-field textarea:focus { border-color:var(--purple-500); box-shadow:0 0 0 3px rgba(168,85,247,.09); }
+    .policy-composer { padding:1rem; border:1px dashed var(--border-hover); border-radius:12px; background:rgba(168,85,247,.025); }
+    .policy-composer-head { display:flex; align-items:center; gap:.5rem; margin-bottom:.75rem; color:var(--text-primary); font-size:.78rem; font-weight:800; }
+    .policy-composer-head i { color:var(--purple-400); }
+    .policy-add-row { display:grid; grid-template-columns:minmax(180px,.35fr) minmax(0,1fr) auto; align-items:end; gap:.7rem; }
+    .policy-add-button { min-height:41px; white-space:nowrap; }
+    .policy-empty { padding:1.5rem; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:10px; text-align:center; font-size:.76rem; }
+    @container (max-width:860px){
+        .maintenance-workspace{grid-template-columns:minmax(0,1fr)}
+        .maintenance-nav{position:static;display:flex;max-height:none;gap:.25rem;overflow-x:auto;overflow-y:hidden;padding:.45rem;scroll-snap-type:x proximity}
+        .maintenance-nav-label{display:none}.section-tab{width:auto;min-width:max-content;flex:none;padding:.58rem .72rem;scroll-snap-align:start}.section-tab span{max-width:none;white-space:nowrap}.section-tab small{display:none}.section-tab.active{box-shadow:inset 0 -3px 0 var(--purple-500)}
+    }
+    @container (max-width:620px){
+        .maintenance-grid{grid-template-columns:minmax(0,1fr);padding:.3rem .9rem .8rem}
+        .maintenance-field:nth-child(odd):not(.full),.maintenance-field:nth-child(even):not(.full){padding-left:0;padding-right:0}.maintenance-field.full{grid-column:auto}
+    }
+    @media(max-width:900px){
+        .maintenance-workspace{grid-template-columns:minmax(0,1fr)}.maintenance-nav{position:static;display:flex;max-height:none;gap:.25rem;overflow-x:auto;overflow-y:hidden;padding:.45rem}.maintenance-nav-label{display:none}.section-tab{width:auto;min-width:max-content;flex:none;padding:.58rem .72rem}.section-tab span{max-width:none;white-space:nowrap}.section-tab small{display:none}.section-tab.active{box-shadow:inset 0 -3px 0 var(--purple-500)}
+    }
+    @media(max-width:650px){
+        .maintenance-overview{align-items:flex-start;flex-direction:column}.maintenance-actions{width:100%}.maintenance-actions .maintenance-btn{flex:1}.maintenance-grid{grid-template-columns:1fr;padding:.3rem .9rem .8rem}.maintenance-field:nth-child(odd):not(.full),.maintenance-field:nth-child(even):not(.full){padding-left:0;padding-right:0}.maintenance-field.full{grid-column:auto}.save-dock{bottom:8px}.save-status span{display:none}.save-dock-actions{flex:1}.save-dock-actions .maintenance-btn{flex:1}.policy-fields,.policy-add-row{grid-template-columns:1fr}.policy-add-button{width:100%}
+    }
+    @media(max-width:460px){
+        .maintenance-actions{flex-direction:column}.maintenance-actions .maintenance-btn{width:100%}.maintenance-overview-copy{align-items:flex-start}.maintenance-search kbd{display:none}.maintenance-search input{padding-right:.8rem}.maintenance-group-head{align-items:flex-start}.maintenance-group-count{display:none}.save-dock{padding:.55rem}.save-dock .maintenance-btn{padding:.58rem .7rem;font-size:.74rem}
+    }
+    @media(max-height:800px) and (min-width:901px){
+        .maintenance-overview{padding:.78rem 1rem;margin-bottom:.75rem}.maintenance-overview-icon{width:36px;height:36px}.maintenance-search{margin-bottom:.75rem}.maintenance-field{padding:.68rem 0}.maintenance-field textarea{min-height:72px}.maintenance-group-head{padding:.8rem 1rem}.maintenance-nav{max-height:calc(100dvh - 205px)}
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="maintenance-shell">
+    <div class="maintenance-overview">
+        <div class="maintenance-overview-copy">
+            <div class="maintenance-overview-icon"><i class="fas fa-pen-ruler"></i></div>
+            <div><h2>Website content editor</h2><p>Select a section to edit. Saved changes are published immediately to the client website.</p></div>
+        </div>
+        <div class="maintenance-actions">
+            <a class="maintenance-btn secondary" href="{% url 'website:home' %}" target="_blank" rel="noopener"><i class="fas fa-arrow-up-right-from-square"></i> Preview Website</a>
+            <button class="maintenance-btn primary save-trigger" type="submit" form="maintenance-form" disabled><i class="fas fa-floppy-disk"></i> Save Changes</button>
+        </div>
+    </div>
+    <div class="maintenance-search">
+        <i class="fas fa-magnifying-glass"></i>
+        <input id="maintenance-search" type="search" placeholder="Search website content…" autocomplete="off" aria-label="Search website content">
+        <kbd>Ctrl K</kbd>
+    </div>
+    <form method="post" id="maintenance-form">
+        {% csrf_token %}
+        <div class="maintenance-workspace">
+            <nav class="maintenance-nav" aria-label="Website content sections">
+                <div class="maintenance-nav-label">Content sections</div>
+                {% for group in grouped_content %}
+                <button type="button" class="section-tab {% if forloop.first and not requested_section %}active{% endif %}" data-section-target="section-{{ forloop.counter0 }}" title="{{ group.name }}">
+                    <i class="fas {% if group.name == 'Business Information' %}fa-building{% elif group.name == 'Contact Information' %}fa-address-book{% elif group.name == 'Home Page' %}fa-house{% elif group.name == 'Home Statistics' %}fa-chart-simple{% elif group.name == 'About Page' %}fa-circle-info{% elif group.name == 'Services Page' %}fa-spa{% elif group.name == 'Contact Page' %}fa-envelope{% elif group.name == 'Booking Page' %}fa-calendar-check{% else %}fa-file-lines{% endif %}"></i>
+                    <span>{{ group.name }}</span><small>{{ group.items|length }}</small>
+                </button>
+                {% endfor %}
+                {% for group in policy_groups %}
+                <button type="button" class="section-tab {% if requested_section == group.section %}active{% endif %}" data-section-target="policy-section-{{ group.section }}" title="{{ group.name }}">
+                    <i class="fas {% if group.section == 'booking_policy' %}fa-clipboard-list{% elif group.section == 'privacy_policy' %}fa-shield-halved{% else %}fa-file-contract{% endif %}"></i>
+                    <span>{{ group.name }}</span><small>{{ group.items|length }}</small>
+                </button>
+                {% endfor %}
+            </nav>
+            <div class="maintenance-editor">
+                {% for group in grouped_content %}
+                <section id="section-{{ forloop.counter0 }}" class="maintenance-group {% if forloop.first and not requested_section %}active{% endif %}" data-search-group="{{ group.name|lower }}">
+                    <div class="maintenance-group-head">
+                        <div class="maintenance-group-title"><i class="fas fa-file-pen"></i><div><h2>{{ group.name }}</h2><p>Edit only the fields you need, then save your changes.</p></div></div>
+                        <span class="maintenance-group-count">{{ group.items|length }} field{{ group.items|length|pluralize }}</span>
+                    </div>
+                    <div class="maintenance-grid">
+                        {% for item in group.items %}
+                        <div class="maintenance-field {% if item.input_type == 'textarea' %}full{% endif %}" data-search-field="{{ item.label|lower }} {{ item.value|lower }}">
+                            <label for="content-{{ item.pk }}">{{ item.label }}</label>
+                            {% if item.input_type == 'textarea' %}
+                            <textarea id="content-{{ item.pk }}" name="content_{{ item.pk }}" rows="3" data-default="{{ item.default_value }}" data-maintenance-field>{{ item.value }}</textarea>
+                            {% else %}
+                            <input id="content-{{ item.pk }}" name="content_{{ item.pk }}" type="{% if item.input_type == 'phone' %}tel{% else %}{{ item.input_type }}{% endif %}" value="{{ item.value }}" data-default="{{ item.default_value }}" {% if item.input_type == 'number' %}min="0" step="1"{% endif %} data-maintenance-field>
+                            {% endif %}
+                            <div class="maintenance-meta">
+                                <span class="maintenance-help">{{ item.help_text|default:"Displayed wherever this information is used." }}</span>
+                                <button class="reset-field" type="button" data-reset-field="content-{{ item.pk }}" title="Restore default value"><i class="fas fa-rotate-left"></i> Reset</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endfor %}
+                {% for group in policy_groups %}
+                <section id="policy-section-{{ group.section }}" class="maintenance-group {% if requested_section == group.section %}active{% endif %}" data-search-group="{{ group.name|lower }}">
+                    <div class="maintenance-group-head">
+                        <div class="maintenance-group-title"><i class="fas {% if group.section == 'booking_policy' %}fa-clipboard-list{% elif group.section == 'privacy_policy' %}fa-shield-halved{% else %}fa-file-contract{% endif %}"></i><div><h2>{{ group.name }}</h2><p>Add, edit, arrange, or delete content displayed to clients.</p></div></div>
+                        <span class="maintenance-group-count">{{ group.items|length }} item{{ group.items|length|pluralize }}</span>
+                    </div>
+                    <div class="policy-list">
+                        {% for item in group.items %}
+                        <div class="policy-item maintenance-field" data-search-field="{{ item.title|lower }} {{ item.body|lower }}">
+                            <div class="policy-item-head">
+                                <span class="policy-item-number"><i class="fas fa-grip-lines"></i> Content {{ forloop.counter }}</span>
+                                <div class="policy-item-actions">
+                                    <label class="policy-order">Order <input type="number" min="0" step="1" name="policy_order_{{ item.pk }}" value="{{ item.sort_order }}" data-maintenance-field aria-label="Display order for {{ item.title|default:'policy item' }}"></label>
+                                    <button class="policy-delete" type="submit" name="action" value="delete_policy:{{ item.pk }}" onclick="return confirm('Delete this content permanently?');"><i class="fas fa-trash"></i> Delete</button>
+                                </div>
+                            </div>
+                            <div class="policy-fields">
+                                <div class="policy-field">
+                                    <label for="policy-title-{{ item.pk }}">Heading <span style="color:var(--text-muted);font-weight:500;">(optional)</span></label>
+                                    <input id="policy-title-{{ item.pk }}" type="text" name="policy_title_{{ item.pk }}" value="{{ item.title }}" placeholder="e.g. Cancellations" data-maintenance-field>
+                                </div>
+                                <div class="policy-field">
+                                    <label for="policy-body-{{ item.pk }}">Content</label>
+                                    <textarea id="policy-body-{{ item.pk }}" name="policy_body_{{ item.pk }}" rows="3" data-maintenance-field>{{ item.body }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="policy-empty"><i class="fas fa-file-circle-plus"></i> No content yet. Use the form below to add the first item.</div>
+                        {% endfor %}
+                        <div class="policy-composer">
+                            <div class="policy-composer-head"><i class="fas fa-plus-circle"></i> Add new content</div>
+                            <div class="policy-add-row">
+                                <div class="policy-field"><label for="new-title-{{ group.section }}">Heading <span style="color:var(--text-muted);font-weight:500;">(optional)</span></label><input id="new-title-{{ group.section }}" type="text" name="new_policy_title_{{ group.section }}" placeholder="Section heading"></div>
+                                <div class="policy-field"><label for="new-body-{{ group.section }}">Content</label><textarea id="new-body-{{ group.section }}" name="new_policy_body_{{ group.section }}" rows="2" placeholder="Enter the content shown to clients"></textarea></div>
+                                <button class="maintenance-btn primary policy-add-button" type="submit" name="action" value="add_policy:{{ group.section }}"><i class="fas fa-plus"></i> Add Content</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                {% endfor %}
+                <div class="search-empty" id="maintenance-no-results"><i class="fas fa-magnifying-glass"></i><strong>No matching content found</strong><br><small>Try a page name or field label.</small></div>
+            </div>
+        </div>
+        <div class="save-dock" id="save-dock">
+            <div class="save-status"><i class="fas fa-circle-exclamation"></i><span><strong id="changed-count">0</strong> unsaved change<span id="changed-plural">s</span></span></div>
+            <div class="save-dock-actions">
+                <button class="maintenance-btn secondary" id="discard-changes" type="button"><i class="fas fa-rotate-left"></i> Discard</button>
+                <button class="maintenance-btn primary" type="submit"><i class="fas fa-floppy-disk"></i> Save Changes</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('maintenance-form');
+    const search = document.getElementById('maintenance-search');
+    const tabs = Array.from(document.querySelectorAll('.section-tab'));
+    const groups = Array.from(document.querySelectorAll('.maintenance-group'));
+    const fields = Array.from(form.querySelectorAll('[data-maintenance-field]'));
+    const empty = document.getElementById('maintenance-no-results');
+    const dock = document.getElementById('save-dock');
+    const changedCount = document.getElementById('changed-count');
+    const changedPlural = document.getElementById('changed-plural');
+    const saveTriggers = document.querySelectorAll('.save-trigger');
+    const initialValues = new Map(fields.map(field => [field, field.value]));
+
+    function activateSection(id) {
+        tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.sectionTarget === id));
+        groups.forEach(group => group.classList.toggle('active', group.id === id));
+        if (window.innerWidth < 901) document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    tabs.forEach(tab => tab.addEventListener('click', () => { search.value = ''; clearSearch(); activateSection(tab.dataset.sectionTarget); }));
+
+    function updateDirtyState() {
+        let count = 0;
+        form.querySelectorAll('.maintenance-field').forEach(wrapper => wrapper.classList.remove('is-dirty'));
+        fields.forEach(field => {
+            const dirty = field.value !== initialValues.get(field);
+            if (dirty) field.closest('.maintenance-field')?.classList.add('is-dirty');
+            if (dirty) count += 1;
+        });
+        changedCount.textContent = count;
+        changedPlural.textContent = count === 1 ? '' : 's';
+        dock.classList.toggle('visible', count > 0);
+        saveTriggers.forEach(button => button.disabled = count === 0);
+    }
+    fields.forEach(field => field.addEventListener('input', updateDirtyState));
+
+    function clearSearch() {
+        fields.forEach(field => field.closest('.maintenance-field').style.display = '');
+        empty.style.display = 'none';
+    }
+    function runSearch() {
+        const query = search.value.trim().toLowerCase();
+        if (!query) {
+            clearSearch();
+            const activeTab = tabs.find(tab => tab.classList.contains('active')) || tabs[0];
+            activateSection(activeTab.dataset.sectionTarget);
+            return;
+        }
+        let firstMatchingGroup = null;
+        let totalMatches = 0;
+        groups.forEach(group => {
+            let groupMatches = 0;
+            group.querySelectorAll('.maintenance-field').forEach(field => {
+                const match = group.dataset.searchGroup.includes(query) || field.dataset.searchField.includes(query);
+                field.style.display = match ? '' : 'none';
+                if (match) { groupMatches += 1; totalMatches += 1; }
+            });
+            group.classList.toggle('active', groupMatches > 0);
+            if (groupMatches && !firstMatchingGroup) firstMatchingGroup = group;
+        });
+        tabs.forEach(tab => tab.classList.toggle('active', Boolean(firstMatchingGroup) && tab.dataset.sectionTarget === firstMatchingGroup.id));
+        empty.style.display = totalMatches ? 'none' : 'block';
+    }
+    search.addEventListener('input', runSearch);
+    document.addEventListener('keydown', event => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); search.focus(); search.select(); }
+    });
+
+    document.querySelectorAll('[data-reset-field]').forEach(button => {
+        button.addEventListener('click', function () {
+            const field = document.getElementById(this.dataset.resetField);
+            field.value = field.dataset.default || '';
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+            field.focus();
+        });
+    });
+    document.getElementById('discard-changes').addEventListener('click', function () {
+        fields.forEach(field => field.value = initialValues.get(field));
+        updateDirtyState();
+    });
+    form.addEventListener('submit', function (event) {
+        if (event.submitter?.name === 'action') {
+            const submittedAction = document.createElement('input');
+            submittedAction.type = 'hidden';
+            submittedAction.name = 'action';
+            submittedAction.value = event.submitter.value;
+            form.appendChild(submittedAction);
+        }
+        dock.classList.remove('visible');
+        form.querySelectorAll('button[type="submit"]').forEach(button => { button.disabled = true; button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; });
+    });
+    window.addEventListener('beforeunload', function (event) {
+        if (!dock.classList.contains('visible')) return;
+        event.preventDefault(); event.returnValue = '';
+    });
+});
+</script>
+{% endblock %}

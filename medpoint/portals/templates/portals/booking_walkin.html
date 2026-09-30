@@ -112,7 +112,7 @@
         box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25), 0 0 16px rgba(239, 68, 68, 0.15) !important;
         background-color: rgba(239, 68, 68, 0.05) !important;
     }
-    .service-chips-grid.field-error {
+    #service-chips-container.field-error {
         border: 2px solid #ef4444 !important;
         border-radius: 14px !important;
         padding: 0.65rem !important;
@@ -159,6 +159,26 @@
         grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
         gap: 0.5rem;
     }
+    .service-category-group + .service-category-group {
+        margin-top: 1.1rem;
+    }
+    .service-category-heading {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin: 0 0 0.55rem;
+        color: var(--purple-300);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .service-category-heading::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border-color);
+    }
     .service-chip {
         display: flex;
         flex-direction: column;
@@ -190,6 +210,28 @@
         right: 9px;
         font-size: 0.55rem;
         color: var(--purple-400);
+    }
+    .service-chip.chip-disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+        border-color: rgba(239, 68, 68, 0.2);
+        background: rgba(239, 68, 68, 0.04);
+        pointer-events: none;
+    }
+    .service-chip.chip-disabled .chip-name,
+    .service-chip.chip-disabled .chip-meta {
+        color: var(--text-muted);
+    }
+    .service-chip.chip-disabled::before {
+        content: '\f023';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        top: 7px;
+        right: 9px;
+        color: var(--red-400);
+        font-size: 0.6rem;
+        opacity: 0.8;
     }
     .chip-name {
         font-size: 0.8rem;
@@ -380,11 +422,12 @@
             </div>
         </div>
 
-        <!-- SECTION 2: Appointment Details -->
+        <!-- SECTION 2: Schedule -->
         <div class="section-card">
             <div class="section-header">
                 <div class="section-header-icon"><i class="fas fa-calendar-check"></i></div>
-                <span class="section-header-label">Appointment Details</span>
+                <span class="section-header-label">Schedule</span>
+                <span class="pref-badge" style="margin-left: auto;"><i class="fas fa-check-circle"></i>&nbsp;Automatically Confirmed</span>
             </div>
             <div class="section-body">
                 <div class="form-grid">
@@ -401,50 +444,55 @@
                         </span>
                         {% if form.time.errors %}<span class="error-text">{{ form.time.errors.0 }}</span>{% endif %}
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="id_status">Status <span style="color: var(--red-400);">*</span></label>
-                        {{ form.status }}
-                        {% if form.status.errors %}<span class="error-text">{{ form.status.errors.0 }}</span>{% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="id_therapist_preference">Therapist Preference</label>
-                        {{ form.therapist_preference }}
-                        {% if form.therapist_preference.errors %}<span class="error-text">{{ form.therapist_preference.errors.0 }}</span>{% endif %}
-                    </div>
-                    <div class="form-group full">
-                        <label class="form-label" for="id_notes">Notes (Optional)</label>
-                        {{ form.notes }}
-                        {% if form.notes.errors %}<span class="error-text">{{ form.notes.errors.0 }}</span>{% endif %}
-                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- SECTION 3: Services -->
+        <!-- SECTION 3: Service & Therapist -->
         <div class="section-card">
             <div class="section-header">
                 <div class="section-header-icon"><i class="fas fa-spa"></i></div>
-                <span class="section-header-label">Services <span style="color: var(--red-400);">*</span></span>
+                <span class="section-header-label">Service &amp; Therapist</span>
             </div>
             <div class="section-body">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label class="form-label">Select Service(s) <span style="color: var(--red-400);">*</span></label>
+                    <p style="font-size: 0.72rem; color: var(--text-muted); margin: 0 0 0.65rem;">
+                        <i class="fas fa-info-circle" style="color: var(--purple-400);"></i>
+                        Click to select. You can choose multiple services to add on.
+                    </p>
+                </div>
                 <!-- Hidden multi-select synced with chips -->
                 <div style="display:none;">{{ form.services }}</div>
                 {% if form.services.errors %}<span class="error-text" style="display:block; margin-bottom: 0.5rem;">{{ form.services.errors.0 }}</span>{% endif %}
 
-                <div class="service-chips-grid">
-                    {% for svc in services_list %}
-                    <div class="service-chip"
-                         data-id="{{ svc.pk }}"
-                         data-price="{{ svc.discounted_price }}"
-                         data-duration="{{ svc.duration_minutes }}"
-                         onclick="toggleService(this)"
-                         title="{{ svc.name }}">
-                        <span class="chip-name">{{ svc.name }}</span>
-                        <span class="chip-meta">
-                            <span class="chip-price">&#8369;{{ svc.discounted_price|floatformat:0 }}</span>
-                            <span>&bull; {{ svc.duration_minutes }} min</span>
-                        </span>
-                    </div>
+                <div id="service-chips-container">
+                    {% for group in service_groups %}
+                    <section class="service-category-group" data-service-category="{{ group.code }}">
+                        <h4 class="service-category-heading"><i class="fas fa-spa"></i>{{ group.label }}</h4>
+                        <div class="service-chips-grid">
+                            {% for svc in group.services %}
+                            <div class="service-chip"
+                                 data-id="{{ svc.pk }}"
+                                 data-price="{{ svc.discounted_price }}"
+                                 data-duration="{{ svc.duration_minutes }}"
+                                 onclick="toggleService(this)"
+                                 title="{{ svc.name }}">
+                                <span class="chip-name">{{ svc.name }}</span>
+                                <span class="chip-meta">
+                                    {% if svc.has_discount %}
+                                    <span style="text-decoration: line-through;">&#8369;{{ svc.price|floatformat:2 }}</span>
+                                    <span class="chip-price">&#8369;{{ svc.discounted_price|floatformat:2 }}</span>
+                                    <span style="color: var(--green-400);">{{ svc.discount_percentage|floatformat:-2 }}% OFF</span>
+                                    {% else %}
+                                    <span class="chip-price">&#8369;{{ svc.price|floatformat:2 }}</span>
+                                    {% endif %}
+                                    <span>&bull; {{ svc.duration_minutes }} min</span>
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </section>
                     {% empty %}
                     <p style="color: var(--text-muted); font-size: 0.85rem;">No active services found.</p>
                     {% endfor %}
@@ -455,17 +503,16 @@
                     <span class="sum-item"><i class="fas fa-peso-sign"></i> Total:&nbsp;<strong id="sum-price">&#8369;0.00</strong></span>
                     <span class="sum-item"><i class="fas fa-clock"></i> Duration:&nbsp;<strong id="sum-duration">0 min</strong></span>
                 </div>
-            </div>
-        </div>
+                <div class="form-group" style="margin-top: 1.25rem;">
+                    <label class="form-label" for="id_therapist_preference">Therapist Preference <span style="color: var(--red-400);">*</span></label>
+                    {{ form.therapist_preference }}
+                    {% if form.therapist_preference.errors %}<span class="error-text">{{ form.therapist_preference.errors.0 }}</span>{% endif %}
+                </div>
 
-        <!-- SECTION 4: Therapist -->
-        <div class="section-card">
-            <div class="section-header">
-                <div class="section-header-icon"><i class="fas fa-user-nurse"></i></div>
-                <span class="section-header-label">Therapist Assignment <span style="color: var(--red-400);">*</span></span>
-                <span id="pref-badge" class="pref-badge" style="margin-left: auto;"><i class="fas fa-users"></i>&nbsp;All therapists</span>
-            </div>
-            <div class="section-body">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin: 1.25rem 0 0.75rem;">
+                    <label class="form-label" style="margin:0;">Select Your Therapist <span style="color: var(--red-400);">*</span></label>
+                    <span id="pref-badge" class="pref-badge"><i class="fas fa-users"></i>&nbsp;All therapists</span>
+                </div>
                 <!-- Hidden select synced by JS -->
                 <div style="display:none;">{{ form.therapist }}</div>
                 {% if form.therapist.errors %}<span class="error-text">{{ form.therapist.errors.0 }}</span>{% endif %}
@@ -473,7 +520,7 @@
                 <div class="therapist-section hidden" id="therapist-section">
                     <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">
                         <i class="fas fa-info-circle" style="color: var(--purple-400);"></i>
-                        Showing availability for selected date &amp; time. Click to select (optional).
+                        Showing availability for the selected date and time. Choose one therapist.
                     </p>
                     <div id="therapist-cards-container">
                         <div class="loading-spinner"></div>
@@ -483,6 +530,21 @@
                     <i class="fas fa-calendar-day" style="color: var(--purple-400);"></i>
                     Select a date and time to see available therapists.
                 </p>
+            </div>
+        </div>
+
+        <!-- SECTION 4: Additional Notes -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-header-icon"><i class="fas fa-pen"></i></div>
+                <span class="section-header-label">Additional Notes</span>
+            </div>
+            <div class="section-body">
+                <div class="form-group full">
+                    <label class="form-label" for="id_notes">Special Requests (Optional)</label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}<span class="error-text">{{ form.notes.errors.0 }}</span>{% endif %}
+                </div>
             </div>
         </div>
 
@@ -518,6 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateInput      = document.getElementById('id_date');
     const timeInput      = document.getElementById('id_time');
     const svcSelect      = document.getElementById('id_services');
+    const nameInput      = document.getElementById('id_client_name');
+    const phoneInput     = document.getElementById('id_client_phone');
 
     const currentTherapistId = {{ current_therapist_id|default:"null" }};
     let selectedServiceIds = [];
@@ -525,6 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Service chip toggle ──────────────────────────────
     window.toggleService = function(chip) {
+        if (chip.classList.contains('chip-disabled')) return;
         chip.classList.toggle('active');
         const id = chip.dataset.id;
         if (chip.classList.contains('active')) {
@@ -538,9 +603,9 @@ document.addEventListener('DOMContentLoaded', () => {
         maybeLoadTherapists();
 
         // Clear service error if at least one selected
-        const chipsGrid = document.querySelector('.service-chips-grid');
-        if (selectedServiceIds.length > 0 && chipsGrid) {
-            clearFieldError(null, chipsGrid);
+        const chipsContainer = document.getElementById('service-chips-container');
+        if (selectedServiceIds.length > 0 && chipsContainer) {
+            clearFieldError(null, chipsContainer);
         }
     };
 
@@ -566,6 +631,71 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             bar.classList.remove('visible');
         }
+        updateChipAvailability();
+    }
+
+    const CLOSING_MINUTES = 24 * 60;
+
+    function getAvailableServiceMinutes() {
+        if (!timeInput || !timeInput.value) return null;
+        const [hour, minute] = timeInput.value.split(':').map(Number);
+        return CLOSING_MINUTES - (hour * 60 + minute);
+    }
+
+    function updateChipAvailability() {
+        const availableMinutes = getAvailableServiceMinutes();
+        const chips = document.querySelectorAll('#service-chips-container .service-chip');
+
+        if (availableMinutes === null) {
+            chips.forEach(chip => {
+                chip.classList.remove('chip-disabled');
+                chip.removeAttribute('aria-disabled');
+            });
+            return;
+        }
+
+        const selectedDuration = Array.from(
+            document.querySelectorAll('#service-chips-container .service-chip.active')
+        ).reduce((total, chip) => total + (parseInt(chip.dataset.duration, 10) || 0), 0);
+
+        chips.forEach(chip => {
+            if (chip.classList.contains('active')) {
+                chip.classList.remove('chip-disabled');
+                chip.removeAttribute('aria-disabled');
+                return;
+            }
+
+            const serviceDuration = parseInt(chip.dataset.duration, 10) || 0;
+            const wouldFinishLate = selectedDuration + serviceDuration > availableMinutes;
+            chip.classList.toggle('chip-disabled', wouldFinishLate);
+            if (wouldFinishLate) {
+                chip.setAttribute('aria-disabled', 'true');
+            } else {
+                chip.removeAttribute('aria-disabled');
+            }
+        });
+    }
+
+    function enforceClosingTimeOnSelectedServices() {
+        const availableMinutes = getAvailableServiceMinutes();
+        if (availableMinutes === null) return;
+
+        const selected = Array.from(
+            document.querySelectorAll('#service-chips-container .service-chip.active')
+        ).map(chip => ({
+            chip,
+            id: chip.dataset.id,
+            duration: parseInt(chip.dataset.duration, 10) || 0,
+        })).sort((left, right) => right.duration - left.duration);
+
+        let totalDuration = selected.reduce((total, item) => total + item.duration, 0);
+        for (const item of selected) {
+            if (totalDuration <= availableMinutes) break;
+            item.chip.classList.remove('active');
+            selectedServiceIds = selectedServiceIds.filter(id => id !== item.id);
+            totalDuration -= item.duration;
+        }
+        syncServicesField();
     }
 
     // ── Therapist preference options ────────────────────
@@ -606,8 +736,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const clientGender = genderSelect ? genderSelect.value : 'male';
         const dateQ       = dateInput.value  ? `&date=${dateInput.value}` : '';
         const timeQ       = timeInput.value  ? `&time=${timeInput.value}` : '';
-        const svcQ        = selectedServiceIds.map(id => `service_id=${id}`).join('&');
-        const svcPart     = svcQ ? `&${svcQ}` : '';
+        const svcQ        = selectedServiceIds.join(',');
+        const svcPart     = svcQ ? `&service_id=${svcQ}` : '';
 
         // Update badge
         if (clientGender === 'female' || pref === 'female') {
@@ -638,7 +768,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         let html = '<div class="therapist-grid">';
         therapists.forEach(t => {
-            if ((t.is_off || t.is_booked || t.is_closed) && selectedTherapistId == t.id) resetTherapist();
+            if ((t.is_off || t.is_booked || t.is_closed || t.is_outside_schedule || t.is_on_break) && selectedTherapistId == t.id) resetTherapist();
 
             const isSelected    = selectedTherapistId == t.id;
             const photo         = t.photo
@@ -654,6 +784,16 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (t.is_off) {
                 overlay  = `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.65);z-index:5;display:flex;align-items:center;justify-content:center;"><span style="background:rgba(239,68,68,.9);color:#fff;padding:3px 9px;border-radius:6px;font-size:.65rem;font-weight:700;">Day Off</span></div>`;
                 disabled = 'opacity:.55;cursor:not-allowed;'; clickFn = ''; selClass = '';
+            } else if (t.is_on_break) {
+                const breakInfo = t.break_hours ? `<br><span style="font-size:.58rem;font-weight:400;">${t.break_hours}</span>` : '';
+                overlay = `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.65);z-index:5;display:flex;align-items:center;justify-content:center;text-align:center;"><span style="background:rgba(245,158,11,.92);color:#fff;padding:3px 9px;border-radius:6px;font-size:.65rem;font-weight:700;">On Break${breakInfo}</span></div>`;
+                disabled = 'opacity:.55;cursor:not-allowed;border-color:rgba(245,158,11,.35);'; clickFn = ''; selClass = '';
+            } else if (t.is_outside_schedule) {
+                const schedule = t.schedule_hours
+                    ? `<br><span style="font-size:.58rem;font-weight:400;">Schedule: ${t.schedule_hours}</span>`
+                    : '';
+                overlay  = `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.65);z-index:5;display:flex;align-items:center;justify-content:center;text-align:center;"><span style="background:rgba(168,85,247,.9);color:#fff;padding:3px 9px;border-radius:6px;font-size:.65rem;font-weight:700;">Not on Shift${schedule}</span></div>`;
+                disabled = 'opacity:.55;cursor:not-allowed;border-color:rgba(168,85,247,.3);'; clickFn = ''; selClass = '';
             } else if (t.is_booked) {
                 const txt = t.next_avail ? `Booked<br><span style="font-size:.58rem;font-weight:400;">Next: ${t.next_avail}</span>` : 'Booked';
                 overlay  = `<div style="position:absolute;inset:0;background:rgba(0,0,0,0.65);z-index:5;display:flex;align-items:center;justify-content:center;text-align:center;"><span style="background:rgba(245,158,11,.9);color:#fff;padding:3px 9px;border-radius:6px;font-size:.65rem;font-weight:700;">${txt}</span></div>`;
@@ -773,16 +913,6 @@ document.addEventListener('DOMContentLoaded', () => {
         maybeLoadTherapists();
     }
 
-    // ── Status Options Safety (Ensure Completed & Cancelled are removed) ──
-    const statusSelect = document.getElementById('id_status');
-    if (statusSelect) {
-        Array.from(statusSelect.options).forEach(opt => {
-            if (['completed', 'cancelled', 'awaiting_verification'].includes(opt.value)) {
-                opt.remove();
-            }
-        });
-    }
-
     // ── Date input min constraint ────────────────────────
     if (dateInput) {
         const todayStr = getLocalDateString();
@@ -832,6 +962,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function validateClientName(showRequiredError = false) {
+        if (!nameInput) return true;
+        const value = nameInput.value.trim();
+
+        if (!value) {
+            if (showRequiredError) {
+                setFieldError(nameInput, 'Please enter client full name.');
+            } else {
+                clearFieldError(nameInput);
+            }
+            return false;
+        }
+        if (!/^[\p{L} .'-]+$/u.test(value) || !/\p{L}/u.test(value)) {
+            setFieldError(
+                nameInput,
+                'Full name can contain letters, spaces, hyphens, apostrophes, and periods only.'
+            );
+            return false;
+        }
+
+        clearFieldError(nameInput);
+        return true;
+    }
+
+    function validateClientPhone(showRequiredError = false) {
+        if (!phoneInput) return true;
+        const value = phoneInput.value.trim();
+
+        if (!value) {
+            if (showRequiredError) {
+                setFieldError(phoneInput, 'Please enter client phone number.');
+            } else {
+                clearFieldError(phoneInput);
+            }
+            return false;
+        }
+        if (!/^\d+$/.test(value)) {
+            setFieldError(phoneInput, 'Phone number must contain numbers only.');
+            return false;
+        }
+
+        clearFieldError(phoneInput);
+        return true;
+    }
+
     const walkinForm = document.getElementById('walkin-form');
     if (walkinForm) {
         walkinForm.addEventListener('submit', function (e) {
@@ -860,13 +1035,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // 1. Full Name
-            checkField(document.getElementById('id_client_name'), 'Please enter client full name');
+            if (!validateClientName(true)) {
+                hasErrors = true;
+                if (!firstInvalidEl) firstInvalidEl = nameInput;
+            }
 
             // 2. Gender
             checkField(document.getElementById('id_client_gender'), 'Please select client gender');
 
             // 3. Phone Number
-            checkField(document.getElementById('id_client_phone'), 'Please enter client phone number');
+            if (!validateClientPhone(true)) {
+                hasErrors = true;
+                if (!firstInvalidEl) firstInvalidEl = phoneInput;
+            }
 
             // 4. Email Address
             const emailInput = document.getElementById('id_client_email');
@@ -906,20 +1087,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // 6. Time
             checkField(document.getElementById('id_time'), 'Please select booking time');
 
-            // 7. Status
-            checkField(document.getElementById('id_status'), 'Please select booking status');
-
-            // 8. Services (must select at least one)
-            const chipsGrid = document.querySelector('.service-chips-grid');
-            if (selectedServiceIds.length === 0 && chipsGrid) {
-                setFieldError(null, 'Please select at least one service', chipsGrid);
+            // 7. Services (must select at least one)
+            const chipsContainer = document.getElementById('service-chips-container');
+            if (selectedServiceIds.length === 0 && chipsContainer) {
+                setFieldError(null, 'Please select at least one service', chipsContainer);
                 hasErrors = true;
-                if (!firstInvalidEl) firstInvalidEl = chipsGrid;
-            } else if (chipsGrid) {
-                clearFieldError(null, chipsGrid);
+                if (!firstInvalidEl) firstInvalidEl = chipsContainer;
+            } else if (chipsContainer) {
+                clearFieldError(null, chipsContainer);
             }
 
-            // 9. Therapist (must select one if therapist cards are visible)
+            // 8. Therapist
             const therapistCardsContainer = document.getElementById('therapist-cards-container');
             const therapistSection = document.getElementById('therapist-section');
             const isTherapistVisible = therapistSection && !therapistSection.classList.contains('hidden');
@@ -937,15 +1115,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 if (firstInvalidEl) {
                     firstInvalidEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    if (typeof firstInvalidEl.focus === 'function' && !firstInvalidEl.classList.contains('service-chips-grid')) {
+                    if (typeof firstInvalidEl.focus === 'function' && firstInvalidEl.id !== 'service-chips-container') {
                         firstInvalidEl.focus();
                     }
                 }
             }
         });
 
-        // Live-clear on user typing or selection
+        // Keep format-aware fields validated live instead of clearing their
+        // messages merely because they contain a value.
+        if (nameInput) {
+            nameInput.addEventListener('input', () => validateClientName(false));
+            nameInput.addEventListener('blur', () => validateClientName(true));
+        }
+        if (phoneInput) {
+            phoneInput.addEventListener('input', () => validateClientPhone(false));
+            phoneInput.addEventListener('blur', () => validateClientPhone(true));
+        }
+
+        // Live-clear ordinary required fields on user input or selection.
         walkinForm.querySelectorAll('.portal-input').forEach(input => {
+            if (input === nameInput || input === phoneInput) return;
             input.addEventListener('input', () => {
                 if (input.value.trim() !== '') clearFieldError(input);
             });
@@ -964,7 +1154,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (timeInput) {
         timeInput.addEventListener('focus', filterTimesForToday);
-        timeInput.addEventListener('change', () => { resetTherapist(); maybeLoadTherapists(); });
+        timeInput.addEventListener('change', () => {
+            enforceClosingTimeOnSelectedServices();
+            updateSummary();
+            resetTherapist();
+            maybeLoadTherapists();
+        });
     }
 
     // ── Highlight server-side errors on page load ────────
@@ -984,6 +1179,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Init ─────────────────────────────────────────────
+    validateClientName(false);
+    validateClientPhone(false);
     updatePreferenceOptions();
     filterTimesForToday();   // apply on page load if date is pre-filled
     // Auto-load therapists if date is pre-filled and time gets selected

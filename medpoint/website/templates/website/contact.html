@@ -1,7 +1,7 @@
 {% extends 'website/base.html' %}
 {% load static %}
 
-{% block title %}Contact Us - MEDPOINT Massage &amp; Spa{% endblock %}
+{% block title %}Contact Us - {{ site_content.business_legal_name }}{% endblock %}
 
 {% block content %}
 <!-- Page Hero -->
@@ -9,13 +9,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div class="flex items-center gap-3 mb-4 animate-fade-in">
             <div class="w-8 h-px bg-purple-500"></div>
-            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Get In Touch</span>
+            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">{{ site_content.contact_hero_label }}</span>
         </div>
         <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in-up">
-            Contact <span class="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">Us</span>
+            {{ site_content.contact_hero_title }}
         </h1>
         <p class="text-gray-400 text-lg max-w-xl animate-fade-in-up" style="animation-delay:0.2s">
-            Have questions or want to learn more? We'd love to hear from you.
+            {{ site_content.contact_hero_description }}
         </p>
         <div class="flex items-center gap-2 mt-6 text-sm animate-fade-in" style="animation-delay:0.3s">
             <a href="{% url 'website:home' %}" class="text-gray-500 hover:text-purple-400 transition-colors">Home</a>
@@ -35,7 +35,7 @@
                     <i class="fas fa-map-marker-alt text-purple-400 text-lg"></i>
                 </div>
                 <h3 class="text-white font-semibold text-sm mb-1">Visit Us</h3>
-                <p class="text-gray-400 text-sm">Gallares Street, Tagbilaran City, Philippines</p>
+                <p class="text-gray-400 text-sm">{{ site_content.address }}</p>
             </div>
             <div
                 class="glass-panel p-6 text-center hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-200">
@@ -43,7 +43,7 @@
                     <i class="fas fa-phone-alt text-purple-400 text-lg"></i>
                 </div>
                 <h3 class="text-white font-semibold text-sm mb-1">Call Us</h3>
-                <p class="text-gray-400 text-sm">+63 928 356 8231</p>
+                <p class="text-gray-400 text-sm">{{ site_content.phone }}</p>
             </div>
             <div
                 class="glass-panel p-6 text-center hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-300">
@@ -51,7 +51,7 @@
                     <i class="fas fa-envelope text-purple-400 text-lg"></i>
                 </div>
                 <h3 class="text-white font-semibold text-sm mb-1">Email Us</h3>
-                <p class="text-gray-400 text-sm">medpointmassage.spa@gmail.com</p>
+                <p class="text-gray-400 text-sm">{{ site_content.email }}</p>
             </div>
             <div
                 class="glass-panel p-6 text-center hover:border-purple-500/25 transition-all duration-300 scroll-reveal delay-400">
@@ -59,7 +59,7 @@
                     <i class="fas fa-clock text-purple-400 text-lg"></i>
                 </div>
                 <h3 class="text-white font-semibold text-sm mb-1">Open Hours</h3>
-                <p class="text-gray-400 text-sm">Mon-Sun: 10:00AM - 12:00MN</p>
+                <p class="text-gray-400 text-sm">{{ site_content.business_hours }}</p>
             </div>
         </div>
     </div>
@@ -72,8 +72,8 @@
             <!-- Form -->
             <div class="lg:col-span-3 scroll-reveal">
                 <div class="glass-panel p-8 sm:p-10">
-                    <h2 class="font-display text-2xl font-semibold text-white mb-2">Send Us a Message</h2>
-                    <p class="text-gray-400 text-sm mb-8">We'll get back to you within 24 hours.</p>
+                    <h2 class="font-display text-2xl font-semibold text-white mb-2">{{ site_content.contact_form_title }}</h2>
+                    <p class="text-gray-400 text-sm mb-8">{{ site_content.contact_form_description }}</p>
 
                     <form method="post" action="{% url 'website:contact' %}" id="contact-form">
                         {% csrf_token %}
@@ -145,7 +145,7 @@
                         <i class="fas fa-share-alt text-purple-400"></i> Follow Us
                     </h3>
                     <div class="flex gap-3">
-                        <a href="https://www.facebook.com/MedpointSpa"
+                        <a href="{{ site_content.facebook_url }}" target="_blank" rel="noopener"
                             class="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 hover:bg-purple-500 hover:text-white transition-all"><i
                                 class="fab fa-facebook-f"></i></a>
                     </div>

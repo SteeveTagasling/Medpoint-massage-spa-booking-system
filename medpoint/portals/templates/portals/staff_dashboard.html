@@ -5,29 +5,34 @@
 {% block page_subtitle %}Your daily appointments and performance metrics{% endblock %}
 
 {% block content %}
-<!-- Combined Welcome & Profile Header -->
+<!-- Staff welcome and quick actions -->
 {% if therapist %}
 <div class="dashboard-hero card">
-    <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+    <div class="staff-hero-profile">
         {% if therapist.photo %}
         <img src="{{ therapist.photo.url }}" alt="{{ therapist.name }}" class="staff-avatar">
         {% else %}
         <div class="staff-avatar-placeholder">{{ therapist.name|first|upper }}</div>
         {% endif %}
-        
         <div class="hero-content">
+            <span class="hero-eyebrow"><i class="fas fa-user-clock"></i> My workspace</span>
             <h2>Welcome back, {{ therapist.name }}</h2>
-            <div style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
-                <span class="staff-title" style="color: var(--text-primary); font-weight: 500; font-size: 0.9rem; margin: 0;">{{ therapist.title }}</span>
+            <div class="staff-meta">
+                <span class="staff-title">{{ therapist.title }}</span>
                 <span class="staff-commission">
-                    <i class="fas fa-award" style="font-size: 0.8rem; margin-right: 0.2rem;"></i>{{ therapist.commission_percentage }}% Commission Rate
+                    <i class="fas fa-award"></i>{{ therapist.commission_percentage }}% commission
                 </span>
             </div>
-            <p style="margin: 0;">You have <strong style="color: var(--purple-400);">{{ my_bookings_today.count }}</strong> appointment(s) scheduled for today.</p>
+            <p>You have <strong>{{ my_bookings_today.count }}</strong> appointment{{ my_bookings_today.count|pluralize }} scheduled today.</p>
+            <div class="hero-actions">
+                <a href="{% url 'portals:staff_my_bookings' %}" class="dashboard-action dashboard-action-primary"><i class="fas fa-calendar-check"></i> My Bookings</a>
+                <a href="{% url 'portals:staff_my_schedule' %}" class="dashboard-action"><i class="far fa-calendar-alt"></i> My Schedule</a>
+                <a href="{% url 'portals:staff_apply_leave' %}" class="dashboard-action"><i class="fas fa-plane-departure"></i> Apply Leave</a>
+            </div>
         </div>
     </div>
     <div class="hero-live-clock">
-        <i class="fa-regular fa-clock clock-icon"></i>
+        <span class="clock-icon-wrap"><i class="fa-regular fa-clock clock-icon"></i></span>
         <div class="clock-data">
             <div id="date-display" class="clock-date">...</div>
             <div id="clock-display" class="clock-time">...</div>
@@ -37,11 +42,12 @@
 {% else %}
 <div class="dashboard-hero card">
     <div class="hero-content">
+        <span class="hero-eyebrow"><i class="fas fa-user-clock"></i> My workspace</span>
         <h2>Welcome back, {{ request.user.get_full_name|default:request.user.username }}</h2>
         <p>You have <strong>{{ my_bookings_today.count }}</strong> appointment(s) scheduled for today.</p>
     </div>
     <div class="hero-live-clock">
-        <i class="fa-regular fa-clock clock-icon"></i>
+        <span class="clock-icon-wrap"><i class="fa-regular fa-clock clock-icon"></i></span>
         <div class="clock-data">
             <div id="date-display" class="clock-date">...</div>
             <div id="clock-display" class="clock-time">...</div>
@@ -54,68 +60,94 @@
 </div>
 {% endif %}
 
-<!-- Metrics -->
-<h3 class="section-heading">Performance Metrics</h3>
-<div class="metrics-grid priority-metrics" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-    <div class="metric-card premium-card metric-green">
+<!-- Daily and performance overview -->
+<div class="section-title-row">
+    <div>
+        <h3 class="section-heading dashboard-section-heading">My overview</h3>
+        <p class="section-description">Your appointments and performance at a glance.</p>
+    </div>
+    <a href="{% url 'portals:staff_my_reports' %}" class="section-link">View my reports <i class="fas fa-arrow-right"></i></a>
+</div>
+<div class="dashboard-kpi-grid">
+    <a href="{% url 'portals:staff_my_bookings' %}" class="dashboard-kpi metric-green">
         <div class="metric-icon"><i class="fas fa-calendar-day"></i></div>
-        <div class="metric-info">
-            <div class="metric-label">Today's Bookings</div>
+        <div class="kpi-content">
             <div class="metric-value">{{ my_bookings_today.count }}</div>
+            <div class="metric-label">Today's bookings</div>
+            <div class="metric-helper">Appointments on your agenda</div>
         </div>
-    </div>
-    <div class="metric-card premium-card metric-purple">
+        <i class="fas fa-chevron-right kpi-arrow"></i>
+    </a>
+    <a href="{% url 'portals:staff_my_bookings' %}?status=pending" class="dashboard-kpi metric-amber">
+        <div class="metric-icon"><i class="fas fa-hourglass-half"></i></div>
+        <div class="kpi-content">
+            <div class="metric-value">{{ my_pending }}</div>
+            <div class="metric-label">Pending bookings</div>
+            <div class="metric-helper">Bookings awaiting action</div>
+        </div>
+        <i class="fas fa-chevron-right kpi-arrow"></i>
+    </a>
+    <a href="{% url 'portals:staff_my_reports' %}" class="dashboard-kpi metric-purple">
         <div class="metric-icon"><i class="fas fa-check-double"></i></div>
-        <div class="metric-info">
-            <div class="metric-label">Total Completed</div>
+        <div class="kpi-content">
             <div class="metric-value">{{ my_total_completed }}</div>
+            <div class="metric-label">Completed services</div>
+            <div class="metric-helper">All completed appointments</div>
         </div>
-    </div>
-    <div class="metric-card premium-card metric-amber">
-        <div class="metric-icon"><i class="fas fa-users"></i></div>
-        <div class="metric-info">
-            <div class="metric-label">Total Customers</div>
-            <div class="metric-value">{{ my_unique_customers }}</div>
-        </div>
-    </div>
-    <div class="metric-card premium-card metric-blue">
+        <i class="fas fa-chevron-right kpi-arrow"></i>
+    </a>
+    <a href="{% url 'portals:staff_my_reports' %}" class="dashboard-kpi metric-blue">
         <div class="metric-icon"><i class="fas fa-money-bill-wave"></i></div>
-        <div class="metric-info">
-            <div class="metric-label">Total Income</div>
-            <div class="metric-value">₱{{ my_services_income|floatformat:2 }}</div>
+        <div class="kpi-content">
+            <div class="metric-value metric-currency">₱{{ my_services_income|floatformat:"2g" }}</div>
+            <div class="metric-label">Commission earned</div>
+            <div class="metric-helper">Based on completed services</div>
         </div>
-    </div>
+        <i class="fas fa-chevron-right kpi-arrow"></i>
+    </a>
 </div>
 
-<!-- Today's Schedule -->
-<h3 class="section-heading">Your Agenda</h3>
-<div class="card">
-    <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-        <span class="card-header-title">
-            <i class="fas fa-calendar-day" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
-            Today's Appointments — {{ today|date:"l, M d, Y" }}
-        </span>
-        <a href="{% url 'portals:booking_walkin' %}" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.42rem 0.9rem; border-radius: 8px; background: linear-gradient(135deg, var(--purple-600), var(--violet-600)); color: #fff; font-size: 0.78rem; font-weight: 600; text-decoration: none; box-shadow: 0 2px 8px rgba(147, 51, 234, 0.25); transition: all 0.2s ease;">
-            <i class="fas fa-plus"></i> New Walk-in Booking
-        </a>
+<div class="staff-snapshot card">
+    <span class="snapshot-icon"><i class="fas fa-users"></i></span>
+    <div><strong>{{ my_unique_customers }}</strong><span>unique clients served</span></div>
+    {% if therapist %}<span class="snapshot-divider"></span><div><strong>{{ therapist.commission_percentage }}%</strong><span>current commission rate</span></div>{% endif %}
+</div>
+
+<!-- Today's schedule -->
+<div class="agenda-heading-row">
+    <div>
+        <h3 class="section-heading dashboard-section-heading">Today's agenda</h3>
+        <p class="section-description">{{ today|date:"l, F j, Y" }}</p>
     </div>
-    <div class="card-body">
+    <a href="{% url 'portals:booking_walkin' %}" class="dashboard-action dashboard-action-primary"><i class="fas fa-plus"></i> New Walk-in</a>
+</div>
+<div class="card agenda-card">
+    <div class="card-header agenda-card-header">
+        <span class="card-header-title"><i class="fas fa-list-ul"></i> Appointment timeline</span>
+        <span class="agenda-count">{{ my_bookings_today.count }} booking{{ my_bookings_today.count|pluralize }}</span>
+    </div>
+    <div class="card-body agenda-body">
         <div class="today-bookings-list">
             {% for booking in my_bookings_today %}
-            <div class="today-booking-item">
-                <div class="today-booking-info">
+            <a href="{% url 'portals:staff_my_bookings' %}" class="today-booking-item">
+                <div class="booking-time-column">
                     <span class="booking-time-pill">{{ booking.get_time_display }}</span>
-                    <div>
-                        <div class="today-booking-client">{{ booking.client_name }}</div>
-                        <div class="today-booking-service">{{ booking.service_names }} • {{ booking.total_duration_minutes }} min</div>
-                    </div>
+                    <span class="timeline-dot"></span>
+                </div>
+                <div class="today-booking-info">
+                    <div class="today-booking-client">{{ booking.client_name }}</div>
+                    <div class="today-booking-service"><i class="fas fa-spa"></i> {{ booking.service_names }}</div>
+                    <div class="today-booking-meta"><span><i class="far fa-clock"></i> {{ booking.total_duration_minutes }} min</span><span><i class="fas fa-hashtag"></i>{{ booking.pk|stringformat:"04d" }}</span></div>
                 </div>
                 <span class="status status-{{ booking.status }}">{{ booking.get_status_display }}</span>
-            </div>
+                <i class="fas fa-chevron-right booking-row-arrow"></i>
+            </a>
             {% empty %}
             <div class="empty-state">
-                <i class="fas fa-coffee" style="font-size: 2rem; color: var(--text-muted); margin-bottom: 0.5rem;"></i>
-                <p>No appointments scheduled for today</p>
+                <span class="empty-icon"><i class="far fa-calendar-check"></i></span>
+                <strong>Your schedule is clear</strong>
+                <p>No appointments are assigned to you today.</p>
+                <a href="{% url 'portals:staff_my_schedule' %}" class="dashboard-action">View weekly schedule</a>
             </div>
             {% endfor %}
         </div>
@@ -336,6 +368,142 @@
     
     .empty-state { text-align: center; padding: 2rem; }
     .empty-state p { margin: 0; color: var(--text-secondary); }
+
+    /* Refined staff dashboard */
+    .dashboard-hero {
+        padding: 1.5rem 1.65rem;
+        margin-bottom: 1.6rem;
+        border-left: 1px solid rgba(168, 85, 247, 0.18);
+        border-color: rgba(168, 85, 247, 0.18);
+        background:
+            radial-gradient(circle at 92% 12%, rgba(168, 85, 247, 0.16), transparent 28%),
+            linear-gradient(135deg, var(--bg-card), rgba(124, 58, 237, 0.05));
+        position: relative;
+        overflow: hidden;
+        flex-wrap: nowrap;
+    }
+    .dashboard-hero::after {
+        content: '';
+        position: absolute;
+        width: 170px;
+        height: 170px;
+        right: -72px;
+        bottom: -115px;
+        border: 28px solid rgba(168, 85, 247, 0.045);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .staff-hero-profile { display: flex; align-items: center; gap: 1.2rem; min-width: 0; position: relative; z-index: 1; }
+    .staff-avatar, .staff-avatar-placeholder { width: 68px; height: 68px; flex: 0 0 68px; border: 2px solid rgba(168,85,247,.6); box-shadow: 0 8px 24px rgba(124,58,237,.17); }
+    .hero-eyebrow { display: inline-flex; align-items: center; gap: .4rem; margin-bottom: .35rem; color: var(--purple-400); font-size: .65rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    .hero-content h2 { font-size: clamp(1.25rem, 2vw, 1.65rem); font-weight: 650; margin-bottom: .35rem; }
+    .hero-content p { margin: .55rem 0 0; }
+    .hero-content p strong { color: var(--purple-400); }
+    .staff-meta { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; }
+    .hero-content .staff-title { color: var(--text-primary); font-size: .78rem; font-weight: 600; }
+    .staff-commission { padding: .18rem .6rem; font-size: .65rem; box-shadow: none; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .9rem; }
+    .dashboard-action { min-height: 35px; padding: .48rem .78rem; display: inline-flex; align-items: center; justify-content: center; gap: .42rem; color: var(--text-secondary); background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 9px; text-decoration: none; font-size: .72rem; font-weight: 650; transition: all .2s ease; }
+    .dashboard-action:hover { transform: translateY(-1px); color: var(--purple-400); border-color: rgba(168,85,247,.4); }
+    .dashboard-action-primary { color: #fff; background: linear-gradient(135deg, var(--purple-600), var(--violet-600)); border-color: transparent; box-shadow: 0 7px 18px rgba(124,58,237,.2); }
+    .dashboard-action-primary:hover { color: #fff; border-color: transparent; box-shadow: 0 9px 22px rgba(124,58,237,.3); }
+    .hero-live-clock { min-width: 205px; padding: .68rem .8rem; gap: .75rem; background: color-mix(in srgb, var(--bg-primary) 78%, transparent); border-color: rgba(168,85,247,.16); position: relative; z-index: 1; }
+    .clock-icon-wrap { width: 38px; height: 38px; border-radius: 10px; background: rgba(168,85,247,.12); display: grid; place-items: center; flex: 0 0 38px; }
+    .hero-live-clock .clock-icon { font-size: 1rem; }
+    .hero-live-clock .clock-time { font-size: 1rem; }
+
+    .section-title-row, .agenda-heading-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: .8rem; }
+    .dashboard-section-heading { margin: 0; color: var(--text-primary); letter-spacing: .035em; }
+    .dashboard-section-heading::after { display: none; }
+    .section-description { margin: .2rem 0 0; color: var(--text-muted); font-size: .72rem; }
+    .section-link { color: var(--purple-400); text-decoration: none; font-size: .72rem; font-weight: 650; display: inline-flex; align-items: center; gap: .38rem; white-space: nowrap; }
+
+    .dashboard-kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; margin-bottom: .85rem; }
+    .dashboard-kpi { min-width: 0; min-height: 112px; padding: 1rem; display: flex; align-items: center; gap: .72rem; color: inherit; text-decoration: none; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; position: relative; overflow: hidden; transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+    .dashboard-kpi::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+    .dashboard-kpi.metric-green::before { background: var(--green-400); }
+    .dashboard-kpi.metric-amber::before { background: var(--amber-400); }
+    .dashboard-kpi.metric-purple::before { background: var(--purple-400); }
+    .dashboard-kpi.metric-blue::before { background: var(--blue-400); }
+    .dashboard-kpi:hover { transform: translateY(-2px); border-color: var(--border-hover); box-shadow: var(--metric-hover-shadow); }
+    .dashboard-kpi .metric-icon { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 11px; display: grid; place-items: center; }
+    .kpi-content { min-width: 0; flex: 1; }
+    .dashboard-kpi .metric-value { color: var(--text-primary); font-size: 1.35rem; font-weight: 750; line-height: 1; }
+    .dashboard-kpi .metric-currency { font-size: 1.12rem; white-space: nowrap; }
+    .dashboard-kpi .metric-label { margin-top: .35rem; color: var(--text-primary); font-size: .74rem; font-weight: 650; }
+    .metric-helper { margin-top: .18rem; color: var(--text-muted); font-size: .62rem; line-height: 1.35; }
+    .kpi-arrow { color: var(--text-muted); font-size: .6rem; opacity: .5; transition: .2s ease; }
+    .dashboard-kpi:hover .kpi-arrow { color: var(--purple-400); opacity: 1; transform: translateX(2px); }
+
+    .staff-snapshot { display: flex; align-items: center; gap: .75rem; padding: .75rem 1rem; margin-bottom: 1.55rem; }
+    .snapshot-icon { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; border-radius: 9px; color: var(--purple-400); background: rgba(168,85,247,.11); }
+    .staff-snapshot > div { display: flex; align-items: baseline; gap: .35rem; }
+    .staff-snapshot strong { color: var(--text-primary); font-size: .9rem; }
+    .staff-snapshot div span { color: var(--text-muted); font-size: .68rem; }
+    .snapshot-divider { width: 1px; height: 24px; background: var(--border-color); margin: 0 .2rem; }
+
+    .agenda-heading-row { align-items: center; }
+    .agenda-card { overflow: hidden; }
+    .agenda-card-header { padding: .9rem 1.15rem; }
+    .agenda-card-header .card-header-title { display: flex; align-items: center; gap: .48rem; }
+    .agenda-card-header i { color: var(--purple-400); }
+    .agenda-count { padding: .2rem .62rem; color: var(--purple-400); background: rgba(168,85,247,.1); border: 1px solid rgba(168,85,247,.18); border-radius: 999px; font-size: .65rem; font-weight: 650; }
+    .agenda-body { padding: .65rem; }
+    .today-bookings-list { gap: .42rem; }
+    .today-booking-item { color: inherit; text-decoration: none; padding: .78rem .9rem; border-radius: 11px; display: grid; grid-template-columns: 105px minmax(0, 1fr) auto 14px; align-items: center; gap: .8rem; }
+    .booking-time-column { display: flex; align-items: center; gap: .65rem; min-width: 0; }
+    .booking-time-pill { min-width: 78px; padding: .32rem .5rem; text-align: center; }
+    .timeline-dot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--purple-400); box-shadow: 0 0 0 4px rgba(168,85,247,.1); }
+    .today-booking-info { display: block; min-width: 0; }
+    .today-booking-client { font-weight: 650; font-size: .82rem; }
+    .today-booking-service { margin-top: .18rem; font-size: .72rem; white-space: normal; }
+    .today-booking-service i { color: var(--purple-400); font-size: .6rem; margin-right: .24rem; }
+    .today-booking-meta { display: flex; gap: .75rem; margin-top: .28rem; color: var(--text-muted); font-size: .62rem; }
+    .today-booking-meta span { display: inline-flex; align-items: center; gap: .25rem; }
+    .booking-row-arrow { color: var(--text-muted); opacity: .45; font-size: .6rem; }
+    .today-booking-item:hover .booking-row-arrow { color: var(--purple-400); opacity: 1; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; padding: 2.3rem 1rem; }
+    .empty-icon { width: 50px; height: 50px; display: grid; place-items: center; margin-bottom: .7rem; border-radius: 14px; color: var(--purple-400); background: rgba(168,85,247,.1); font-size: 1.15rem; }
+    .empty-state strong { color: var(--text-primary); font-size: .85rem; }
+    .empty-state p { margin: .25rem 0 .8rem; font-size: .72rem; }
+
+    @media (max-width: 1050px) {
+        .dashboard-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dashboard-hero { flex-wrap: wrap; }
+    }
+    @media (max-width: 700px) {
+        .dashboard-hero { padding: 1.15rem; align-items: stretch; }
+        .staff-hero-profile { align-items: flex-start; }
+        .hero-live-clock { width: 100%; min-width: 0; }
+        .dashboard-kpi-grid { gap: .6rem; }
+        .dashboard-kpi { min-height: 102px; padding: .82rem; }
+        .metric-helper, .kpi-arrow { display: none; }
+        .today-booking-item { grid-template-columns: 88px minmax(0, 1fr) auto; }
+        .booking-row-arrow { display: none; }
+    }
+    @media (max-width: 480px) {
+        .staff-hero-profile { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: .8rem; }
+        .staff-avatar, .staff-avatar-placeholder { width: 52px; height: 52px; flex-basis: 52px; }
+        .hero-actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }
+        .hero-actions .dashboard-action:first-child { grid-column: 1 / -1; }
+        .dashboard-kpi-grid { grid-template-columns: 1fr 1fr; gap: .5rem; }
+        .dashboard-kpi { min-height: 96px; padding: .72rem; align-items: flex-start; flex-direction: column; }
+        .dashboard-kpi .metric-icon { width: 34px; height: 34px; flex-basis: 34px; }
+        .dashboard-kpi .metric-value { font-size: 1.12rem; }
+        .dashboard-kpi .metric-label { font-size: .66rem; }
+        .section-description { display: none; }
+        .section-link { font-size: .65rem; }
+        .staff-snapshot { align-items: flex-start; flex-wrap: wrap; }
+        .snapshot-divider { display: none; }
+        .staff-snapshot > div { flex-direction: column; gap: .05rem; }
+        .agenda-heading-row .dashboard-action { min-width: 38px; padding: .5rem; }
+        .agenda-heading-row .dashboard-action { font-size: 0; }
+        .agenda-heading-row .dashboard-action i { font-size: .72rem; }
+        .today-booking-item { grid-template-columns: 1fr auto; align-items: start; }
+        .booking-time-column { grid-column: 1; }
+        .today-booking-info { grid-column: 1 / -1; }
+        .today-booking-item > .status { grid-column: 2; grid-row: 1; }
+    }
 </style>
 {% endblock %}
 

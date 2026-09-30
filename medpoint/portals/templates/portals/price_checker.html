@@ -926,17 +926,6 @@
         </div>
 
         <div class="pc-toolbar-actions">
-            <!-- Quick Preset Chips -->
-            <div class="pc-presets">
-                {% for m in available_months|slice:":4" %}
-                <a href="?month={{ m.value }}&tab={{ active_tab }}"
-                    class="pc-preset-btn {% if selected_month == m.value %}active{% endif %}">
-                    {{ m.label }}
-                </a>
-                {% endfor %}
-            </div>
-
-
             <!-- Schedule Price Range Action -->
             <button type="button" class="btn-pc-primary" onclick="openAddPriceModal()">
                 <i class="fas fa-calendar-plus"></i>
@@ -1293,6 +1282,7 @@
                             style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Base
                             Catalog Price (₱) *</label>
                         <input type="number" step="0.01" min="0" name="base_price" id="modalBasePrice" class="pc-input"
+                            inputmode="decimal" onwheel="this.blur()"
                             style="width:100%;" required placeholder="0.00" oninput="updateModalLiveCalc()">
                     </div>
                     <div>
@@ -1300,6 +1290,7 @@
                             style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Promo
                             Discount (%)</label>
                         <input type="number" step="0.01" min="0" max="100" name="discount_percentage" id="modalDiscount"
+                            inputmode="decimal" onwheel="this.blur()"
                             class="pc-input" style="width:100%;" value="0" placeholder="0"
                             oninput="updateModalLiveCalc()">
                     </div>
@@ -1526,6 +1517,7 @@
                             style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Base
                             Catalog Price (₱) *</label>
                         <input type="number" step="0.01" min="0" name="base_price" id="editBasePrice" class="pc-input"
+                            inputmode="decimal" onwheel="this.blur()"
                             style="width:100%;" required placeholder="0.00" oninput="updateEditLiveCalc()">
                     </div>
                     <div>
@@ -1533,6 +1525,7 @@
                             style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Promo
                             Discount (%)</label>
                         <input type="number" step="0.01" min="0" max="100" name="discount_percentage" id="editDiscount"
+                            inputmode="decimal" onwheel="this.blur()"
                             class="pc-input" style="width:100%;" value="0" placeholder="0"
                             oninput="updateEditLiveCalc()">
                     </div>

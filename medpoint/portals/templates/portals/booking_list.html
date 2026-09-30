@@ -687,30 +687,6 @@
         color: #ffffff;
     }
 
-    .btn-delete-sm {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 30px;
-        height: 30px;
-        padding: 0;
-        border-radius: 7px;
-        font-size: 0.78rem;
-        background: rgba(239, 68, 68, 0.1);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.28);
-        cursor: pointer;
-        transition: all 0.15s ease;
-        font-family: inherit;
-        flex-shrink: 0;
-    }
-    .btn-delete-sm:hover {
-        background: #ef4444;
-        color: #ffffff;
-        border-color: #ef4444;
-        transform: translateY(-1px);
-    }
-
     /* Compact status badge override for booking list */
     .bookings-table td.status-td {
         overflow: visible;
@@ -861,7 +837,7 @@
                     <th style="width: 38px; text-align: center;">
                         <input type="checkbox" class="booking-cb" id="booking-select-all" title="Select all bookings">
                     </th>
-                    <th style="width: 48px;">#</th>
+                    <th style="width: 58px;">BK ID</th>
                     <th style="width: 270px;">Client</th>
                     <th style="width: 280px;">Service</th>
                     <th style="width: 135px;">Therapist</th>
@@ -904,6 +880,12 @@
                             {% empty %}
                             <span style="color: var(--text-muted); font-size: 0.8rem;">{{ booking.service_names|default:"—" }}</span>
                             {% endfor %}
+                            {% if booking.additional_minutes %}
+                            <div class="service-line" title="Additional massage time: {{ booking.additional_minutes }} minutes for ₱{{ booking.additional_time_fee|floatformat:2 }}">
+                                <i class="fas fa-clock" style="color: #a855f7;"></i>
+                                <span>Additional Time: +{{ booking.additional_minutes }} min · ₱{{ booking.additional_time_fee|floatformat:0 }}</span>
+                            </div>
+                            {% endif %}
                         </div>
                     </td>
                     <td>
@@ -937,11 +919,6 @@
                                 <button class="btn-restore-sm" onclick="restoreBooking({{ booking.pk }})" title="Restore to active bookings">
                                     <i class="fas fa-undo"></i>
                                 </button>
-                                {% if request.user.is_superuser %}
-                                <button class="btn-delete-sm" onclick="deleteBooking({{ booking.pk }})" title="Permanently delete this booking">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                                {% endif %}
                             {% else %}
                                 {% if booking.status == 'pending' %}
                                     <button class="action-btn btn-confirm"
@@ -1138,35 +1115,6 @@
         .catch(err => console.error(err));
     }
 
-    function deleteBooking(bookingId) {
-        bookingToDelete = bookingId;
-        document.getElementById('custom-delete-modal').classList.add('active');
-    }
-
-    function closeDeleteModal() {
-        bookingToDelete = null;
-        document.getElementById('custom-delete-modal').classList.remove('active');
-    }
-
-    function confirmDeleteBooking() {
-        if (!bookingToDelete) return;
-        const id = bookingToDelete;
-        closeDeleteModal();
-        setActionCellLoading(id);
-        fetch(`/portal/bookings/${id}/delete/`, {
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/json' },
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                const row = document.getElementById(`booking-row-${id}`);
-                if (row) { row.style.opacity = '0'; row.style.transition = 'opacity 0.3s'; setTimeout(() => row.remove(), 300); }
-            }
-        })
-        .catch(err => console.error(err));
-    }
-
     // ── Status Update ──────────────────────────────────────────────────────────
     function renderActionButtons(cell, newStatus) {
         const bookingId = cell.id.replace('action-cell-', '');
@@ -1220,7 +1168,6 @@
     }
 
     let bookingToCancel = null;
-    let bookingToDelete = null;
 
     function openCancelModal(bookingId) {
         bookingToCancel = bookingId;
@@ -1243,9 +1190,6 @@
         if (e.target === this) { closeCancelModal(); }
     });
 
-    document.getElementById('custom-delete-modal').addEventListener('click', function(e) {
-        if (e.target === this) { closeDeleteModal(); }
-    });
 </script>
 
 <!-- Custom Cancel Modal HTML -->
@@ -1263,18 +1207,4 @@
     </div>
 </div>
 
-<!-- Custom Delete Modal HTML -->
-<div class="logout-modal-overlay" id="custom-delete-modal">
-    <div class="logout-modal-content">
-        <div class="logout-modal-icon" style="background: rgba(239,68,68,0.15); color: #ef4444;">
-            <i class="fas fa-trash"></i>
-        </div>
-        <h3 class="logout-modal-title">Delete Booking?</h3>
-        <p class="logout-modal-desc">This will <strong>permanently delete</strong> the booking and cannot be undone.</p>
-        <div class="logout-modal-actions">
-            <button class="logout-btn-cancel" onclick="closeDeleteModal()">No, Keep it</button>
-            <button class="logout-btn-confirm" onclick="confirmDeleteBooking()" style="background: #ef4444;">Yes, Delete</button>
-        </div>
-    </div>
-</div>
 {% endblock %}

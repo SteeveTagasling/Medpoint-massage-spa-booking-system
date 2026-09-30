@@ -47,6 +47,16 @@
                             <span class="text-purple-300 font-medium">₱{{ svc.discounted_price|floatformat:0 }}</span>
                         </div>
                         {% endfor %}
+                        {% if b.additional_minutes %}
+                        <div class="flex items-start gap-2 rounded-lg bg-purple-500/10 border border-purple-500/15 px-3 py-2 mt-1">
+                            <i class="fas fa-clock mt-1 w-4 text-center text-purple-400"></i>
+                            <span class="flex-1">
+                                <span class="block text-gray-300">Additional Massage Time</span>
+                                <span class="block text-xs text-purple-300">+{{ b.additional_minutes }} minutes</span>
+                            </span>
+                            <span class="text-purple-300 font-medium">₱{{ b.additional_time_fee|floatformat:0 }}</span>
+                        </div>
+                        {% endif %}
                         {% if b.therapist %}
                         <div class="flex items-start gap-2 mt-1">
                             <i class="fas fa-user-md mt-1 w-4 text-center opacity-50"></i>
@@ -81,6 +91,16 @@
                         <span class="text-purple-300 font-medium">₱{{ svc.discounted_price|floatformat:0 }}</span>
                     </div>
                     {% endfor %}
+                    {% if booking.additional_minutes %}
+                    <div class="flex items-start gap-2 pl-6 rounded-lg bg-purple-500/10 border border-purple-500/15 px-3 py-2">
+                        <i class="fas fa-clock mt-1 w-4 text-center text-purple-400"></i>
+                        <span class="flex-1">
+                            <span class="block text-gray-300">Additional Massage Time</span>
+                            <span class="block text-xs text-purple-300">+{{ booking.additional_minutes }} minutes</span>
+                        </span>
+                        <span class="text-purple-300 font-medium">₱{{ booking.additional_time_fee|floatformat:0 }}</span>
+                    </div>
+                    {% endif %}
                     <!-- Date & Time -->
                     <div class="flex items-start gap-2 mt-1 pt-2 border-t border-purple-500/10">
                         <i class="fas fa-clock mt-1 w-4 text-center opacity-50"></i>

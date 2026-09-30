@@ -54,6 +54,62 @@
     .filter-select:focus {
         border-color: var(--purple-400);
     }
+    .catalog-search {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin-left: auto;
+        flex-wrap: wrap;
+    }
+    .search-field {
+        position: relative;
+        min-width: min(290px, 72vw);
+    }
+    .search-field i {
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 0.76rem;
+        pointer-events: none;
+    }
+    .search-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.62rem 0.9rem 0.62rem 2.25rem;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        font: inherit;
+        font-size: 0.8125rem;
+        outline: none;
+    }
+    .search-input:focus {
+        border-color: var(--purple-400);
+        box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.09);
+    }
+    .btn-search, .btn-clear-search {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        min-height: 39px;
+        padding: 0.58rem 0.9rem;
+        border-radius: 10px;
+        font: inherit;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .btn-search { border: 0; color: #fff; background: var(--purple-600); }
+    .btn-clear-search { border: 1px solid var(--border-color); color: var(--text-secondary); background: var(--bg-secondary); }
+    @media (max-width: 760px) {
+        .catalog-search { width: 100%; margin-left: 0; }
+        .search-field { flex: 1; min-width: 190px; }
+    }
 
     /* ─── Uniform Card Grid ─── */
     .items-grid {
@@ -352,14 +408,25 @@
     <a href="{% url 'portals:service_create' %}" class="btn-primary">
         <i class="fas fa-plus"></i> Add New Service
     </a>
+    <a href="{% url 'portals:service_category_list' %}" class="btn-action-edit" style="padding: 0.65rem 1.1rem;">
+        <i class="fas fa-layer-group"></i> Manage Categories
+    </a>
     {% endif %}
-    <form method="get" action="{% url 'portals:service_list' %}" style="display: flex; gap: 0.5rem; align-items: center;">
+    <form method="get" action="{% url 'portals:service_list' %}" class="catalog-search">
+        <div class="search-field">
+            <i class="fas fa-search"></i>
+            <input class="search-input" type="search" name="q" value="{{ search_query }}" placeholder="Search services or categories..." aria-label="Search services">
+        </div>
         <select name="category" class="filter-select" onchange="this.form.submit()">
             <option value="">All Categories</option>
             {% for value, label in categories %}
             <option value="{{ value }}" {% if category_filter == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
+        <button type="submit" class="btn-search"><i class="fas fa-search"></i> Search</button>
+        {% if search_query or category_filter %}
+        <a href="{% url 'portals:service_list' %}" class="btn-clear-search" title="Clear search and filter"><i class="fas fa-times"></i> Clear</a>
+        {% endif %}
     </form>
 </div>
 
@@ -443,7 +510,7 @@
     <div class="card" style="grid-column: 1 / -1;">
         <div class="empty-state">
             <i class="fas fa-concierge-bell"></i>
-            <p>No services found</p>
+            <p>{% if search_query or category_filter %}No services match your search or filter.{% else %}No services found.{% endif %}</p>
         </div>
     </div>
     {% endfor %}

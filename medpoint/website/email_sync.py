@@ -3,6 +3,8 @@ import email
 from email.header import decode_header
 import re
 import logging
+import hashlib
+import html as html_lib
 from datetime import datetime, timedelta
 from django.conf import settings
 from django.utils import timezone
@@ -43,31 +45,61 @@ def extract_email_address(from_header):
 
 
 def clean_email_body(text):
-    """Strip quoted reply text (e.g. 'On ... wrote:', '--- Original Message ---', quotes)."""
+    """Return only the newly written portion of an email reply.
+
+    Gmail frequently wraps its ``On ... wrote:`` marker across multiple lines,
+    especially between the sender name and address.  Process the whole body
+    before falling back to line-level markers so quoted history never becomes
+    a second message inside the portal conversation.
+    """
     if not text:
         return ""
 
+    normalized = html_lib.unescape(str(text)).replace('\r\n', '\n').replace('\r', '\n')
+    normalized = normalized.replace('\xa0', ' ')
+
+    # These markers begin quoted history. Gmail's marker may span lines, so
+    # DOTALL is intentionally enabled with a conservative length limit.
+    block_patterns = [
+        r'(?ims)^\s*On\s+.{1,1200}?\bwrote:\s*$',
+        r'(?im)^\s*-{2,}\s*(?:Original Message|Forwarded message)\s*-{2,}\s*$',
+        r'(?im)^\s*Begin forwarded message:\s*$',
+        r'(?im)^\s*_{5,}\s*$',
+    ]
+    marker_positions = []
+    for pattern in block_patterns:
+        match = re.search(pattern, normalized)
+        if match:
+            marker_positions.append(match.start())
+    if marker_positions:
+        normalized = normalized[:min(marker_positions)]
+
     lines = []
-    stop_reply_patterns = [
-        r'^\s*On\s+.+wrote:\s*$',
-        r'^\s*-{2,}\s*Original Message\s*-{2,}',
-        r'^\s*_{2,}\s*$',
+    line_stop_patterns = [
         r'^\s*From:\s*.+',
+        r'^\s*Sent:\s*.+',
         r'^\s*Sent from my\s+.+',
         r'^\s*Get Outlook for\s+.+',
     ]
-
-    for line in text.splitlines():
-        # Check if line marks the beginning of quoted previous email
-        if any(re.match(pattern, line, re.IGNORECASE) for pattern in stop_reply_patterns):
+    for line in normalized.splitlines():
+        if any(re.match(pattern, line, re.IGNORECASE) for pattern in line_stop_patterns):
             break
-        # Skip quoted lines starting with '>'
         if line.strip().startswith('>'):
             continue
         lines.append(line)
 
-    cleaned = "\n".join(lines).strip()
-    return cleaned if cleaned else text.strip()
+    # Trim excessive blank lines left behind by HTML/plain-text conversion.
+    cleaned = re.sub(r'\n{3,}', '\n\n', "\n".join(lines)).strip()
+    return cleaned
+
+
+def _html_to_text(html_body):
+    """Convert email HTML to readable text while retaining quote boundaries."""
+    from django.utils.html import strip_tags
+
+    html_body = re.sub(r'(?is)<(?:script|style)\b.*?</(?:script|style)>', '', html_body)
+    html_body = re.sub(r'(?i)<br\s*/?>|</(?:p|div|li|tr|blockquote)>', '\n', html_body)
+    return strip_tags(html_body)
 
 
 def extract_body_from_email(msg_obj):
@@ -93,8 +125,7 @@ def extract_body_from_email(msg_obj):
                 payload = part.get_payload(decode=True)
                 charset = part.get_content_charset() or 'utf-8'
                 try:
-                    from django.utils.html import strip_tags
-                    body_text = strip_tags(payload.decode(charset, errors='replace'))
+                    body_text = _html_to_text(payload.decode(charset, errors='replace'))
                 except Exception:
                     pass
     else:
@@ -110,35 +141,45 @@ def extract_body_from_email(msg_obj):
 
 def find_matching_contact_message(subject, from_email, references_header=""):
     """
-    Find corresponding ContactMessage:
-    1. By explicit ticket ID in subject [Ticket #123] or [Ref: #123]
-    2. By In-Reply-To / References header containing <ticket-123-...>
-    3. Fallback: sender email matching most recent active ContactMessage
+    Find corresponding ContactMessage by reliable ticket-based matching only.
+
+    Matching strategy (in order of reliability):
+    1. Ticket ID embedded in the email subject — [Ticket #123] or [Ref: #123]
+    2. Message-ID / References header containing <ticket-123-...> (set by portal reply)
+
+    NOTE: The old email-only fallback (matching by sender address) has been removed.
+    That approach was unreliable: a client with multiple tickets would have all their
+    replies incorrectly routed to their *most recent* ticket instead of the actual
+    reply thread, causing messages to appear in the wrong conversation.
     """
-    # 1. Look for [Ticket #123] in subject
-    ticket_match = re.search(r'\[(?:Ticket|Ref|ID)\s*#?(\d+)\]', subject, re.IGNORECASE)
-    if ticket_match:
-        msg_id = int(ticket_match.group(1))
-        contact = ContactMessage.objects.filter(pk=msg_id).first()
-        if contact:
-            return contact
+    ticket_ids = {
+        int(value)
+        for value in re.findall(r'\[(?:Ticket|Ref|ID)\s*#?(\d+)\]', subject or '', re.IGNORECASE)
+    }
 
-    # 2. Look in References header: e.g. <ticket-123-reply@...>
+    # Also inspect References / In-Reply-To: e.g. <ticket-123-reply@domain>.
     if references_header:
-        ref_match = re.search(r'<ticket-(\d+)-', references_header, re.IGNORECASE)
-        if ref_match:
-            msg_id = int(ref_match.group(1))
-            contact = ContactMessage.objects.filter(pk=msg_id).first()
-            if contact:
-                return contact
+        decoded_refs = references_header.replace('%3C', '<').replace('%3E', '>')
+        ticket_ids.update(
+            int(value)
+            for value in re.findall(r'<ticket-(\d+)(?:-|@)', decoded_refs, re.IGNORECASE)
+        )
 
-    # 3. Fallback: match by sender email address
-    if from_email:
-        contact = ContactMessage.objects.filter(email__iexact=from_email).order_by('-created_at').first()
-        if contact:
-            return contact
+    # Conflicting ticket identifiers indicate a merged/forwarded email thread;
+    # never guess because that can leak one conversation into another.
+    if len(ticket_ids) != 1:
+        return None
 
-    return None
+    contact = ContactMessage.objects.filter(pk=ticket_ids.pop()).first()
+    if not contact or not from_email:
+        return None
+
+    # The incoming sender must own the ticket. This intentionally replaces the
+    # unsafe historical behavior of routing based on a ticket-like subject alone.
+    if contact.email.strip().casefold() != from_email.strip().casefold():
+        return None
+
+    return contact
 
 
 def sync_incoming_email_replies():
@@ -183,9 +224,13 @@ def sync_incoming_email_replies():
                 msg = email.message_from_bytes(raw_email)
 
                 # Message-ID header (unique message identifier)
-                message_id = msg.get('Message-ID', '').strip()
+                message_id = msg.get('Message-ID', '').strip().casefold()
                 if not message_id:
-                    message_id = f"imap-{m_id.decode()}"
+                    # IMAP sequence numbers are not stable across mailbox changes.
+                    # A content hash remains stable and prevents repeat imports.
+                    message_id = f"sha256-{hashlib.sha256(raw_email).hexdigest()}"
+                elif len(message_id) > 255:
+                    message_id = f"sha256-{hashlib.sha256(message_id.encode()).hexdigest()}"
 
                 # Skip if already ingested
                 if MessageReply.objects.filter(email_message_id=message_id).exists():
@@ -199,7 +244,10 @@ def sync_incoming_email_replies():
                     continue
 
                 subject = decode_mime_header(msg.get('Subject', ''))
-                references = msg.get('References', '') or msg.get('In-Reply-To', '')
+                references = ' '.join(filter(None, [
+                    msg.get('References', ''),
+                    msg.get('In-Reply-To', ''),
+                ]))
 
                 contact_msg = find_matching_contact_message(subject, from_email, references)
                 if not contact_msg:

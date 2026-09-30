@@ -1,13 +1,21 @@
 from django import forms
 from django.contrib.auth.models import User
+from django.utils import timezone
 from django.utils.text import slugify
-from website.models import Service, Therapist, Booking, StaffSchedule
+from django.db.models import Q
+from website.forms import (
+    DUPLICATE_BOOKING_ERROR,
+    duplicate_booking_exists,
+    validate_full_name,
+    validate_phone_number,
+)
+from website.models import Service, ServiceCategory, Therapist, Booking, StaffSchedule
 
 
 class ServiceForm(forms.ModelForm):
     """Admin form for creating/editing services."""
     category = forms.MultipleChoiceField(
-        choices=Service.CATEGORY_CHOICES,
+        choices=(),
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'category-checkboxes'}),
         help_text="Select one or more categories."
     )
@@ -36,10 +44,12 @@ class ServiceForm(forms.ModelForm):
             }),
             'price': forms.NumberInput(attrs={
                 'class': 'portal-input', 'placeholder': '0.00', 'step': '0.01',
+                'inputmode': 'decimal', 'onwheel': 'this.blur()',
             }),
             'discount_percentage': forms.NumberInput(attrs={
                 'class': 'portal-input', 'placeholder': '0',
                 'min': 0, 'max': 100, 'step': '0.01',
+                'inputmode': 'decimal', 'onwheel': 'this.blur()',
             }),
             'image': forms.ClearableFileInput(attrs={'class': 'portal-input'}),
             'order': forms.NumberInput(attrs={
@@ -49,8 +59,14 @@ class ServiceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        selected_codes = []
         if self.instance and self.instance.pk and self.instance.category:
-            self.initial['category'] = [c.strip() for c in self.instance.category.split(',')]
+            selected_codes = [c.strip() for c in self.instance.category.split(',')]
+            self.initial['category'] = selected_codes
+        categories = ServiceCategory.objects.filter(is_active=True)
+        if selected_codes:
+            categories = ServiceCategory.objects.filter(Q(is_active=True) | Q(code__in=selected_codes))
+        self.fields['category'].choices = list(categories.values_list('code', 'name'))
 
     def clean_category(self):
         data = self.cleaned_data['category']
@@ -69,6 +85,52 @@ class ServiceForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+
+class ServiceCategoryForm(forms.ModelForm):
+    """Admin form for catalog categories."""
+
+    code = forms.SlugField(
+        required=False,
+        help_text='Used internally and in website links. It is generated from the name if left blank.',
+        widget=forms.TextInput(attrs={
+            'class': 'portal-input', 'placeholder': 'premium-packages',
+        }),
+    )
+
+    class Meta:
+        model = ServiceCategory
+        fields = ['name', 'code', 'order', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'portal-input', 'placeholder': 'e.g. Premium Packages',
+            }),
+            'order': forms.NumberInput(attrs={
+                'class': 'portal-input', 'min': 0,
+            }),
+        }
+        help_texts = {
+            'code': 'Used internally and in website links. It is generated from the name if left blank.',
+            'order': 'Lower numbers appear first in Services, Book Now, and Walk-in Booking.',
+        }
+
+    def clean_name(self):
+        name = self.cleaned_data['name'].strip()
+        duplicate = ServiceCategory.objects.filter(name__iexact=name).exclude(pk=self.instance.pk)
+        if duplicate.exists():
+            raise forms.ValidationError('A category with this name already exists.')
+        return name
+
+    def clean_code(self):
+        code = slugify(self.cleaned_data.get('code', '').strip())
+        if not code:
+            code = slugify(self.cleaned_data.get('name', ''))
+        if not code:
+            raise forms.ValidationError('Enter a valid category name or code.')
+        duplicate = ServiceCategory.objects.filter(code__iexact=code).exclude(pk=self.instance.pk)
+        if duplicate.exists():
+            raise forms.ValidationError('A category with this code already exists.')
+        return code
 
 
 class TherapistForm(forms.ModelForm):
@@ -173,18 +235,21 @@ class WalkInBookingForm(forms.ModelForm):
         model = Booking
         fields = [
             'client_name', 'client_gender', 'client_email', 'client_phone',
-            'services', 'therapist_preference', 'therapist', 'date', 'time', 'notes', 'status'
+            'services', 'therapist_preference', 'therapist', 'date', 'time', 'notes'
         ]
         widgets = {
             'client_name': forms.TextInput(attrs={
                 'class': 'portal-input', 'placeholder': 'Client full name',
+                'autocomplete': 'name',
             }),
             'client_gender': forms.Select(attrs={'class': 'portal-input'}),
             'client_email': forms.EmailInput(attrs={
                 'class': 'portal-input', 'placeholder': 'client@example.com',
             }),
             'client_phone': forms.TextInput(attrs={
-                'class': 'portal-input', 'placeholder': '+63 9XX XXX XXXX',
+                'class': 'portal-input', 'placeholder': '639XXXXXXXXX',
+                'inputmode': 'numeric', 'pattern': '[0-9]+',
+                'maxlength': '20', 'autocomplete': 'tel',
             }),
             'services': forms.SelectMultiple(attrs={'class': 'portal-input'}),
             'therapist_preference': forms.Select(attrs={'class': 'portal-input'}),
@@ -194,31 +259,151 @@ class WalkInBookingForm(forms.ModelForm):
                 'class': 'portal-input', 'rows': 3,
                 'placeholder': 'Any special notes...',
             }),
-            'status': forms.Select(attrs={'class': 'portal-input'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['services'].queryset = Service.objects.filter(is_active=True)
         self.fields['therapist'].queryset = Therapist.objects.filter(is_active=True)
-        self.fields['therapist'].required = False
+        self.fields['therapist'].required = True
+        self.fields['therapist'].error_messages = {
+            'required': 'Please select a therapist.'
+        }
         self.fields['notes'].required = False
-        self.fields['status'].choices = [
-            ('confirmed', 'Confirmed'),
-            ('pending', 'Pending'),
-        ]
         from django.utils import timezone
         today_local = timezone.localtime(timezone.now()).date()
         self.fields['date'].widget.attrs['min'] = today_local.isoformat()
 
+    def clean_client_name(self):
+        value = self.cleaned_data['client_name'].strip()
+        validate_full_name(value)
+        return value
+
+    def clean_client_phone(self):
+        value = self.cleaned_data['client_phone'].strip()
+        validate_phone_number(value)
+        return value
+
     def clean(self):
         cleaned_data = super().clean()
+        client_name = cleaned_data.get('client_name')
+        client_gender = cleaned_data.get('client_gender')
+        therapist_preference = cleaned_data.get('therapist_preference')
+        therapist = cleaned_data.get('therapist')
         date = cleaned_data.get('date')
         time_val = cleaned_data.get('time')
-        status = cleaned_data.get('status')
 
-        if status and status not in ('pending', 'confirmed'):
-            self.add_error('status', 'Invalid status. Only Confirmed and Pending are permitted for walk-in.')
+        excluded_ids = [self.instance.pk] if self.instance and self.instance.pk else None
+        if duplicate_booking_exists(client_name, date, time_val, excluded_ids):
+            self.add_error('client_name', DUPLICATE_BOOKING_ERROR)
+
+        services = cleaned_data.get('services')
+        if time_val and services:
+            try:
+                start_hour, start_minute = (int(part) for part in time_val.split(':'))
+                available_minutes = (24 * 60) - (start_hour * 60 + start_minute)
+                total_duration = sum(service.duration_minutes for service in services)
+                if total_duration > available_minutes:
+                    self.add_error(
+                        'services',
+                        'The selected services would finish after closing time. '
+                        'Please remove a service or select an earlier time.'
+                    )
+            except (TypeError, ValueError):
+                pass
+
+        if therapist:
+            if client_gender == 'female' and therapist.gender != 'female':
+                self.add_error(
+                    'therapist',
+                    'Female clients can only be assigned to female therapists.'
+                )
+            elif (
+                therapist_preference in ('male', 'female')
+                and therapist.gender != therapist_preference
+            ):
+                self.add_error(
+                    'therapist',
+                    'The selected therapist does not match the therapist preference.'
+                )
+
+        if date and time_val and services and therapist:
+            import datetime
+            from website.models import StaffLeave
+
+            try:
+                requested_start_time = datetime.datetime.strptime(time_val, '%H:%M').time()
+                requested_start = datetime.datetime.combine(date, requested_start_time)
+                total_duration = sum(service.duration_minutes for service in services)
+                requested_end = requested_start + datetime.timedelta(minutes=total_duration)
+
+                if StaffLeave.objects.filter(
+                    is_active=True,
+                    therapist=therapist,
+                    start_date__lte=date,
+                    end_date__gte=date,
+                ).exists():
+                    self.add_error(
+                        'therapist',
+                        f'{therapist.name} is on leave on the selected date.'
+                    )
+
+                weekday = date.weekday()
+                schedule = StaffSchedule.objects.filter(
+                    therapist=therapist,
+                    day_of_week=weekday,
+                    is_available=True,
+                ).first()
+                has_schedule_record = StaffSchedule.objects.filter(
+                    therapist=therapist,
+                    day_of_week=weekday,
+                ).exists()
+
+                if schedule:
+                    if not schedule.contains_booking(requested_start_time, total_duration):
+                        self.add_error(
+                            'therapist',
+                            f'{therapist.name} is not on shift for the complete '
+                            'selected service time.'
+                        )
+                    if schedule.booking_overlaps_break(requested_start_time, total_duration):
+                        self.add_error(
+                            'therapist',
+                            f'{therapist.name} is on break from '
+                            f'{schedule.break_start_time.strftime("%I:%M %p")} to '
+                            f'{schedule.break_end_time.strftime("%I:%M %p")}. '
+                            'Select a time that does not overlap the break.'
+                        )
+                elif has_schedule_record:
+                    self.add_error(
+                        'therapist',
+                        f'{therapist.name} is off on the selected date.'
+                    )
+
+                existing_bookings = Booking.objects.filter(
+                    therapist=therapist,
+                    date=date,
+                    status__in=['pending', 'confirmed'],
+                ).exclude(pk=self.instance.pk).prefetch_related('services')
+
+                for existing in existing_bookings:
+                    existing_start_time = datetime.datetime.strptime(
+                        existing.time, '%H:%M'
+                    ).time()
+                    existing_start = datetime.datetime.combine(date, existing_start_time)
+                    existing_duration = existing.total_duration_minutes
+                    existing_end = existing_start + datetime.timedelta(
+                        minutes=existing_duration
+                    )
+                    if max(requested_start, existing_start) < min(requested_end, existing_end):
+                        self.add_error(
+                            'therapist',
+                            f'{therapist.name} is already booked during this timeframe. '
+                            'Please select another therapist or time.'
+                        )
+                        break
+            except (TypeError, ValueError):
+                pass
 
         if date and time_val:
             from django.utils import timezone
@@ -240,6 +425,8 @@ class WalkInBookingForm(forms.ModelForm):
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.booking_type = 'walk_in'
+        instance.status = 'confirmed'
+        instance.is_verified = True
         if commit:
             instance.save()
             self.save_m2m()
@@ -261,10 +448,22 @@ class StaffScheduleForm(forms.ModelForm):
             'type': 'time', 'class': 'portal-input'
         })
     )
+    has_break = forms.BooleanField(required=False, label='Enable break time')
+    break_start_time = forms.TimeField(
+        required=False,
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'portal-input'}),
+    )
+    break_end_time = forms.TimeField(
+        required=False,
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'portal-input'}),
+    )
 
     class Meta:
         model = StaffSchedule
-        fields = ['therapist', 'day_of_week', 'start_time', 'end_time', 'is_available', 'notes']
+        fields = [
+            'therapist', 'day_of_week', 'start_time', 'end_time',
+            'has_break', 'break_start_time', 'break_end_time', 'is_available', 'notes',
+        ]
         widgets = {
             'therapist': forms.Select(attrs={'class': 'portal-input'}),
             'day_of_week': forms.Select(attrs={'class': 'portal-input'}),
@@ -277,6 +476,8 @@ class StaffScheduleForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['therapist'].queryset = Therapist.objects.filter(is_active=True)
         self.fields['notes'].required = False
+        if self.instance and self.instance.pk and self.instance.has_break:
+            self.fields['has_break'].initial = True
 
     def clean(self):
         import datetime
@@ -284,6 +485,9 @@ class StaffScheduleForm(forms.ModelForm):
         is_available = cleaned_data.get('is_available', True)
         start = cleaned_data.get('start_time')
         end = cleaned_data.get('end_time')
+        has_break = cleaned_data.get('has_break', False)
+        break_start = cleaned_data.get('break_start_time')
+        break_end = cleaned_data.get('break_end_time')
 
         if is_available:
             if not start:
@@ -298,12 +502,32 @@ class StaffScheduleForm(forms.ModelForm):
                 
             if start and end and start >= end and end != datetime.time(0, 0):
                 raise forms.ValidationError("End time must be after start time.")
+
+            if has_break:
+                if not break_start:
+                    self.add_error('break_start_time', 'Break start time is required.')
+                if not break_end:
+                    self.add_error('break_end_time', 'Break end time is required.')
+                if break_start and break_end:
+                    shift_start = start.hour * 60 + start.minute if start else 0
+                    shift_end = 1440 if end == datetime.time(0, 0) else end.hour * 60 + end.minute
+                    break_start_mins = break_start.hour * 60 + break_start.minute
+                    break_end_mins = break_end.hour * 60 + break_end.minute
+                    if break_start_mins >= break_end_mins:
+                        self.add_error('break_end_time', 'Break end time must be after break start time.')
+                    elif break_start_mins < shift_start or break_end_mins > shift_end:
+                        self.add_error('break_start_time', 'Break time must be within the assigned shift.')
+            else:
+                cleaned_data['break_start_time'] = None
+                cleaned_data['break_end_time'] = None
         else:
             # Set dummy times if not available to satisfy database constraints
             if not start:
                 cleaned_data['start_time'] = datetime.time(0, 0)
             if not end:
                 cleaned_data['end_time'] = datetime.time(0, 0)
+            cleaned_data['break_start_time'] = None
+            cleaned_data['break_end_time'] = None
 
         return cleaned_data
 
@@ -328,6 +552,15 @@ class BulkStaffScheduleForm(forms.Form):
         required=False,
         widget=forms.TimeInput(attrs={'type': 'time', 'class': 'portal-input'})
     )
+    has_break = forms.BooleanField(required=False, label='Enable break time')
+    break_start_time = forms.TimeField(
+        required=False,
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'portal-input'}),
+    )
+    break_end_time = forms.TimeField(
+        required=False,
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'portal-input'}),
+    )
     notes = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={'class': 'portal-input', 'placeholder': 'Optional notes...'})
@@ -343,6 +576,9 @@ class BulkStaffScheduleForm(forms.Form):
         is_available = cleaned_data.get('is_available', True)
         start = cleaned_data.get('start_time')
         end = cleaned_data.get('end_time')
+        has_break = cleaned_data.get('has_break', False)
+        break_start = cleaned_data.get('break_start_time')
+        break_end = cleaned_data.get('break_end_time')
 
         if is_available:
             if not start:
@@ -357,11 +593,31 @@ class BulkStaffScheduleForm(forms.Form):
                 
             if start and end and start >= end and end != datetime.time(0, 0):
                 raise forms.ValidationError("End time must be after start time.")
+
+            if has_break:
+                if not break_start:
+                    self.add_error('break_start_time', 'Break start time is required.')
+                if not break_end:
+                    self.add_error('break_end_time', 'Break end time is required.')
+                if break_start and break_end:
+                    shift_start = start.hour * 60 + start.minute if start else 0
+                    shift_end = 1440 if end == datetime.time(0, 0) else end.hour * 60 + end.minute
+                    break_start_mins = break_start.hour * 60 + break_start.minute
+                    break_end_mins = break_end.hour * 60 + break_end.minute
+                    if break_start_mins >= break_end_mins:
+                        self.add_error('break_end_time', 'Break end time must be after break start time.')
+                    elif break_start_mins < shift_start or break_end_mins > shift_end:
+                        self.add_error('break_start_time', 'Break time must be within the assigned shift.')
+            else:
+                cleaned_data['break_start_time'] = None
+                cleaned_data['break_end_time'] = None
         else:
             if not start:
                 cleaned_data['start_time'] = datetime.time(0, 0)
             if not end:
                 cleaned_data['end_time'] = datetime.time(0, 0)
+            cleaned_data['break_start_time'] = None
+            cleaned_data['break_end_time'] = None
                 
         return cleaned_data
 
@@ -451,10 +707,22 @@ class StaffLeaveRequestForm(forms.ModelForm):
             'reason': forms.TextInput(attrs={'class': 'portal-input', 'placeholder': 'e.g. Vacation, Sick Leave, Personal'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        today = timezone.localdate().isoformat()
+        self.fields['start_date'].widget.attrs['min'] = today
+        self.fields['end_date'].widget.attrs['min'] = today
+
     def clean(self):
         cleaned_data = super().clean()
         start_date = cleaned_data.get('start_date')
         end_date = cleaned_data.get('end_date')
+        today = timezone.localdate()
+
+        if start_date and start_date < today:
+            self.add_error('start_date', 'Start date cannot be earlier than today.')
+        if end_date and end_date < today:
+            self.add_error('end_date', 'End date cannot be earlier than today.')
 
         if start_date and end_date and start_date > end_date:
             raise forms.ValidationError("End date cannot be earlier than start date.")

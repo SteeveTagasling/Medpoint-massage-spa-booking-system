@@ -28,6 +28,9 @@ urlpatterns = [
     path('services/create/', views.service_create, name='service_create'),
     path('services/<int:pk>/edit/', views.service_edit, name='service_edit'),
     path('services/<int:pk>/delete/', views.service_delete, name='service_delete'),
+    path('services/categories/', views.service_category_list, name='service_category_list'),
+    path('services/categories/<int:pk>/edit/', views.service_category_list, name='service_category_edit'),
+    path('services/categories/<int:pk>/delete/', views.service_category_delete, name='service_category_delete'),
 
     # ── Staff / Therapist management (admin only) ─────
     path('therapists/', views.therapist_list, name='therapist_list'),
@@ -66,6 +69,7 @@ urlpatterns = [
     path('price-checker/record/<int:pk>/delete/', views.price_checker_delete_record, name='price_checker_delete_record'),
     path('price-checker/record/<int:pk>/update/', views.price_checker_update_record, name='price_checker_update_record'),
     path('admin-settings/', views.admin_settings, name='admin_settings'),
+    path('website-maintenance/', views.website_maintenance, name='website_maintenance'),
 
     # ── Staff views (therapist limited access) ────────
     path('my-bookings/', views.staff_my_bookings, name='staff_my_bookings'),

@@ -1,7 +1,7 @@
 {% extends 'website/base.html' %}
 {% load static %}
 
-{% block title %}Our Services - MEDPOINT Massage &amp; Spa{% endblock %}
+{% block title %}Our Services - {{ site_content.business_legal_name }}{% endblock %}
 
 {% block content %}
 <!-- Page Hero -->
@@ -9,13 +9,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div class="flex items-center gap-3 mb-4 animate-fade-in">
             <div class="w-8 h-px bg-purple-500"></div>
-            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">What We Offer</span>
+            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">{{ site_content.services_hero_label }}</span>
         </div>
         <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in-up">
-            Our <span class="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">Services</span>
+            {{ site_content.services_hero_title }}
         </h1>
         <p class="text-gray-400 text-lg max-w-xl animate-fade-in-up" style="animation-delay:0.2s">
-            Discover our premium range of massage therapies and spa treatments designed for your ultimate relaxation.
+            {{ site_content.services_hero_description }}
         </p>
         <!-- Breadcrumb -->
         <div class="flex items-center gap-2 mt-6 text-sm animate-fade-in" style="animation-delay:0.3s">

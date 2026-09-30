@@ -1,7 +1,7 @@
 {% extends 'website/base.html' %}
 {% load static %}
 
-{% block title %}Book Appointment - MEDPOINT Massage &amp; Spa{% endblock %}
+{% block title %}Book Appointment - {{ site_content.business_legal_name }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -371,6 +371,29 @@
         text-align: center;
     }
 
+    .service-category-group + .service-category-group {
+        margin-top: 1.25rem;
+    }
+
+    .service-category-heading {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 0.65rem;
+        color: #c4b5fd;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+    .service-category-heading::after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: linear-gradient(to right, rgba(139, 92, 246, 0.3), transparent);
+    }
+
     #service-total-display {
         transition: all 0.3s ease;
     }
@@ -454,14 +477,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div class="flex items-center gap-3 mb-4 animate-fade-in">
             <div class="w-8 h-px bg-purple-500"></div>
-            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">Reserve Your Session</span>
+            <span class="text-purple-400 text-sm tracking-[0.2em] uppercase">{{ site_content.booking_hero_label }}</span>
         </div>
         <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4 animate-fade-in-up">
-            Book Your <span
-                class="bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">Appointment</span>
+            {{ site_content.booking_hero_title }}
         </h1>
         <p class="text-gray-400 text-lg max-w-xl animate-fade-in-up" style="animation-delay:0.2s">
-            Choose your preferred service, therapist, date, and time. We'll confirm your booking shortly.
+            {{ site_content.booking_hero_description }}
         </p>
         <div class="flex items-center gap-2 mt-6 text-sm animate-fade-in" style="animation-delay:0.3s">
             <a href="{% url 'website:home' %}" class="text-gray-500 hover:text-purple-400 transition-colors">Home</a>
@@ -608,26 +630,33 @@
                                     <p class="text-gray-500 text-xs mb-3"><i
                                             class="fas fa-info-circle text-purple-400/50"></i>
                                         Click to select. You can choose multiple services to add-on.</p>
-                                    <div id="service-chips-container" class="grid sm:grid-cols-2 gap-2 mb-2">
-                                        {% for svc in services %}
-                                        <label class="service-chip" id="chip-label-{{ svc.pk }}">
-                                            <input type="checkbox" class="service-chip-input" value="{{ svc.pk }}"
-                                                id="chip-{{ svc.pk }}">
-                                            <div class="service-chip-inner">
-                                                <div class="service-chip-name">{{ svc.name }}</div>
-                                                {% if svc.has_discount %}
-                                                <div class="service-chip-meta flex items-center gap-1.5 flex-wrap">
-                                                    <span class="line-through text-gray-500 text-xs">₱{{ svc.price|floatformat:2 }}</span>
-                                                    <span class="text-purple-300 font-bold">₱{{ svc.discounted_price|floatformat:2 }}</span>
-                                                    <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">{{ svc.discount_percentage|floatformat:-2 }}% OFF</span>
-                                                    <span class="text-gray-500 text-xs">&middot; {{ svc.duration_minutes }} min</span>
-                                                </div>
-                                                <div class="text-[9px] text-emerald-400/80 mt-0.5 tracking-wide">Promo applied: {{ svc.promo_effective_date|date:"M d, Y" }}</div>
-                                                {% else %}
-                                                <div class="service-chip-meta">₱{{ svc.price|floatformat:2 }} &middot; {{ svc.duration_minutes }} min</div>
-                                                {% endif %}
+                                    <div id="service-chips-container" class="mb-2">
+                                        {% for group in service_groups %}
+                                        <section class="service-category-group" data-service-category="{{ group.code }}">
+                                            <h4 class="service-category-heading"><i class="fas fa-spa"></i>{{ group.label }}</h4>
+                                            <div class="grid sm:grid-cols-2 gap-2">
+                                                {% for svc in group.services %}
+                                                <label class="service-chip" id="chip-label-{{ svc.pk }}">
+                                                    <input type="checkbox" class="service-chip-input" value="{{ svc.pk }}"
+                                                        id="chip-{{ svc.pk }}">
+                                                    <div class="service-chip-inner">
+                                                        <div class="service-chip-name">{{ svc.name }}</div>
+                                                        {% if svc.has_discount %}
+                                                        <div class="service-chip-meta flex items-center gap-1.5 flex-wrap">
+                                                            <span class="line-through text-gray-500 text-xs">₱{{ svc.price|floatformat:2 }}</span>
+                                                            <span class="text-purple-300 font-bold">₱{{ svc.discounted_price|floatformat:2 }}</span>
+                                                            <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">{{ svc.discount_percentage|floatformat:-2 }}% OFF</span>
+                                                            <span class="text-gray-500 text-xs">&middot; {{ svc.duration_minutes }} min</span>
+                                                        </div>
+                                                        <div class="text-[9px] text-emerald-400/80 mt-0.5 tracking-wide">Promo applied: {{ svc.promo_effective_date|date:"M d, Y" }}</div>
+                                                        {% else %}
+                                                        <div class="service-chip-meta">₱{{ svc.price|floatformat:2 }} &middot; {{ svc.duration_minutes }} min</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </label>
+                                                {% endfor %}
                                             </div>
-                                        </label>
+                                        </section>
                                         {% endfor %}
                                     </div>
                                     <!-- Hidden native multi-select synced by JS for form submission -->
@@ -635,6 +664,16 @@
                                     {% if form.services.errors %}
                                     <span class="form-error">{{ form.services.errors.0 }}</span>
                                     {% endif %}
+                                    <div class="mt-4 p-4 rounded-xl bg-purple-500/5 border border-purple-500/20">
+                                        <label for="booking-additional-minutes" class="form-label flex items-center gap-2">
+                                            <i class="fas fa-clock text-purple-400"></i> Additional Massage Time
+                                        </label>
+                                        {{ form.additional_minutes }}
+                                        <p class="text-gray-500 text-xs mt-2">Optional extension charged at <strong class="text-purple-300">₱200 per 30 minutes</strong>.</p>
+                                        {% if form.additional_minutes.errors %}
+                                        <span class="form-error">{{ form.additional_minutes.errors.0 }}</span>
+                                        {% endif %}
+                                    </div>
                                     <!-- Selected services summary -->
                                     <div id="service-total-display"
                                         class="hidden mt-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
@@ -662,7 +701,9 @@
                                                 "has_discount": {% if svc.has_discount %}true{% else %}false{% endif %},
                                                 "promo_date": "{{ svc.promo_effective_date|date:'M d, Y' }}",
                                                 "name": "{{ svc.name|escapejs }}",
-                                                "duration": {{ svc.duration_minutes }}
+                                                "duration": {{ svc.duration_minutes }},
+                                                "category": "{{ svc.booking_category|escapejs }}",
+                                                "category_label": "{{ svc.booking_category_label|escapejs }}"
                                             }{% if not forloop.last %},{% endif %}
                                             {% endfor %}
                                         }
@@ -706,7 +747,7 @@
 
                             <button type="submit" id="booking-submit"
                                 class="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2">
-                                <i class="fas fa-calendar-check"></i> Confirm Booking
+                                <i class="fas fa-calendar-check" aria-hidden="true"></i><span>Confirm Booking</span>
                             </button>
                         </form>
                     </div>
@@ -740,7 +781,8 @@
                                         <label class="form-label">Phone Number <span
                                                 class="text-red-400">*</span></label>
                                         <input type="text" name="client_phone" class="form-input"
-                                            placeholder="+63 9XX XXX XXXX" required id="family-phone">
+                                            placeholder="639XXXXXXXXX" required id="family-phone"
+                                            inputmode="numeric" pattern="[0-9]+" maxlength="20" autocomplete="tel">
                                     </div>
                                 </div>
                             </div>
@@ -806,8 +848,8 @@
                                             <div>
                                                 <label class="form-label">Full Name <span
                                                         class="text-red-400">*</span></label>
-                                                <input type="text" name="member_0_name" class="form-input"
-                                                    placeholder="Member's full name" required>
+                                                <input type="text" name="member_0_name" class="form-input person-name-input"
+                                                    placeholder="Member's full name" maxlength="200" autocomplete="name" required>
                                             </div>
                                             <div>
                                                 <label class="form-label">Gender <span
@@ -826,33 +868,40 @@
                                                 <p class="text-gray-500 text-xs mb-3"><i
                                                         class="fas fa-info-circle text-purple-400/50"></i> Click to
                                                     select. You can choose multiple services to add-on.</p>
-                                                <div class="grid sm:grid-cols-2 gap-2 mb-2 family-chip-grid"
+                                                <div class="mb-2 family-chip-grid"
                                                     data-member-index="0">
-                                                    {% for svc in services %}
-                                                    <label class="service-chip">
-                                                        <input type="checkbox"
-                                                            class="service-chip-input family-service-chip"
-                                                            name="member_0_services" value="{{ svc.pk }}"
-                                                            data-price="{{ svc.discounted_price|floatformat:2 }}"
-                                                            data-original-price="{{ svc.price|floatformat:2 }}"
-                                                            data-has-discount="{% if svc.has_discount %}true{% else %}false{% endif %}"
-                                                            data-duration="{{ svc.duration_minutes }}"
-                                                            data-name="{{ svc.name }}">
-                                                        <div class="service-chip-inner">
-                                                            <div class="service-chip-name">{{ svc.name }}</div>
-                                                            {% if svc.has_discount %}
-                                                            <div class="service-chip-meta flex items-center gap-1.5 flex-wrap">
-                                                                <span class="line-through text-gray-500 text-xs">₱{{ svc.price|floatformat:2 }}</span>
-                                                                <span class="text-purple-300 font-bold">₱{{ svc.discounted_price|floatformat:2 }}</span>
-                                                                <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">{{ svc.discount_percentage|floatformat:-2 }}% OFF</span>
-                                                                <span class="text-gray-500 text-xs">&middot; {{ svc.duration_minutes }} min</span>
-                                                            </div>
-                                                            <div class="text-[9px] text-emerald-400/80 mt-0.5 tracking-wide">Promo applied: {{ svc.promo_effective_date|date:"M d, Y" }}</div>
-                                                            {% else %}
-                                                            <div class="service-chip-meta">₱{{ svc.price|floatformat:2 }} &middot; {{ svc.duration_minutes }} min</div>
-                                                            {% endif %}
+                                                    {% for group in service_groups %}
+                                                    <section class="service-category-group" data-service-category="{{ group.code }}">
+                                                        <h4 class="service-category-heading"><i class="fas fa-spa"></i>{{ group.label }}</h4>
+                                                        <div class="grid sm:grid-cols-2 gap-2">
+                                                            {% for svc in group.services %}
+                                                            <label class="service-chip">
+                                                                <input type="checkbox"
+                                                                    class="service-chip-input family-service-chip"
+                                                                    name="member_0_services" value="{{ svc.pk }}"
+                                                                    data-price="{{ svc.discounted_price|floatformat:2 }}"
+                                                                    data-original-price="{{ svc.price|floatformat:2 }}"
+                                                                    data-has-discount="{% if svc.has_discount %}true{% else %}false{% endif %}"
+                                                                    data-duration="{{ svc.duration_minutes }}"
+                                                                    data-name="{{ svc.name }}">
+                                                                <div class="service-chip-inner">
+                                                                    <div class="service-chip-name">{{ svc.name }}</div>
+                                                                    {% if svc.has_discount %}
+                                                                    <div class="service-chip-meta flex items-center gap-1.5 flex-wrap">
+                                                                        <span class="line-through text-gray-500 text-xs">₱{{ svc.price|floatformat:2 }}</span>
+                                                                        <span class="text-purple-300 font-bold">₱{{ svc.discounted_price|floatformat:2 }}</span>
+                                                                        <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">{{ svc.discount_percentage|floatformat:-2 }}% OFF</span>
+                                                                        <span class="text-gray-500 text-xs">&middot; {{ svc.duration_minutes }} min</span>
+                                                                    </div>
+                                                                    <div class="text-[9px] text-emerald-400/80 mt-0.5 tracking-wide">Promo applied: {{ svc.promo_effective_date|date:"M d, Y" }}</div>
+                                                                    {% else %}
+                                                                    <div class="service-chip-meta">₱{{ svc.price|floatformat:2 }} &middot; {{ svc.duration_minutes }} min</div>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </label>
+                                                            {% endfor %}
                                                         </div>
-                                                    </label>
+                                                    </section>
                                                     {% endfor %}
                                                 </div>
                                                 <!-- Per-member total summary -->
@@ -870,6 +919,20 @@
                                                         <span class="text-purple-300 font-medium"></span>
                                                     </div>
                                                 </div>
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="form-label flex items-center gap-2">
+                                                    <i class="fas fa-clock text-purple-400"></i> Additional Massage Time
+                                                </label>
+                                                <select name="member_0_additional_minutes"
+                                                    class="form-input member-additional-time" data-index="0">
+                                                    <option value="0">No additional time</option>
+                                                    <option value="30">30 minutes (+₱200.00)</option>
+                                                    <option value="60">60 minutes (+₱400.00)</option>
+                                                    <option value="90">90 minutes (+₱600.00)</option>
+                                                    <option value="120">120 minutes (+₱800.00)</option>
+                                                </select>
+                                                <p class="text-gray-500 text-xs mt-2">₱200 for every additional 30 minutes.</p>
                                             </div>
                                             <div>
                                                 <label class="form-label">Therapist Preference <span
@@ -920,7 +983,7 @@
 
                             <button type="submit" id="family-booking-submit"
                                 class="w-full sm:w-auto px-10 py-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2">
-                                <i class="fas fa-calendar-check"></i> Confirm Family Booking
+                                <i class="fas fa-calendar-check" aria-hidden="true"></i><span>Confirm Family Booking</span>
                             </button>
                         </form>
                     </div>
@@ -938,7 +1001,7 @@
                     <div class="space-y-3">
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-400">Monday - Sunday</span>
-                            <span class="text-white font-medium">10:00 AM - 12:00 MN</span>
+                            <span class="text-white font-medium">{{ site_content.business_hours }}</span>
                         </div>
                     </div>
                 </div>
@@ -961,47 +1024,30 @@
                 <!-- Contact -->
                 <div class="glass-panel p-8 mb-6">
                     <h3 class="font-display text-lg font-semibold text-white mb-5 flex items-center gap-2">
-                        <i class="fas fa-phone-alt text-purple-400"></i> Need Help?
+                        <i class="fas fa-phone-alt text-purple-400"></i> {{ site_content.booking_help_title }}
                     </h3>
-                    <p class="text-gray-400 text-sm mb-4">Have questions about our services or need help picking the
-                        right treatment? Contact us!</p>
-                    <a href="tel:+639123456789"
-                        class="flex items-center gap-3 p-3 bg-purple-500/10 border border-purple-500/15 rounded-xl text-purple-300 hover:bg-purple-500/15 transition-all text-sm">
+                    <p class="text-gray-400 text-sm mb-4">{{ site_content.booking_help_description }}</p>
+                    <div
+                        class="flex items-center gap-3 p-3 bg-purple-500/10 border border-purple-500/15 rounded-xl text-purple-300 text-sm">
                         <i class="fas fa-phone-alt"></i>
-                        <span>+63 912 345 6789</span>
-                    </a>
+                        <span>{{ site_content.phone }}</span>
+                    </div>
                 </div>
 
                 <!-- Booking Policy -->
                 <div class="glass-panel p-8">
                     <h3 class="font-display text-lg font-semibold text-white mb-5 flex items-center gap-2">
-                        <i class="fas fa-info-circle text-purple-400"></i> Booking Policy
+                        <i class="fas fa-info-circle text-purple-400"></i> {{ site_content.booking_policy_title }}
                     </h3>
                     <ul class="space-y-3 text-sm text-gray-400">
+                        {% for policy in booking_policy_items %}
                         <li class="flex items-start gap-2">
                             <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
-                            <span>Bookings are confirmed via email or SMS within 1 hour.</span>
+                            <span>{% if policy.title %}<strong class="text-gray-300">{{ policy.title }}:</strong> {% endif %}{{ policy.body|linebreaksbr }}</span>
                         </li>
-                        <li class="flex items-start gap-2">
-                            <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
-                            <span>Please arrive 15 minutes before your appointment.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
-                            <span>Cancellations must be made at least 4 hours in advance.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
-                            <span>Walk-ins are welcome based on availability.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
-                            <span>Female clients are assigned female therapists only.</span>
-                        </li>
-                        <li class="flex items-start gap-2">
-                            <i class="fas fa-check-circle text-purple-400/60 mt-0.5 text-xs"></i>
-                            <span>Family/group bookings support up to 5 members.</span>
-                        </li>
+                        {% empty %}
+                        <li class="text-gray-500">No booking policies are currently published.</li>
+                        {% endfor %}
                     </ul>
                 </div>
             </div>
@@ -1071,24 +1117,43 @@
 
         // Generate chip HTML for a given member index using familyServiceData
         function familyChipOptionsHTML(index) {
-            return Object.entries(familyServiceData).map(([pk, svc]) => {
-                let metaHtml = `\u20B1${parseFloat(svc.price).toFixed(2)} &middot; ${svc.duration} min`;
-                if (svc.has_discount) {
-                    const promoDateHtml = svc.promo_date ? `<div class="text-[9px] text-emerald-400/80 mt-0.5 tracking-wide">Promo applied: ${svc.promo_date}</div>` : '';
-                    metaHtml = `<div class="flex items-center gap-1.5 flex-wrap">` +
-                               `<span class="line-through text-gray-500 text-xs">\u20B1${parseFloat(svc.original_price).toFixed(2)}</span> ` +
-                               `<span class="text-purple-300 font-bold">\u20B1${parseFloat(svc.price).toFixed(2)}</span> ` +
-                               `<span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">${svc.discount_percentage}% OFF</span> ` +
-                               `<span class="text-gray-500 text-xs">&middot; ${svc.duration} min</span>` +
-                               `</div>` + promoDateHtml;
+            const groupedServices = new Map();
+            Object.entries(familyServiceData).forEach(([pk, svc]) => {
+                const category = svc.category || 'other';
+                if (!groupedServices.has(category)) {
+                    groupedServices.set(category, {
+                        label: svc.category_label || 'Other Services',
+                        services: []
+                    });
                 }
-                return `<label class="service-chip">
-                    <input type="checkbox" class="service-chip-input family-service-chip" name="member_${index}_services" value="${pk}" data-price="${svc.price}" data-original-price="${svc.original_price || svc.price}" data-has-discount="${svc.has_discount ? 'true' : 'false'}" data-duration="${svc.duration}" data-name="${svc.name}">
-                    <div class="service-chip-inner">
-                        <div class="service-chip-name">${svc.name}</div>
-                        <div class="service-chip-meta">${metaHtml}</div>
-                    </div>
-                </label>`;
+                groupedServices.get(category).services.push([pk, svc]);
+            });
+
+            return Array.from(groupedServices.entries()).map(([category, group]) => {
+                const chips = group.services.map(([pk, svc]) => {
+                    let metaHtml = `\u20B1${parseFloat(svc.price).toFixed(2)} &middot; ${svc.duration} min`;
+                    if (svc.has_discount) {
+                        const promoDateHtml = svc.promo_date ? `<div class="text-[9px] text-emerald-400/80 mt-0.5 tracking-wide">Promo applied: ${svc.promo_date}</div>` : '';
+                        metaHtml = `<div class="flex items-center gap-1.5 flex-wrap">` +
+                                   `<span class="line-through text-gray-500 text-xs">\u20B1${parseFloat(svc.original_price).toFixed(2)}</span> ` +
+                                   `<span class="text-purple-300 font-bold">\u20B1${parseFloat(svc.price).toFixed(2)}</span> ` +
+                                   `<span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/25 px-1.5 py-0.5 rounded-full">${svc.discount_percentage}% OFF</span> ` +
+                                   `<span class="text-gray-500 text-xs">&middot; ${svc.duration} min</span>` +
+                                   `</div>` + promoDateHtml;
+                    }
+                    return `<label class="service-chip">
+                        <input type="checkbox" class="service-chip-input family-service-chip" name="member_${index}_services" value="${pk}" data-price="${svc.price}" data-original-price="${svc.original_price || svc.price}" data-has-discount="${svc.has_discount ? 'true' : 'false'}" data-duration="${svc.duration}" data-name="${svc.name}">
+                        <div class="service-chip-inner">
+                            <div class="service-chip-name">${svc.name}</div>
+                            <div class="service-chip-meta">${metaHtml}</div>
+                        </div>
+                    </label>`;
+                }).join('');
+
+                return `<section class="service-category-group" data-service-category="${category}">
+                    <h4 class="service-category-heading"><i class="fas fa-spa"></i>${group.label}</h4>
+                    <div class="grid sm:grid-cols-2 gap-2">${chips}</div>
+                </section>`;
             }).join('');
         }
 
@@ -1121,7 +1186,7 @@
             <div class="grid sm:grid-cols-2 gap-4">
                 <div>
                     <label class="form-label">Full Name <span class="text-red-400">*</span></label>
-                    <input type="text" name="member_${index}_name" class="form-input" placeholder="Member's full name" required>
+                    <input type="text" name="member_${index}_name" class="form-input person-name-input" placeholder="Member's full name" maxlength="200" autocomplete="name" required>
                 </div>
                 <div>
                     <label class="form-label">Gender <span class="text-red-400">*</span></label>
@@ -1135,7 +1200,7 @@
                 <div class="sm:col-span-2">
                     <label class="form-label">Select Service(s) <span class="text-red-400">*</span></label>
                     <p class="text-gray-500 text-xs mb-3"><i class="fas fa-info-circle text-purple-400/50"></i> Click to select. You can choose multiple services to add-on.</p>
-                    <div class="grid sm:grid-cols-2 gap-2 mb-2 family-chip-grid" data-member-index="${index}">
+                    <div class="mb-2 family-chip-grid" data-member-index="${index}">
                         ${familyChipOptionsHTML(index)}
                     </div>
                     <div id="member-${index}-total" class="hidden mt-2 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
@@ -1145,6 +1210,17 @@
                         </div>
                         <div class="member-total-duration text-gray-500 text-xs mt-1"></div>
                     </div>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="form-label flex items-center gap-2"><i class="fas fa-clock text-purple-400"></i> Additional Massage Time</label>
+                    <select name="member_${index}_additional_minutes" class="form-input member-additional-time" data-index="${index}">
+                        <option value="0">No additional time</option>
+                        <option value="30">30 minutes (+₱200.00)</option>
+                        <option value="60">60 minutes (+₱400.00)</option>
+                        <option value="90">90 minutes (+₱600.00)</option>
+                        <option value="120">120 minutes (+₱800.00)</option>
+                    </select>
+                    <p class="text-gray-500 text-xs mt-2">₱200 for every additional 30 minutes.</p>
                 </div>
                 <div class="sm:col-span-2">
                     <label class="form-label">Therapist Preference <span class="text-red-400">*</span></label>
@@ -1311,6 +1387,16 @@
                 names.push(cb.dataset.name);
             });
 
+            const additionalTimeSelect = card.querySelector('.member-additional-time');
+            const additionalMinutes = additionalTimeSelect ? parseInt(additionalTimeSelect.value || 0, 10) : 0;
+            if (additionalMinutes > 0) {
+                const additionalFee = (additionalMinutes / 30) * 200;
+                totalPrice += additionalFee;
+                totalOriginal += additionalFee;
+                totalDur += additionalMinutes;
+                names.push(`Additional Massage Time (${additionalMinutes} min)`);
+            }
+
             if (chips.length === 0) {
                 totalEl.classList.add('hidden');
             } else {
@@ -1354,6 +1440,15 @@
                     loadFamilyTherapists(index);
                 });
             });
+            const additionalTimeSelect = card.querySelector('.member-additional-time');
+            if (additionalTimeSelect) {
+                additionalTimeSelect.addEventListener('change', () => {
+                    enforceFamilyTimeLimitOnSelected(index);
+                    updateMemberServiceTotal(index);
+                    updateFamilyChipAvailability(index);
+                    loadFamilyTherapists(index);
+                });
+            }
         }
 
         // Attach to member 0 on load
@@ -1382,12 +1477,15 @@
             const pref = prefSelect.value;
             const rawDate = dateInput ? dateInput.value : '';
             const rawTime = timeInput ? timeInput.value : '';
+            const additionalTimeSelect = memberCard ? memberCard.querySelector('.member-additional-time') : null;
+            const additionalMinutes = additionalTimeSelect ? additionalTimeSelect.value : '0';
 
             const dateQuery = rawDate ? `&date=${rawDate}` : '';
             const timeQuery = rawTime ? `&time=${rawTime}` : '';
             // Pass all selected services for availability check (or none)
             const rawSvc = checkedServices.join(',');
             const svcQuery = rawSvc ? `&service_id=${rawSvc}` : '';
+            const additionalTimeQuery = `&additional_minutes=${additionalMinutes}`;
 
             section.classList.remove('therapist-section-hidden');
             container.innerHTML = '<div class="loading-spinner"></div>';
@@ -1402,7 +1500,7 @@
                 badge.innerHTML = '<i class="fas fa-users"></i> Showing all therapists';
             }
 
-            const url = `{% url 'website:api_therapists' %}?preference=${pref}&client_gender=${clientGender}${dateQuery}${timeQuery}${svcQuery}`;
+            const url = `{% url 'website:api_therapists' %}?preference=${pref}&client_gender=${clientGender}${dateQuery}${timeQuery}${svcQuery}${additionalTimeQuery}`;
             fetch(url)
                 .then(r => r.json())
                 .then(data => {
@@ -1506,7 +1604,7 @@
             let html = '<div class="therapist-grid">';
 
             therapists.forEach(t => {
-                if ((t.is_off || t.is_booked || t.is_outside_schedule) && selectedId == t.id) {
+                if ((t.is_off || t.is_booked || t.is_outside_schedule || t.is_on_break) && selectedId == t.id) {
                     selectedId = null;
                     if (hiddenInput) hiddenInput.value = '';
                 }
@@ -1534,6 +1632,14 @@
                      <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Day Off</span>
                    </div>`;
                     disabledStyle = 'opacity: 0.7; cursor: not-allowed;';
+                    clickHandler = '';
+                    selectedClass = '';
+                } else if (t.is_on_break) {
+                    const breakInfo = t.break_hours ? `<br><span style="font-size:0.6rem;font-weight:normal;">${t.break_hours}</span>` : '';
+                    badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
+                     <span style="background:rgba(245,158,11,0.92); color:white; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:bold; letter-spacing:0.04em; border:1px solid rgba(255,255,255,0.2);">On Break${breakInfo}</span>
+                   </div>`;
+                    disabledStyle = 'opacity:0.7;cursor:not-allowed;border-color:rgba(245,158,11,0.35);';
                     clickHandler = '';
                     selectedClass = '';
                 } else if (t.is_outside_schedule) {
@@ -1722,6 +1828,7 @@
             const dateInput = document.getElementById('booking-date');
             const timeInput = document.getElementById('booking-time');
             const svcSelect = document.getElementById('booking-service');
+            const additionalTimeSelect = document.getElementById('booking-additional-minutes');
 
             const rawDate = dateInput ? dateInput.value : '';
             const rawTime = timeInput ? timeInput.value : '';
@@ -1734,6 +1841,7 @@
             const dateQuery = rawDate ? `&date=${rawDate}` : '';
             const timeQuery = rawTime ? `&time=${rawTime}` : '';
             const svcQuery = rawSvc ? `&service_id=${rawSvc}` : '';
+            const additionalTimeQuery = `&additional_minutes=${additionalTimeSelect ? additionalTimeSelect.value : '0'}`;
 
             // Show the therapist section
             therapistSection.classList.remove('therapist-section-hidden');
@@ -1750,7 +1858,7 @@
                 genderBadge.innerHTML = '<i class="fas fa-users"></i> Showing all therapists';
             }
 
-            const url = `{% url 'website:api_therapists' %}?preference=${pref}&client_gender=${clientGender}${dateQuery}${timeQuery}${svcQuery}`;
+            const url = `{% url 'website:api_therapists' %}?preference=${pref}&client_gender=${clientGender}${dateQuery}${timeQuery}${svcQuery}${additionalTimeQuery}`;
             fetch(url)
                 .then(r => r.json())
                 .then(data => {
@@ -1770,7 +1878,7 @@
 
             let html = '<div class="therapist-grid">';
             therapists.forEach(t => {
-                if ((t.is_off || t.is_booked || t.is_outside_schedule) && selectedTherapistId == t.id) {
+                if ((t.is_off || t.is_booked || t.is_outside_schedule || t.is_on_break) && selectedTherapistId == t.id) {
                     selectedTherapistId = null;
                     if (therapistHidden) therapistHidden.value = '';
                 }
@@ -1798,6 +1906,14 @@
                      <span style="background:rgba(239, 68, 68, 0.9); color:white; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:bold; letter-spacing:0.05em; border:1px solid rgba(255,255,255,0.2);">Day Off</span>
                    </div>`;
                     disabledStyle = 'opacity: 0.7; cursor: not-allowed;';
+                    clickHandler = '';
+                    selectedClass = '';
+                } else if (t.is_on_break) {
+                    const breakInfo = t.break_hours ? `<br><span style="font-size:0.6rem;font-weight:normal;">${t.break_hours}</span>` : '';
+                    badgeHtml = `<div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:5; display:flex; align-items:center; justify-content:center; text-align:center;">
+                     <span style="background:rgba(245,158,11,0.92); color:white; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:bold; letter-spacing:0.04em; border:1px solid rgba(255,255,255,0.2);">On Break${breakInfo}</span>
+                   </div>`;
+                    disabledStyle = 'opacity:0.7;cursor:not-allowed;border-color:rgba(245,158,11,0.35);';
                     clickHandler = '';
                     selectedClass = '';
                 } else if (t.is_outside_schedule) {
@@ -1904,6 +2020,7 @@
         const serviceTotalPrice = document.getElementById('service-total-price');
         const serviceTotalDuration = document.getElementById('service-total-duration');
         const serviceSelectedNames = document.getElementById('service-selected-names');
+        const additionalMinutesSelect = document.getElementById('booking-additional-minutes');
         const serviceChips = document.querySelectorAll('#service-chips-container .service-chip');
         let serviceDataMap = {};
 
@@ -1912,7 +2029,7 @@
         }
 
         function getSelectedChipIds() {
-            return Array.from(document.querySelectorAll('.service-chip-input:checked')).map(el => el.value);
+            return Array.from(document.querySelectorAll('#service-chips-container .service-chip-input:checked')).map(el => el.value);
         }
 
         function syncHiddenSelect(ids) {
@@ -1949,6 +2066,14 @@
                         names.push(d.name);
                     }
                 });
+                const additionalMinutes = additionalMinutesSelect ? parseInt(additionalMinutesSelect.value || 0, 10) : 0;
+                if (additionalMinutes > 0) {
+                    const additionalFee = (additionalMinutes / 30) * 200;
+                    total += additionalFee;
+                    totalOriginal += additionalFee;
+                    totalDur += additionalMinutes;
+                    names.push(`Additional Massage Time (${additionalMinutes} min)`);
+                }
                 const totalSavings = totalOriginal - total;
                 if (serviceTotalPrice) {
                     if (totalSavings > 0.009) {
@@ -2009,7 +2134,7 @@
                 .reduce((sum, cb) => {
                     const id = cb.value;
                     return sum + (serviceDataMap[id] ? parseInt(serviceDataMap[id].duration) : 0);
-                }, 0);
+                }, 0) + (additionalMinutesSelect ? parseInt(additionalMinutesSelect.value || 0, 10) : 0);
 
             document.querySelectorAll('#service-chips-container .service-chip').forEach(chip => {
                 const inp = chip.querySelector('.service-chip-input');
@@ -2046,7 +2171,8 @@
             const availableMins = CLOSING_HOUR * 60 - startMins;
 
             const selectedDur = Array.from(card.querySelectorAll('.family-service-chip:checked'))
-                .reduce((sum, cb) => sum + parseInt(cb.dataset.duration || 0), 0);
+                .reduce((sum, cb) => sum + parseInt(cb.dataset.duration || 0), 0)
+                + parseInt((card.querySelector('.member-additional-time') || {}).value || 0, 10);
 
             allChips.forEach(chip => {
                 const inp = chip.querySelector('.family-service-chip');
@@ -2081,6 +2207,13 @@
                 updateServiceSummary();
             });
         });
+
+        if (additionalMinutesSelect) {
+            additionalMinutesSelect.addEventListener('change', () => {
+                enforceTimeLimitOnSelected();
+                updateServiceSummary();
+            });
+        }
 
         // Pre-select services already selected by the form (e.g., on validation error return)
         if (serviceHiddenSelect) {
@@ -2129,7 +2262,16 @@
                 dur: serviceDataMap[inp.value] ? parseInt(serviceDataMap[inp.value].duration) : 0
             })).sort((a, b) => b.dur - a.dur); // longest first
 
-            let total = selected.reduce((s, x) => s + x.dur, 0);
+            let serviceTotal = selected.reduce((s, x) => s + x.dur, 0);
+            let additionalMinutes = additionalMinutesSelect ? parseInt(additionalMinutesSelect.value || 0, 10) : 0;
+
+            if (serviceTotal + additionalMinutes > availableMins && additionalMinutesSelect) {
+                const allowedExtra = Math.max(0, Math.floor((availableMins - serviceTotal) / 30) * 30);
+                additionalMinutesSelect.value = String(Math.min(allowedExtra, 120));
+                additionalMinutes = parseInt(additionalMinutesSelect.value || 0, 10);
+            }
+
+            let total = serviceTotal + additionalMinutes;
 
             for (const item of selected) {
                 if (total <= availableMins) break;
@@ -2158,7 +2300,17 @@
                     dur: parseInt(inp.dataset.duration || 0)
                 })).sort((a, b) => b.dur - a.dur);
 
-            let total = selected.reduce((s, x) => s + x.dur, 0);
+            let serviceTotal = selected.reduce((s, x) => s + x.dur, 0);
+            const memberAdditionalSelect = card.querySelector('.member-additional-time');
+            let additionalMinutes = memberAdditionalSelect ? parseInt(memberAdditionalSelect.value || 0, 10) : 0;
+
+            if (serviceTotal + additionalMinutes > availableMins && memberAdditionalSelect) {
+                const allowedExtra = Math.max(0, Math.floor((availableMins - serviceTotal) / 30) * 30);
+                memberAdditionalSelect.value = String(Math.min(allowedExtra, 120));
+                additionalMinutes = parseInt(memberAdditionalSelect.value || 0, 10);
+            }
+
+            let total = serviceTotal + additionalMinutes;
 
             for (const item of selected) {
                 if (total <= availableMins) break;
@@ -2229,6 +2381,18 @@
             }
         }
 
+        const fullNamePattern = /^[\p{L}\p{M} .'-]+$/u;
+        const phoneNumberPattern = /^\d+$/;
+
+        function fullNameIsValid(value) {
+            const trimmedValue = value.trim();
+            return trimmedValue !== '' && fullNamePattern.test(trimmedValue) && /\p{L}/u.test(trimmedValue);
+        }
+
+        function phoneNumberIsValid(value) {
+            return phoneNumberPattern.test(value.trim());
+        }
+
         // Single Booking Form Validation
         const singleBookingForm = document.getElementById('booking-form');
         if (singleBookingForm) {
@@ -2255,10 +2419,36 @@
                 }
 
                 // 1. Full Name
-                checkField(document.getElementById('booking-name'), 'Please enter your full name');
+                const nameInput = document.getElementById('booking-name');
+                if (nameInput) {
+                    if (!nameInput.value.trim()) {
+                        setFieldError(nameInput, 'Please enter your full name');
+                        hasErrors = true;
+                        if (!firstInvalidEl) firstInvalidEl = nameInput;
+                    } else if (!fullNameIsValid(nameInput.value)) {
+                        setFieldError(nameInput, 'Full name must contain letters only. Spaces, hyphens, apostrophes, and periods are allowed.');
+                        hasErrors = true;
+                        if (!firstInvalidEl) firstInvalidEl = nameInput;
+                    } else {
+                        clearFieldError(nameInput);
+                    }
+                }
 
                 // 2. Phone Number
-                checkField(document.getElementById('booking-phone'), 'Please enter your phone number');
+                const phoneInput = document.getElementById('booking-phone');
+                if (phoneInput) {
+                    if (!phoneInput.value.trim()) {
+                        setFieldError(phoneInput, 'Please enter your contact number');
+                        hasErrors = true;
+                        if (!firstInvalidEl) firstInvalidEl = phoneInput;
+                    } else if (!phoneNumberIsValid(phoneInput.value)) {
+                        setFieldError(phoneInput, 'Contact number must contain numbers only');
+                        hasErrors = true;
+                        if (!firstInvalidEl) firstInvalidEl = phoneInput;
+                    } else {
+                        clearFieldError(phoneInput);
+                    }
+                }
 
                 // 3. Email Address
                 const emailInput = document.getElementById('booking-email');
@@ -2325,10 +2515,26 @@
             // Live-clear on user typing or selection
             singleBookingForm.querySelectorAll('.form-input').forEach(input => {
                 input.addEventListener('input', () => {
-                    if (input.value.trim() !== '') clearFieldError(input);
+                    if (input.id === 'booking-name') {
+                        if (input.value.trim() && !fullNameIsValid(input.value)) {
+                            setFieldError(input, 'Full name must contain letters only. Spaces, hyphens, apostrophes, and periods are allowed.');
+                        } else if (input.value.trim()) {
+                            clearFieldError(input);
+                        }
+                    } else if (input.id === 'booking-phone') {
+                        if (input.value.trim() && !phoneNumberIsValid(input.value)) {
+                            setFieldError(input, 'Contact number must contain numbers only');
+                        } else if (input.value.trim()) {
+                            clearFieldError(input);
+                        }
+                    } else if (input.value.trim() !== '') {
+                        clearFieldError(input);
+                    }
                 });
                 input.addEventListener('change', () => {
-                    if (input.value !== '') clearFieldError(input);
+                    if (!['booking-name', 'booking-phone'].includes(input.id) && input.value !== '') {
+                        clearFieldError(input);
+                    }
                 });
             });
 
@@ -2386,7 +2592,20 @@
                     }
                 }
 
-                checkField(document.getElementById('family-phone'), 'Please enter contact phone number');
+                const familyPhone = document.getElementById('family-phone');
+                if (familyPhone) {
+                    if (!familyPhone.value.trim()) {
+                        setFieldError(familyPhone, 'Please enter contact phone number');
+                        hasErrors = true;
+                        if (!firstInvalidEl) firstInvalidEl = familyPhone;
+                    } else if (!phoneNumberIsValid(familyPhone.value)) {
+                        setFieldError(familyPhone, 'Contact number must contain numbers only');
+                        hasErrors = true;
+                        if (!firstInvalidEl) firstInvalidEl = familyPhone;
+                    } else {
+                        clearFieldError(familyPhone);
+                    }
+                }
                 checkField(document.getElementById('family-date'), 'Please select preferred date');
                 checkField(document.getElementById('family-time'), 'Please select preferred time');
 
@@ -2394,7 +2613,19 @@
                 const memberCards = document.querySelectorAll('.family-member-card');
                 memberCards.forEach((card, idx) => {
                     const nameInput = card.querySelector('input[name$="_name"]');
-                    checkField(nameInput, `Please enter Member ${idx + 1}'s name`);
+                    if (nameInput) {
+                        if (!nameInput.value.trim()) {
+                            setFieldError(nameInput, `Please enter Member ${idx + 1}'s name`);
+                            hasErrors = true;
+                            if (!firstInvalidEl) firstInvalidEl = nameInput;
+                        } else if (!fullNameIsValid(nameInput.value)) {
+                            setFieldError(nameInput, `Member ${idx + 1}'s name must contain letters only`);
+                            hasErrors = true;
+                            if (!firstInvalidEl) firstInvalidEl = nameInput;
+                        } else {
+                            clearFieldError(nameInput);
+                        }
+                    }
 
                     const genderSelect = card.querySelector('.member-gender-select');
                     checkField(genderSelect, `Please select gender for Member ${idx + 1}`);
@@ -2437,12 +2668,25 @@
 
             // Live-clear on input / change for family form
             familyBookingForm.addEventListener('input', function (e) {
-                if (e.target.classList.contains('form-input') && e.target.value.trim() !== '') {
+                if (e.target.id === 'family-phone' && e.target.value.trim()) {
+                    if (phoneNumberIsValid(e.target.value)) {
+                        clearFieldError(e.target);
+                    } else {
+                        setFieldError(e.target, 'Contact number must contain numbers only');
+                    }
+                } else if (e.target.classList.contains('person-name-input') && e.target.value.trim()) {
+                    if (fullNameIsValid(e.target.value)) {
+                        clearFieldError(e.target);
+                    } else {
+                        setFieldError(e.target, 'Full name must contain letters only. Spaces, hyphens, apostrophes, and periods are allowed.');
+                    }
+                } else if (e.target.classList.contains('form-input') && e.target.value.trim() !== '') {
                     clearFieldError(e.target);
                 }
             });
             familyBookingForm.addEventListener('change', function (e) {
-                if (e.target.classList.contains('form-input') && e.target.value !== '') {
+                const isValidatedTextField = e.target.id === 'family-phone' || e.target.classList.contains('person-name-input');
+                if (!isValidatedTextField && e.target.classList.contains('form-input') && e.target.value !== '') {
                     clearFieldError(e.target);
                 }
                 if (e.target.classList.contains('family-service-chip')) {
@@ -2457,6 +2701,24 @@
                 }
             });
         }
+
+        // Display immediate progress feedback only after all custom validation
+        // listeners have accepted the submission. This also prevents duplicates.
+        function enableBookingLoadingState(form, buttonId, loadingText) {
+            if (!form) return;
+            form.addEventListener('submit', function (event) {
+                if (event.defaultPrevented || !form.checkValidity()) return;
+                const button = document.getElementById(buttonId);
+                if (!button || button.disabled) return;
+                button.disabled = true;
+                button.setAttribute('aria-busy', 'true');
+                button.classList.add('opacity-75', 'cursor-wait');
+                button.innerHTML = `<i class="fas fa-spinner fa-spin" aria-hidden="true"></i><span>${loadingText}</span>`;
+            });
+        }
+
+        enableBookingLoadingState(singleBookingForm, 'booking-submit', 'Processing Booking...');
+        enableBookingLoadingState(familyBookingForm, 'family-booking-submit', 'Processing Booking...');
     });
 </script>
 {% endblock %}

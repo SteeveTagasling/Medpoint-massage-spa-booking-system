@@ -1407,7 +1407,7 @@
                     <span class="badge badge-amber">{{ pending_bookings_count }}</span>
                     {% endif %}
                 </a>
-                <a href="{% url 'portals:service_list' %}" class="nav-item {% if request.resolver_match.url_name == 'service_list' or request.resolver_match.url_name == 'service_create' or request.resolver_match.url_name == 'service_edit' %}active{% endif %}" id="nav-services">
+                <a href="{% url 'portals:service_list' %}" class="nav-item {% if request.resolver_match.url_name == 'service_list' or request.resolver_match.url_name == 'service_create' or request.resolver_match.url_name == 'service_edit' or request.resolver_match.url_name == 'service_category_list' or request.resolver_match.url_name == 'service_category_edit' %}active{% endif %}" id="nav-services">
                     <i class="fas fa-concierge-bell"></i>
                     <span class="nav-label">Services</span>
                 </a>
@@ -1478,7 +1478,10 @@
             <!-- Content Section -->
             <div class="nav-section">
                 <div class="nav-section-label">Content</div>
-
+                <a href="{% url 'portals:website_maintenance' %}" class="nav-item {% if request.resolver_match.url_name == 'website_maintenance' %}active{% endif %}" id="nav-website-maintenance">
+                    <i class="fas fa-pen-to-square"></i>
+                    <span class="nav-label">Website Maintenance</span>
+                </a>
                 <a href="{% url 'website:home' %}" class="nav-item" id="nav-view-site" target="_blank">
                     <i class="fas fa-external-link-alt"></i>
                     <span class="nav-label">View Website</span>

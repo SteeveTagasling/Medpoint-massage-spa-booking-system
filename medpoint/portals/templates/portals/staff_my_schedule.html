@@ -219,9 +219,41 @@
     .availability-status.available { color: var(--green-400); }
     .availability-status.unavailable { color: var(--red-400); }
 
+    .calendar-cell:not(.empty) { cursor: pointer; }
+    .calendar-cell:not(.empty):focus-visible { z-index:2; outline:2px solid var(--purple-500); outline-offset:-2px; }
+    .calendar-cell.has-bookings { box-shadow: inset 0 -2px 0 rgba(251,191,36,.45); }
+
+    /* Day booking details modal */
+    .day-modal-backdrop { position:fixed; inset:0; z-index:1100; display:none; align-items:center; justify-content:center; padding:1rem; background:rgba(5,2,10,.78); backdrop-filter:blur(7px); }
+    .day-modal-backdrop.open { display:flex; animation:dayModalFade .18s ease; }
+    @keyframes dayModalFade { from{opacity:0} to{opacity:1} }
+    .day-modal { width:min(620px,100%); max-height:min(720px,88dvh); display:flex; flex-direction:column; overflow:hidden; background:var(--bg-secondary); border:1px solid var(--border-hover); border-radius:17px; box-shadow:0 24px 70px rgba(0,0,0,.48); }
+    .day-modal-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1.1rem 1.2rem; border-bottom:1px solid var(--border-color); background:linear-gradient(135deg,rgba(168,85,247,.1),rgba(124,58,237,.04)); }
+    .day-modal-heading { display:flex; align-items:center; gap:.75rem; min-width:0; }
+    .day-modal-icon { width:38px; height:38px; flex:none; display:grid; place-items:center; color:var(--purple-400); background:rgba(168,85,247,.12); border-radius:10px; }
+    .day-modal-title { color:var(--text-primary); font-size:1rem; font-weight:750; }
+    .day-modal-subtitle { margin-top:.15rem; color:var(--text-muted); font-size:.7rem; }
+    .day-modal-close { width:34px; height:34px; flex:none; display:grid; place-items:center; color:var(--text-muted); background:transparent; border:1px solid var(--border-color); border-radius:9px; cursor:pointer; }
+    .day-modal-close:hover { color:var(--text-primary); background:var(--sidebar-hover-bg); }
+    .day-modal-body { overflow-y:auto; padding:1rem 1.2rem 1.2rem; }
+    .day-booking-list { display:flex; flex-direction:column; gap:.7rem; }
+    .day-booking-card { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:.8rem; align-items:start; padding:.85rem; background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; }
+    .day-booking-time { min-width:76px; padding:.42rem .5rem; color:var(--purple-400); background:rgba(168,85,247,.1); border-radius:8px; font-size:.72rem; font-weight:750; text-align:center; }
+    .day-booking-client { color:var(--text-primary); font-size:.82rem; font-weight:700; }
+    .day-booking-service { margin-top:.2rem; color:var(--text-secondary); font-size:.72rem; line-height:1.35; }
+    .day-booking-meta { margin-top:.28rem; color:var(--text-muted); font-size:.64rem; }
+    .day-booking-status { padding:.22rem .5rem; border-radius:99px; font-size:.62rem; font-weight:700; text-transform:capitalize; }
+    .day-booking-status.pending { color:var(--amber-400); background:rgba(245,158,11,.12); }
+    .day-booking-status.confirmed { color:var(--blue-400); background:rgba(59,130,246,.12); }
+    .day-booking-status.completed { color:var(--green-400); background:rgba(34,197,94,.12); }
+    .day-booking-empty { padding:2.3rem 1rem; color:var(--text-muted); text-align:center; }
+    .day-booking-empty i { display:block; margin-bottom:.65rem; color:var(--purple-400); font-size:1.7rem; opacity:.55; }
+    .day-booking-empty strong { display:block; margin-bottom:.25rem; color:var(--text-secondary); font-size:.85rem; }
+
     @media (max-width: 768px) {
         .calendar-cell { min-height: 60px; padding: 0.3rem; }
         .slot-booked { font-size: 0.5rem; padding: 0.15rem 0.25rem; }
+        .day-booking-card { grid-template-columns:1fr auto; }.day-booking-time{grid-column:1/-1;width:max-content}.day-booking-details{min-width:0}
     }
 </style>
 {% endblock %}
@@ -313,11 +345,32 @@
     </div>
 </div>
 {% endif %}
+
+<div class="day-modal-backdrop" id="dayBookingsModal" role="dialog" aria-modal="true" aria-labelledby="dayBookingsTitle">
+    <div class="day-modal">
+        <div class="day-modal-header">
+            <div class="day-modal-heading">
+                <div class="day-modal-icon"><i class="fas fa-calendar-day"></i></div>
+                <div>
+                    <div class="day-modal-title" id="dayBookingsTitle">Bookings</div>
+                    <div class="day-modal-subtitle" id="dayBookingsSubtitle">Select a date to view its schedule</div>
+                </div>
+            </div>
+            <button type="button" class="day-modal-close" id="closeDayBookingsModal" aria-label="Close booking details"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="day-modal-body">
+            <div class="day-booking-list" id="dayBookingsList"></div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 (function() {
+    const calendarYear = {{ year }};
+    const calendarMonth = {{ month }};
+
     // Approved leave days
     const leaveDays = new Set({{ leave_days|safe }});
 
@@ -327,9 +380,11 @@
     bookedSlots[{{ day }}] = [
         {% for slot in slots %}
         {
+            id: '{{ slot.id }}',
             time: '{{ slot.time|escapejs }}',
             service: '{{ slot.service|escapejs }}',
             client: '{{ slot.client|escapejs }}',
+            phone: '{{ slot.phone|default:""|escapejs }}',
             status: '{{ slot.status|escapejs }}',
         },
         {% endfor %}
@@ -347,11 +402,78 @@
     });
     {% endfor %}
 
+    const modal = document.getElementById('dayBookingsModal');
+    const modalTitle = document.getElementById('dayBookingsTitle');
+    const modalSubtitle = document.getElementById('dayBookingsSubtitle');
+    const modalList = document.getElementById('dayBookingsList');
+    const modalClose = document.getElementById('closeDayBookingsModal');
+
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value == null ? '' : String(value);
+        return div.innerHTML;
+    }
+
+    function openDayBookings(day) {
+        const bookings = bookedSlots[day] || [];
+        const selectedDate = new Date(calendarYear, calendarMonth - 1, day);
+        const dateLabel = selectedDate.toLocaleDateString('en-PH', {
+            weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+        });
+        modalTitle.textContent = dateLabel;
+        modalSubtitle.textContent = bookings.length
+            ? `${bookings.length} booking${bookings.length === 1 ? '' : 's'} scheduled`
+            : 'No bookings scheduled';
+
+        if (!bookings.length) {
+            modalList.innerHTML = '<div class="day-booking-empty"><i class="far fa-calendar-check"></i><strong>No bookings for this date</strong><span>Your schedule is clear.</span></div>';
+        } else {
+            modalList.innerHTML = bookings.map(booking => {
+                const safeStatus = ['pending', 'confirmed', 'completed'].includes(booking.status) ? booking.status : 'pending';
+                const statusLabel = {pending:'Pending', confirmed:'Confirmed', completed:'Completed'}[booking.status] || booking.status;
+                return `<article class="day-booking-card">
+                    <div class="day-booking-time">${escapeHtml(booking.time)}</div>
+                    <div class="day-booking-details">
+                        <div class="day-booking-client">${escapeHtml(booking.client)}</div>
+                        <div class="day-booking-service">${escapeHtml(booking.service || 'Service not specified')}</div>
+                        <div class="day-booking-meta">BK ID ${escapeHtml(booking.id)}${booking.phone ? ' · ' + escapeHtml(booking.phone) : ''}</div>
+                    </div>
+                    <span class="day-booking-status ${safeStatus}">${escapeHtml(statusLabel)}</span>
+                </article>`;
+            }).join('');
+        }
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        modalClose.focus();
+    }
+
+    function closeDayBookings() {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    modalClose.addEventListener('click', closeDayBookings);
+    modal.addEventListener('click', event => { if (event.target === modal) closeDayBookings(); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && modal.classList.contains('open')) closeDayBookings(); });
+
     // Populate calendar cells
     document.querySelectorAll('.calendar-cell[data-day]').forEach(cell => {
         const day = parseInt(cell.getAttribute('data-day'));
         const weekday = parseInt(cell.getAttribute('data-weekday'));
         const slotsContainer = cell.querySelector('.day-slots');
+        const dayBookings = bookedSlots[day] || [];
+
+        cell.setAttribute('role', 'button');
+        cell.setAttribute('tabindex', '0');
+        cell.setAttribute('aria-label', `View bookings for day ${day}`);
+        cell.addEventListener('click', () => openDayBookings(day));
+        cell.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openDayBookings(day);
+            }
+        });
+        if (dayBookings.length) cell.classList.add('has-bookings');
 
         // ── Approved Leave override ──────────────────────────────
         if (leaveDays.has(day)) {
@@ -396,7 +518,6 @@
         }
 
         // Show booked slots
-        const dayBookings = bookedSlots[day] || [];
         dayBookings.forEach(b => {
             const statusLabel = {pending:'Pending',confirmed:'Confirmed',completed:'Completed',cancelled:'Cancelled'}[b.status] || b.status;
             const el = document.createElement('div');

@@ -190,10 +190,12 @@
         }
 
         .role-info {
+            display: block;
             min-width: 0;
         }
 
         .role-title {
+            display: block;
             font-weight: 600;
             font-size: 0.8rem;
             color: #e5e7eb;
@@ -201,6 +203,7 @@
         }
 
         .role-desc {
+            display: block;
             font-size: 0.6rem;
             color: #6b7280;
             line-height: 1.3;
@@ -394,55 +397,6 @@
             color: #a855f7;
         }
 
-        .form-options {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.25rem;
-            margin-top: -0.5rem;
-        }
-
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-        }
-
-        .remember-me input[type="checkbox"] {
-            appearance: none;
-            width: 14px;
-            height: 14px;
-            border: 1px solid rgba(168, 85, 247, 0.4);
-            border-radius: 4px;
-            background: rgba(11, 6, 19, 0.7);
-            cursor: pointer;
-            position: relative;
-            transition: all 0.2s;
-        }
-
-        .remember-me input[type="checkbox"]:checked {
-            background: #9333ea;
-            border-color: #9333ea;
-        }
-
-        .remember-me input[type="checkbox"]:checked::after {
-            content: '\f00c';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            color: white;
-            font-size: 8px;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .remember-me span {
-            font-size: 0.8rem;
-            color: #d1d5db;
-        }
-
         /* Responsive */
         @media (max-width: 480px) {
             body {
@@ -464,101 +418,241 @@
                 font-size: 0.8rem;
             }
         }
+
+        /* Refined portal sign-in */
+        body {
+            min-height: 100dvh;
+            padding: 1.25rem;
+            background:
+                radial-gradient(circle at 12% 18%, rgba(147, 51, 234, 0.12), transparent 30%),
+                radial-gradient(circle at 88% 82%, rgba(76, 29, 149, 0.16), transparent 32%),
+                #090510;
+        }
+        .login-container { max-width: 1040px; }
+        .login-shell {
+            min-height: 650px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.02fr) minmax(420px, 0.98fr);
+            overflow: hidden;
+            border: 1px solid rgba(168, 85, 247, 0.16);
+            border-radius: 28px;
+            background: rgba(16, 9, 25, 0.86);
+            box-shadow: 0 32px 90px rgba(0, 0, 0, 0.42);
+            backdrop-filter: blur(20px);
+        }
+        .portal-intro {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3rem;
+            overflow: hidden;
+            border-right: 1px solid rgba(168, 85, 247, 0.14);
+            background:
+                linear-gradient(145deg, rgba(147, 51, 234, 0.17), rgba(24, 12, 38, 0.45) 56%),
+                rgba(22, 12, 35, 0.72);
+        }
+        .portal-intro::before,
+        .portal-intro::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .portal-intro::before {
+            width: 340px;
+            height: 340px;
+            right: -170px;
+            top: -130px;
+            border: 1px solid rgba(192, 132, 252, 0.18);
+            box-shadow: 0 0 0 42px rgba(168, 85, 247, 0.025), 0 0 0 92px rgba(168, 85, 247, 0.018);
+        }
+        .portal-intro::after {
+            width: 190px;
+            height: 190px;
+            left: -95px;
+            bottom: -80px;
+            background: rgba(124, 58, 237, 0.1);
+            filter: blur(4px);
+        }
+        .intro-brand,
+        .intro-copy,
+        .portal-security { position: relative; z-index: 1; }
+        .intro-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.9rem;
+            color: inherit;
+            text-decoration: none;
+        }
+        .intro-brand-icon {
+            width: 52px;
+            height: 52px;
+            display: grid;
+            place-items: center;
+            border-radius: 15px;
+            color: #fff;
+            font-size: 1.25rem;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            box-shadow: 0 12px 30px rgba(147, 51, 234, 0.3);
+        }
+        .intro-brand-name { display: block; font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; letter-spacing: 0.08em; }
+        .intro-brand-sub { display: block; margin-top: 0.12rem; color: #9488a3; font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; }
+        .intro-kicker { display: inline-flex; align-items: center; gap: 0.45rem; margin-bottom: 1rem; color: #d8b4fe; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+        .intro-kicker::before { content: ''; width: 22px; height: 2px; border-radius: 2px; background: #a855f7; }
+        .intro-copy h1 { max-width: 430px; font-family: 'Playfair Display', serif; font-size: clamp(2rem, 3.6vw, 3.15rem); line-height: 1.08; letter-spacing: -0.02em; }
+        .intro-copy > p { max-width: 430px; margin-top: 1rem; color: #a79caf; font-size: 0.88rem; line-height: 1.7; }
+        .portal-benefits { display: grid; gap: 0.7rem; margin-top: 1.6rem; list-style: none; }
+        .portal-benefits li { display: flex; align-items: center; gap: 0.65rem; color: #d7d1dc; font-size: 0.78rem; }
+        .portal-benefits i { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 8px; color: #c084fc; background: rgba(168, 85, 247, 0.12); font-size: 0.68rem; }
+        .portal-security { display: inline-flex; align-items: center; gap: 0.5rem; width: fit-content; padding: 0.45rem 0.7rem; border: 1px solid rgba(74, 222, 128, 0.16); border-radius: 999px; color: #8f9b92; background: rgba(34, 197, 94, 0.045); font-size: 0.68rem; }
+        .portal-security i { color: #4ade80; }
+        .login-panel { display: flex; flex-direction: column; justify-content: center; padding: 2.5rem 3rem 1.7rem; }
+        .login-card { width: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; backdrop-filter: none; }
+        .login-eyebrow { display: inline-flex; align-items: center; gap: 0.45rem; margin-bottom: 0.7rem; color: #a78bfa; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+        .login-eyebrow-dot { width: 7px; height: 7px; border-radius: 50%; background: #8b5cf6; box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.12); }
+        .login-card h2 { font-size: 1.5rem; }
+        .login-card .login-sub { margin-bottom: 1.25rem; line-height: 1.5; }
+        .role-selector { margin-bottom: 1.25rem; }
+        .role-card { min-height: 66px; }
+        .role-card:focus-within { outline: 2px solid rgba(192, 132, 252, 0.85); outline-offset: 2px; }
+        .divider { margin-bottom: 1.2rem; }
+        .form-group { margin-bottom: 1rem; }
+        .input-wrap input { min-height: 50px; }
+        .input-wrap input:-webkit-autofill,
+        .input-wrap input:-webkit-autofill:hover,
+        .input-wrap input:-webkit-autofill:focus { -webkit-text-fill-color: #f3f4f6; -webkit-box-shadow: 0 0 0 1000px #0f0918 inset; transition: background-color 9999s ease-out; }
+        .show-password-toggle { width: 36px; height: 36px; display: grid; place-items: center; border: 0; background: transparent; }
+        .login-btn { min-height: 52px; position: relative; overflow: hidden; }
+        .login-btn:disabled { cursor: wait; opacity: 0.78; transform: none; }
+        .login-btn .button-spinner { display: none; }
+        .login-btn.is-loading .button-label { opacity: 0; }
+        .login-btn.is-loading .button-spinner { display: inline-flex; position: absolute; inset: 0; align-items: center; justify-content: center; }
+        .login-footer { margin-top: 1.4rem; }
+        .login-footer a { display: inline-flex; align-items: center; gap: 0.4rem; }
+        .login-help { margin-top: 0.75rem; color: #625a6a; font-size: 0.65rem; line-height: 1.45; text-align: center; }
+        .visually-hidden { position: absolute!important; width: 1px!important; height: 1px!important; padding: 0!important; margin: -1px!important; overflow: hidden!important; clip: rect(0,0,0,0)!important; white-space: nowrap!important; border: 0!important; }
+
+        @media (max-width: 860px) {
+            body { align-items: flex-start; }
+            .login-container { max-width: 580px; }
+            .login-shell { min-height: 0; grid-template-columns: 1fr; border-radius: 22px; }
+            .portal-intro { padding: 1.35rem 1.5rem; border-right: 0; border-bottom: 1px solid rgba(168,85,247,.14); }
+            .intro-copy, .portal-security { display: none; }
+            .login-panel { padding: 2rem 2.2rem 1.5rem; }
+        }
+        @media (max-width: 480px) {
+            body { padding: 0; }
+            .login-container { max-width: none; min-height: 100dvh; }
+            .login-shell { min-height: 100dvh; border: 0; border-radius: 0; }
+            .portal-intro { padding: 1rem 1.15rem; }
+            .intro-brand-icon { width: 43px; height: 43px; border-radius: 12px; }
+            .login-panel { justify-content: flex-start; padding: 1.6rem 1.15rem 1.25rem; }
+            .role-selector { grid-template-columns: 1fr 1fr; }
+            .role-desc { display: none; }
+        }
     </style>
 </head>
 
 <body>
     <div class="login-container">
-        <div class="login-brand">
-            <div class="login-brand-icon"><i class="fas fa-spa"></i></div>
-            <h1>MEDPOINT</h1>
-            <p>Management Portal</p>
-        </div>
-
-        <div class="login-card">
-            <h2>Welcome back</h2>
-            <p class="login-sub">Select your role and sign in to continue</p>
-
-            {% if messages %}
-            {% for message in messages %}
-            <div class="login-alert {% if message.tags == 'success' %}login-alert-success{% else %}login-alert-error{% endif %}">
-                <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
-                <span>{{ message }}</span>
-            </div>
-            {% endfor %}
-            {% endif %}
-
-            <form method="post" action="{% url 'portals:login' %}" id="login-form">
-                {% csrf_token %}
-
-                <!-- Role Selector -->
-                <div class="role-selector">
-                    <label class="role-card role-admin selected" id="role-admin-card">
-                        <input type="radio" name="role" value="admin" checked>
-                        <div class="role-check"><i class="fas fa-check"></i></div>
-                        <div class="role-icon"><i class="fas fa-user-shield"></i></div>
-                        <div class="role-info">
-                            <div class="role-title">Admin</div>
-                            <div class="role-desc">Full system access</div>
-                        </div>
-                    </label>
-                    <label class="role-card role-staff" id="role-staff-card">
-                        <input type="radio" name="role" value="staff">
-                        <div class="role-check"><i class="fas fa-check"></i></div>
-                        <div class="role-icon"><i class="fas fa-user-tie"></i></div>
-                        <div class="role-info">
-                            <div class="role-title">Staff</div>
-                            <div class="role-desc">Daily operations</div>
-                        </div>
-                    </label>
+        <div class="login-shell">
+            <section class="portal-intro" aria-label="MEDPOINT management portal">
+                <a class="intro-brand" href="{% url 'website:home' %}">
+                    <span class="intro-brand-icon"><i class="fas fa-spa"></i></span>
+                    <span><span class="intro-brand-name">MEDPOINT</span><span class="intro-brand-sub">Management Portal</span></span>
+                </a>
+                <div class="intro-copy">
+                    <span class="intro-kicker">Workspace access</span>
+                    <h1>Run every appointment with confidence.</h1>
+                    <p>One secure workspace for bookings, staff schedules, services, reports, and client care.</p>
+                    <ul class="portal-benefits">
+                        <li><i class="fas fa-calendar-check"></i> Keep daily bookings and schedules organized</li>
+                        <li><i class="fas fa-users-gear"></i> Manage staff access and availability</li>
+                        <li><i class="fas fa-chart-line"></i> Review performance and business reports</li>
+                    </ul>
                 </div>
+                <div class="portal-security"><i class="fas fa-shield-halved"></i> Authorized personnel only · Secure session</div>
+            </section>
 
-                <div class="divider"><span>Sign in credentials</span></div>
+            <main class="login-panel">
+                <div class="login-card">
+                    <div class="login-eyebrow"><span class="login-eyebrow-dot"></span> Secure sign in</div>
+                    <h2>Welcome back</h2>
+                    <p class="login-sub">Choose your access role and enter your portal credentials.</p>
 
-                <div class="form-group">
-                    <label for="login-username">Username</label>
-                    <div class="input-wrap">
-                        <input type="text" name="username" id="login-username" placeholder="Enter your username"
-                            required autofocus>
-                        <i class="fas fa-user"></i>
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="login-alert {% if message.tags == 'success' %}login-alert-success{% else %}login-alert-error{% endif %}" role="alert">
+                        <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
+                        <span>{{ message }}</span>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label for="login-password">Password</label>
-                    <div class="input-wrap">
-                        <input type="password" name="password" id="login-password"
-                            placeholder="Enter your password" required>
-                        <i class="fas fa-lock"></i>
-                        <span class="show-password-toggle" id="toggle-password">
-                            <i class="fas fa-eye"></i>
-                        </span>
-                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="post" action="{% url 'portals:login' %}" id="login-form">
+                        {% csrf_token %}
+                        {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+
+                        <fieldset style="border:0;">
+                            <legend class="visually-hidden">Select portal role</legend>
+                            <div class="role-selector">
+                                <label class="role-card role-admin {% if selected_role != 'staff' %}selected{% endif %}" id="role-admin-card">
+                                    <input type="radio" name="role" value="admin" {% if selected_role != 'staff' %}checked{% endif %}>
+                                    <span class="role-check"><i class="fas fa-check"></i></span>
+                                    <span class="role-icon"><i class="fas fa-user-shield"></i></span>
+                                    <span class="role-info"><span class="role-title">Admin</span><span class="role-desc">Full system access</span></span>
+                                </label>
+                                <label class="role-card role-staff {% if selected_role == 'staff' %}selected{% endif %}" id="role-staff-card">
+                                    <input type="radio" name="role" value="staff" {% if selected_role == 'staff' %}checked{% endif %}>
+                                    <span class="role-check"><i class="fas fa-check"></i></span>
+                                    <span class="role-icon"><i class="fas fa-user-tie"></i></span>
+                                    <span class="role-info"><span class="role-title">Staff</span><span class="role-desc">Daily operations</span></span>
+                                </label>
+                            </div>
+                        </fieldset>
+
+                        <div class="divider"><span>Sign in credentials</span></div>
+
+                        <div class="form-group">
+                            <label for="login-username">Username</label>
+                            <div class="input-wrap">
+                                <input type="text" name="username" id="login-username" value="{{ submitted_username }}" placeholder="Enter your username" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
+                                <i class="fas fa-user"></i>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Password</label>
+                            <div class="input-wrap">
+                                <input type="password" name="password" id="login-password" placeholder="Enter your password" autocomplete="current-password" required>
+                                <i class="fas fa-lock"></i>
+                                <button type="button" class="show-password-toggle" id="toggle-password" aria-label="Show password" aria-pressed="false">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="login-btn" id="login-submit">
+                            <span class="button-label">Sign In <i class="fas fa-arrow-right" style="margin-left: 0.5rem; font-size: 0.8rem;"></i></span>
+                            <span class="button-spinner"><i class="fas fa-circle-notch fa-spin"></i>&nbsp; Signing in…</span>
+                        </button>
+                    </form>
                 </div>
 
-                <div class="form-options">
-                    <label class="remember-me">
-                        <input type="checkbox" name="remember_me" id="remember-me">
-                        <span>Remember Me</span>
-                    </label>
+                <div class="login-footer">
+                    <a href="{% url 'website:home' %}"><i class="fas fa-arrow-left"></i> Back to Website</a>
                 </div>
-
-                <button type="submit" class="login-btn" id="login-submit">
-                    Sign In <i class="fas fa-arrow-right" style="margin-left: 0.5rem; font-size: 0.8rem;"></i>
-                </button>
-            </form>
-        </div>
-
-        <div class="login-footer">
-            <a href="{% url 'website:home' %}"><i class="fas fa-arrow-left" style="margin-right: 0.375rem; font-size: 0.7rem;"></i> Back to Website</a>
+                <p class="login-help">For account access issues, contact your system administrator.</p>
+            </main>
         </div>
     </div>
 
     <script>
         // Role card selection
-        document.querySelectorAll('.role-card').forEach(card => {
-            card.addEventListener('click', () => {
+        document.querySelectorAll('.role-card input[type="radio"]').forEach(input => {
+            input.addEventListener('change', () => {
                 document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
+                input.closest('.role-card').classList.add('selected');
             });
         });
 
@@ -571,6 +665,17 @@
                 const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
                 passwordInput.setAttribute('type', type);
                 this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+                this.setAttribute('aria-label', type === 'password' ? 'Show password' : 'Hide password');
+                this.setAttribute('aria-pressed', type === 'text' ? 'true' : 'false');
+            });
+        }
+
+        const loginForm = document.getElementById('login-form');
+        const loginSubmit = document.getElementById('login-submit');
+        if (loginForm && loginSubmit) {
+            loginForm.addEventListener('submit', function () {
+                loginSubmit.disabled = true;
+                loginSubmit.classList.add('is-loading');
             });
         }
     </script>
