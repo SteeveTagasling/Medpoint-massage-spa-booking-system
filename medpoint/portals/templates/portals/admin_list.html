@@ -6,140 +6,129 @@
 
 {% block extra_css %}
 <style>
-    .header-actions {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.25rem;
-    }
-    .btn-primary {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.6rem 1.25rem;
-        border-radius: 10px;
-        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
-        color: #fff;
-        font-size: 0.8125rem;
-        font-weight: 600;
-        text-decoration: none;
-        font-family: inherit;
-        border: none;
-        cursor: pointer;
-        transition: var(--transition);
-    }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-primary i { font-size: 0.75rem; }
-    
-    .admin-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        border-radius: 16px;
-        padding: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        transition: var(--transition);
-        margin-bottom: 1rem;
-    }
-    .admin-card:hover {
-        border-color: var(--border-hover);
-        box-shadow: var(--item-hover-shadow);
-        transform: translateY(-2px);
-    }
-    
-    .admin-avatar {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        font-weight: bold;
-        flex-shrink: 0;
-        object-fit: cover;
-    }
-    
-    .admin-info {
-        flex: 1;
-    }
-    .admin-name {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 0.25rem;
-    }
-    .admin-meta {
-        font-size: 0.8rem;
-        color: var(--text-muted);
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-    .admin-meta span {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-    }
-    
-    .admin-actions {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .btn-sm {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        padding: 0.4rem 0.8rem;
-        border-radius: 8px;
-        font-size: 0.8rem;
-        font-weight: 500;
-        text-decoration: none;
-        cursor: pointer;
-        transition: var(--transition);
-        border: 1px solid var(--border-color);
-        background: transparent;
-        color: var(--text-secondary);
-        font-family: inherit;
-    }
+    .admin-page-hero { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.25rem 1.4rem; margin-bottom: 1rem; overflow: hidden; position: relative; background: radial-gradient(circle at 90% 0%, rgba(168,85,247,.14), transparent 35%), linear-gradient(135deg, var(--bg-card), rgba(124,58,237,.045)); border-color: rgba(168,85,247,.18); }
+    .admin-page-hero::after { content: ''; position: absolute; width: 150px; height: 150px; right: -75px; bottom: -105px; border: 24px solid rgba(168,85,247,.045); border-radius: 50%; }
+    .hero-copy { display: flex; align-items: center; gap: .85rem; position: relative; z-index: 1; }
+    .hero-icon { width: 44px; height: 44px; flex: 0 0 44px; display: grid; place-items: center; border-radius: 12px; color: var(--purple-400); background: rgba(168,85,247,.12); font-size: 1rem; }
+    .hero-copy h2 { margin: 0; color: var(--text-primary); font-size: 1rem; font-weight: 700; }
+    .hero-copy p { margin: .25rem 0 0; color: var(--text-muted); font-size: .73rem; }
+    .btn-primary { min-height: 39px; display: inline-flex; align-items: center; justify-content: center; gap: .48rem; padding: .58rem 1rem; border-radius: 9px; background: linear-gradient(135deg, var(--purple-600), var(--violet-600)); color: #fff; font-size: .76rem; font-weight: 650; text-decoration: none; border: none; cursor: pointer; transition: .2s ease; box-shadow: 0 7px 18px rgba(124,58,237,.2); position: relative; z-index: 1; }
+    .btn-primary:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 9px 22px rgba(124,58,237,.3); }
+
+    .admin-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; margin-bottom: 1rem; }
+    .overview-card { padding: .85rem 1rem; display: flex; align-items: center; gap: .7rem; }
+    .overview-icon { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; border-radius: 9px; font-size: .72rem; }
+    .overview-purple { color: var(--purple-400); background: rgba(168,85,247,.11); }
+    .overview-green { color: var(--green-400); background: rgba(34,197,94,.11); }
+    .overview-red { color: var(--red-400); background: rgba(239,68,68,.1); }
+    .overview-card strong { display: block; color: var(--text-primary); font-size: 1rem; line-height: 1.1; }
+    .overview-card span:last-child { display: block; color: var(--text-muted); font-size: .64rem; margin-top: .15rem; }
+
+    .admin-toolbar { display: flex; align-items: center; gap: .65rem; padding: .75rem; margin-bottom: 1rem; }
+    .admin-search { flex: 1; min-width: 220px; position: relative; }
+    .admin-search i { position: absolute; left: .8rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: .72rem; }
+    .admin-input, .admin-select { width: 100%; height: 39px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); border-radius: 9px; font-family: inherit; font-size: .75rem; outline: none; transition: .2s ease; }
+    .admin-input { padding: 0 .8rem 0 2.15rem; }
+    .admin-select { width: 150px; padding: 0 .7rem; cursor: pointer; }
+    .admin-input:focus, .admin-select:focus { border-color: var(--purple-500); box-shadow: 0 0 0 3px rgba(168,85,247,.08); }
+    .btn-filter, .btn-clear { height: 39px; padding: 0 .85rem; display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border: 1px solid var(--border-color); border-radius: 9px; background: var(--bg-card); color: var(--text-secondary); font: 650 .72rem inherit; cursor: pointer; text-decoration: none; white-space: nowrap; }
+    .btn-filter { color: #fff; border-color: transparent; background: linear-gradient(135deg,var(--purple-600),var(--violet-600)); }
+    .btn-clear:hover { color: var(--purple-400); border-color: var(--border-hover); }
+
+    .admin-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
+    .admin-card { min-width: 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 1rem; display: grid; grid-template-columns: 52px minmax(0,1fr); gap: .8rem; position: relative; transition: .2s ease; }
+    .admin-card:hover { border-color: var(--border-hover); box-shadow: var(--item-hover-shadow); transform: translateY(-2px); }
+    .admin-card.is-inactive { opacity: .72; }
+    .admin-avatar { width: 52px; height: 52px; border-radius: 13px; background: linear-gradient(135deg,var(--purple-600),var(--violet-600)); color: #fff; display: grid; place-items: center; font-size: 1.15rem; font-weight: 750; object-fit: cover; box-shadow: 0 6px 16px rgba(124,58,237,.16); }
+    .admin-info { min-width: 0; }
+    .admin-name-row { display: flex; align-items: center; gap: .45rem; min-width: 0; }
+    .admin-name { color: var(--text-primary); font-size: .9rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .you-badge { padding: .12rem .45rem; border-radius: 999px; color: var(--purple-400); background: rgba(168,85,247,.12); font-size: .58rem; font-weight: 700; }
+    .status-badge { margin-left: auto; padding: .16rem .48rem; border-radius: 999px; display: inline-flex; align-items: center; gap: .3rem; font-size: .58rem; font-weight: 700; white-space: nowrap; }
+    .status-badge i { font-size: .42rem; }
+    .status-active { color: var(--green-400); background: rgba(34,197,94,.1); }
+    .status-inactive { color: var(--red-400); background: rgba(239,68,68,.09); }
+    .admin-role { display: inline-flex; align-items: center; gap: .35rem; margin-top: .25rem; color: var(--text-muted); font-size: .63rem; }
+    .admin-role i { color: var(--green-400); }
+    .admin-contact { grid-column: 1 / -1; display: grid; gap: .38rem; padding: .7rem .75rem; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-secondary); }
+    .admin-contact span { min-width: 0; display: flex; align-items: center; gap: .48rem; color: var(--text-secondary); font-size: .68rem; }
+    .admin-contact i { width: 13px; color: var(--purple-400); text-align: center; }
+    .admin-contact span span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .admin-activity { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: .8rem; color: var(--text-muted); font-size: .6rem; }
+    .admin-actions { grid-column: 1 / -1; display: flex; align-items: center; gap: .45rem; padding-top: .75rem; border-top: 1px solid var(--border-color); }
+    .btn-sm { min-height: 34px; padding: .42rem .72rem; display: inline-flex; align-items: center; justify-content: center; gap: .34rem; border-radius: 8px; font-size: .68rem; font-weight: 650; text-decoration: none; cursor: pointer; transition: .2s ease; border: 1px solid var(--border-color); background: transparent; color: var(--text-secondary); font-family: inherit; }
     .btn-sm:hover { border-color: var(--border-hover); color: var(--purple-400); }
-    .btn-sm-danger {
-        border-color: rgba(239, 68, 68, 0.2);
-        color: var(--red-400);
-        background: rgba(239, 68, 68, 0.05);
+    .admin-actions form { margin-left: auto; }
+    .btn-sm-danger { color: var(--red-400); border-color: rgba(239,68,68,.2); background: rgba(239,68,68,.05); }
+    .btn-sm-success { color: var(--green-400); border-color: rgba(34,197,94,.2); background: rgba(34,197,94,.05); }
+    .btn-disabled { margin-left: auto; opacity: .45; cursor: not-allowed; }
+    .admin-empty { grid-column: 1 / -1; padding: 2.75rem 1rem; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .empty-icon { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 14px; color: var(--purple-400); background: rgba(168,85,247,.1); margin-bottom: .75rem; }
+    .admin-empty strong { color: var(--text-primary); font-size: .85rem; }
+    .admin-empty p { margin: .25rem 0 .9rem; color: var(--text-muted); font-size: .7rem; }
+    .security-note { margin-top: 1rem; padding: .75rem 1rem; display: flex; gap: .65rem; align-items: flex-start; color: var(--text-muted); font-size: .66rem; line-height: 1.5; }
+    .security-note i { color: var(--amber-400); margin-top: .1rem; }
+
+    @media (max-width: 900px) { .admin-list { grid-template-columns: 1fr; } }
+    @media (max-width: 650px) {
+        .admin-page-hero { align-items: stretch; flex-direction: column; }
+        .admin-page-hero .btn-primary { width: 100%; }
+        .admin-overview { grid-template-columns: repeat(3,1fr); gap: .5rem; }
+        .overview-card { padding: .7rem; flex-direction: column; align-items: flex-start; gap: .45rem; }
+        .admin-toolbar { flex-wrap: wrap; }
+        .admin-search { min-width: 100%; }
+        .admin-select { flex: 1; width: auto; }
     }
-    .btn-sm-danger:hover {
-        background: rgba(239, 68, 68, 0.12);
-        border-color: rgba(239, 68, 68, 0.35);
-    }
-    .btn-sm-success {
-        border-color: rgba(34, 197, 94, 0.2);
-        color: var(--green-400);
-        background: rgba(34, 197, 94, 0.05);
-    }
-    .btn-sm-success:hover {
-        background: rgba(34, 197, 94, 0.12);
-        border-color: rgba(34, 197, 94, 0.35);
+    @media (max-width: 430px) {
+        .overview-icon { width: 30px; height: 30px; }
+        .overview-card strong { font-size: .9rem; }
+        .admin-card { grid-template-columns: 44px minmax(0,1fr); padding: .8rem; }
+        .admin-avatar { width: 44px; height: 44px; }
+        .admin-actions { flex-wrap: wrap; }
+        .admin-actions form, .btn-disabled { margin-left: 0; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="header-actions">
+<div class="admin-page-hero card">
+    <div class="hero-copy">
+        <span class="hero-icon"><i class="fas fa-user-shield"></i></span>
+        <div>
+            <h2>Administrator access</h2>
+            <p>Manage accounts with full control of bookings, staff, reports, and website settings.</p>
+        </div>
+    </div>
     <a href="{% url 'portals:admin_management_create' %}" class="btn-primary">
-        <i class="fas fa-user-shield"></i> Add Administrator
+        <i class="fas fa-user-plus"></i> Add Administrator
     </a>
 </div>
 
+<div class="admin-overview">
+    <div class="overview-card card"><span class="overview-icon overview-purple"><i class="fas fa-users-cog"></i></span><div><strong>{{ total_admins }}</strong><span>Total administrators</span></div></div>
+    <div class="overview-card card"><span class="overview-icon overview-green"><i class="fas fa-user-check"></i></span><div><strong>{{ active_admins }}</strong><span>Active accounts</span></div></div>
+    <div class="overview-card card"><span class="overview-icon overview-red"><i class="fas fa-user-lock"></i></span><div><strong>{{ inactive_admins }}</strong><span>Deactivated accounts</span></div></div>
+</div>
+
+<form method="get" class="admin-toolbar card" role="search">
+    <div class="admin-search">
+        <i class="fas fa-search"></i>
+        <input class="admin-input" type="search" name="search" value="{{ search }}" placeholder="Search by name, username, or email" aria-label="Search administrators">
+    </div>
+    <select name="status" class="admin-select" aria-label="Filter account status">
+        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All statuses</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Deactivated</option>
+    </select>
+    <button class="btn-filter" type="submit"><i class="fas fa-filter"></i> Apply</button>
+    {% if search or status_filter != 'all' %}<a href="{% url 'portals:admin_management_list' %}" class="btn-clear"><i class="fas fa-rotate-left"></i> Clear</a>{% endif %}
+</form>
+
 <div class="admin-list">
     {% for admin_user in admins %}
-    <div class="admin-card">
+    <div class="admin-card {% if not admin_user.is_active %}is-inactive{% endif %}">
         {% if admin_user.admin_profile.photo %}
-        <img src="{{ admin_user.admin_profile.photo.url }}" class="admin-avatar">
+        <img src="{{ admin_user.admin_profile.photo.url }}" class="admin-avatar" alt="{{ admin_user.get_full_name|default:admin_user.username }}">
         {% else %}
         <div class="admin-avatar">
             {{ admin_user.first_name|default:admin_user.username|first|upper }}
@@ -147,28 +136,26 @@
         {% endif %}
         
         <div class="admin-info">
-            <div class="admin-name">
-                {{ admin_user.get_full_name|default:admin_user.username }}
+            <div class="admin-name-row">
+                <span class="admin-name" title="{{ admin_user.get_full_name|default:admin_user.username }}">{{ admin_user.get_full_name|default:admin_user.username }}</span>
                 {% if admin_user == request.user %}
-                <span style="font-size: 0.7rem; background: rgba(168, 85, 247, 0.2); color: var(--purple-400); padding: 0.1rem 0.5rem; border-radius: 8px; margin-left: 0.5rem;">You</span>
+                <span class="you-badge">You</span>
                 {% endif %}
+                {% if admin_user.is_active %}<span class="status-badge status-active"><i class="fas fa-circle"></i> Active</span>{% else %}<span class="status-badge status-inactive"><i class="fas fa-circle"></i> Deactivated</span>{% endif %}
             </div>
-            <div class="admin-meta">
-                <span><i class="fas fa-id-badge" style="color: var(--purple-400);"></i> @{{ admin_user.username }}</span>
-                {% if admin_user.email %}
-                <span><i class="fas fa-envelope" style="color: var(--text-muted);"></i> {{ admin_user.email }}</span>
-                {% endif %}
-                <span><i class="fas fa-shield-alt" style="color: var(--green-400);"></i> Superuser</span>
-                <span>
-                    {% if admin_user.is_active %}
-                    <i class="fas fa-circle" style="color: var(--green-400); font-size: 0.5rem;"></i> Active
-                    {% else %}
-                    <i class="fas fa-circle" style="color: var(--red-400); font-size: 0.5rem;"></i> Deactivated
-                    {% endif %}
-                </span>
-            </div>
+            <span class="admin-role"><i class="fas fa-shield-alt"></i> Full portal access</span>
         </div>
-        
+
+        <div class="admin-contact">
+            <span><i class="fas fa-id-badge"></i><span>@{{ admin_user.username }}</span></span>
+            <span><i class="fas fa-envelope"></i><span>{{ admin_user.email|default:"No email address" }}</span></span>
+        </div>
+
+        <div class="admin-activity">
+            <span>Added {{ admin_user.date_joined|date:"M j, Y" }}</span>
+            <span>{% if admin_user.last_login %}Last login {{ admin_user.last_login|date:"M j, Y · g:i A" }}{% else %}No login recorded{% endif %}</span>
+        </div>
+
         <div class="admin-actions">
             <a href="{% url 'portals:admin_management_edit' admin_user.pk %}" class="btn-sm">
                 <i class="fas fa-pen"></i> Edit
@@ -183,19 +170,24 @@
                 </button>
             </form>
             {% else %}
-            <button class="btn-sm" style="opacity: 0.5; cursor: not-allowed;" title="You cannot deactivate yourself">
+            <button type="button" class="btn-sm btn-disabled" disabled title="You cannot deactivate your own account">
                 <i class="fas fa-user-slash"></i> Deactivate
             </button>
             {% endif %}
         </div>
     </div>
     {% empty %}
-    <div class="card">
-        <div class="empty-state">
-            <i class="fas fa-user-shield"></i>
-            <p>No administrators found</p>
-        </div>
+    <div class="admin-empty card">
+        <span class="empty-icon"><i class="fas fa-user-shield"></i></span>
+        <strong>No administrators found</strong>
+        <p>Try changing the search or status filter.</p>
+        {% if search or status_filter != 'all' %}<a href="{% url 'portals:admin_management_list' %}" class="btn-clear">Clear filters</a>{% endif %}
     </div>
     {% endfor %}
+</div>
+
+<div class="security-note card">
+    <i class="fas fa-lock"></i>
+    <span>Administrators have full access to sensitive business settings and client information. Only add trusted users. Your own account cannot be deactivated while you are signed in.</span>
 </div>
 {% endblock %}

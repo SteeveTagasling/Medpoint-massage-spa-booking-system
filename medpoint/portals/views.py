@@ -1767,9 +1767,35 @@ def admin_management_list(request):
         return check
     
     from django.contrib.auth.models import User
-    # Get all superusers
-    admins = User.objects.filter(is_superuser=True).order_by('username')
-    return render(request, 'portals/admin_list.html', {'admins': admins})
+    # Get all superusers, with lightweight search and status filtering.
+    base_admins = User.objects.filter(is_superuser=True)
+    search = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', 'all')
+    if status_filter not in {'all', 'active', 'inactive'}:
+        status_filter = 'all'
+
+    admins = base_admins.select_related('admin_profile')
+    if search:
+        admins = admins.filter(
+            Q(username__icontains=search)
+            | Q(first_name__icontains=search)
+            | Q(last_name__icontains=search)
+            | Q(email__icontains=search)
+        )
+    if status_filter == 'active':
+        admins = admins.filter(is_active=True)
+    elif status_filter == 'inactive':
+        admins = admins.filter(is_active=False)
+
+    context = {
+        'admins': admins.order_by('-is_active', 'first_name', 'username'),
+        'search': search,
+        'status_filter': status_filter,
+        'total_admins': base_admins.count(),
+        'active_admins': base_admins.filter(is_active=True).count(),
+        'inactive_admins': base_admins.filter(is_active=False).count(),
+    }
+    return render(request, 'portals/admin_list.html', context)
 
 @login_required(login_url='portals:login')
 def admin_management_create(request):
