@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='testimonial',
             constraint=models.CheckConstraint(
-                check=models.Q(is_approved=True) | models.Q(is_featured=False),
+                condition=models.Q(is_approved=True) | models.Q(is_featured=False),
                 name='testimonial_featured_requires_approval',
             ),
         ),

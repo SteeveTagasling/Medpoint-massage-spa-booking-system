@@ -427,7 +427,7 @@ class Testimonial(models.Model):
         ordering = ['-created_at']
         constraints = [
             models.CheckConstraint(
-                check=models.Q(is_approved=True) | models.Q(is_featured=False),
+                condition=models.Q(is_approved=True) | models.Q(is_featured=False),
                 name='testimonial_featured_requires_approval',
             ),
         ]
