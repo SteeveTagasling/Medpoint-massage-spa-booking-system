@@ -459,7 +459,7 @@
                     <label class="form-label">Select Service(s) <span style="color: var(--red-400);">*</span></label>
                     <p style="font-size: 0.72rem; color: var(--text-muted); margin: 0 0 0.65rem;">
                         <i class="fas fa-info-circle" style="color: var(--purple-400);"></i>
-                        Click to select. You can choose multiple services to add on.
+                        Click to select. If two or more services are selected, ₱200 is added for each selected service.
                     </p>
                 </div>
                 <!-- Hidden multi-select synced with chips -->
@@ -474,6 +474,7 @@
                             {% for svc in group.services %}
                             <div class="service-chip"
                                  data-id="{{ svc.pk }}"
+                                 data-name="{{ svc.name }}"
                                  data-price="{{ svc.discounted_price }}"
                                  data-duration="{{ svc.duration_minutes }}"
                                  onclick="toggleService(this)"
@@ -502,6 +503,17 @@
                     <span class="sum-item"><i class="fas fa-spa"></i> <strong id="sum-count">0</strong>&nbsp;service(s)</span>
                     <span class="sum-item"><i class="fas fa-peso-sign"></i> Total:&nbsp;<strong id="sum-price">&#8369;0.00</strong></span>
                     <span class="sum-item"><i class="fas fa-clock"></i> Duration:&nbsp;<strong id="sum-duration">0 min</strong></span>
+                    <span class="sum-item" id="sum-fees" style="display:none;"><i class="fas fa-circle-plus"></i> <strong id="sum-fee-text"></strong></span>
+                </div>
+
+                <div class="form-group" style="margin-top: 1.25rem;">
+                    <label class="form-label" for="id_additional_minutes">Additional Massage Time (Optional)</label>
+                    {{ form.additional_minutes }}
+                    <p style="font-size: 0.72rem; color: var(--text-muted); margin: 0.35rem 0 0;">
+                        <i class="fas fa-clock" style="color: var(--purple-400);"></i>
+                        Add one 30-minute extension for &#8369;200.
+                    </p>
+                    {% if form.additional_minutes.errors %}<span class="error-text">{{ form.additional_minutes.errors.0 }}</span>{% endif %}
                 </div>
                 <div class="form-group" style="margin-top: 1.25rem;">
                     <label class="form-label" for="id_therapist_preference">Therapist Preference <span style="color: var(--red-400);">*</span></label>
@@ -580,6 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateInput      = document.getElementById('id_date');
     const timeInput      = document.getElementById('id_time');
     const svcSelect      = document.getElementById('id_services');
+    const additionalMinutesSelect = document.getElementById('id_additional_minutes');
     const nameInput      = document.getElementById('id_client_name');
     const phoneInput     = document.getElementById('id_client_phone');
 
@@ -618,18 +631,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateSummary() {
         let total = 0, mins = 0;
+        const feeDescriptions = [];
         document.querySelectorAll('.service-chip.active').forEach(chip => {
             total += parseFloat(chip.dataset.price) || 0;
             mins  += parseInt(chip.dataset.duration) || 0;
         });
+        const serviceCount = selectedServiceIds.length;
+        if (serviceCount >= 2) {
+            total += serviceCount * 200;
+            feeDescriptions.push(`Service fee: ${serviceCount} × ₱200`);
+        }
+        const additionalMinutes = additionalMinutesSelect
+            ? (parseInt(additionalMinutesSelect.value, 10) || 0)
+            : 0;
+        if (additionalMinutes === 30) {
+            total += 200;
+            mins += 30;
+            feeDescriptions.push('Extra 30 minutes: ₱200');
+        }
         const bar = document.getElementById('summary-bar');
+        const fees = document.getElementById('sum-fees');
+        const feeText = document.getElementById('sum-fee-text');
         if (selectedServiceIds.length > 0) {
             bar.classList.add('visible');
             document.getElementById('sum-count').textContent    = selectedServiceIds.length;
             document.getElementById('sum-price').textContent    = '\u20b1' + total.toLocaleString('en-PH', { minimumFractionDigits: 2 });
             document.getElementById('sum-duration').textContent = mins + ' min';
+            if (fees && feeText) {
+                fees.style.display = feeDescriptions.length ? '' : 'none';
+                feeText.textContent = feeDescriptions.join(' • ');
+            }
         } else {
             bar.classList.remove('visible');
+            if (fees) fees.style.display = 'none';
         }
         updateChipAvailability();
     }
@@ -654,7 +688,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const selectedDuration = Array.from(
+        const additionalMinutes = additionalMinutesSelect
+            ? (parseInt(additionalMinutesSelect.value, 10) || 0)
+            : 0;
+        const selectedDuration = additionalMinutes + Array.from(
             document.querySelectorAll('#service-chips-container .service-chip.active')
         ).reduce((total, chip) => total + (parseInt(chip.dataset.duration, 10) || 0), 0);
 
@@ -688,7 +725,19 @@ document.addEventListener('DOMContentLoaded', () => {
             duration: parseInt(chip.dataset.duration, 10) || 0,
         })).sort((left, right) => right.duration - left.duration);
 
-        let totalDuration = selected.reduce((total, item) => total + item.duration, 0);
+        let additionalMinutes = additionalMinutesSelect
+            ? (parseInt(additionalMinutesSelect.value, 10) || 0)
+            : 0;
+        let serviceDuration = selected.reduce((total, item) => total + item.duration, 0);
+
+        // Preserve selected services when possible. If only the optional
+        // extension causes the booking to run past closing, remove it first.
+        if (serviceDuration + additionalMinutes > availableMinutes && additionalMinutesSelect) {
+            additionalMinutesSelect.value = '0';
+            additionalMinutes = 0;
+        }
+
+        let totalDuration = serviceDuration + additionalMinutes;
         for (const item of selected) {
             if (totalDuration <= availableMinutes) break;
             item.chip.classList.remove('active');
@@ -738,6 +787,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeQ       = timeInput.value  ? `&time=${timeInput.value}` : '';
         const svcQ        = selectedServiceIds.join(',');
         const svcPart     = svcQ ? `&service_id=${svcQ}` : '';
+        const additionalMinutes = additionalMinutesSelect
+            ? (parseInt(additionalMinutesSelect.value, 10) || 0)
+            : 0;
+        const additionalPart = `&additional_minutes=${additionalMinutes}`;
 
         // Update badge
         if (clientGender === 'female' || pref === 'female') {
@@ -752,7 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
         therapistHint.style.display = 'none';
         cardsContainer.innerHTML = '<div class="loading-spinner"></div>';
 
-        const url = `{% url 'website:api_therapists' %}?preference=${pref}&client_gender=${clientGender}${dateQ}${timeQ}${svcPart}`;
+        const url = `{% url 'website:api_therapists' %}?preference=${pref}&client_gender=${clientGender}${dateQ}${timeQ}${svcPart}${additionalPart}`;
         fetch(url)
             .then(r => r.json())
             .then(data => renderCards(data.therapists))
@@ -1155,6 +1208,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (timeInput) {
         timeInput.addEventListener('focus', filterTimesForToday);
         timeInput.addEventListener('change', () => {
+            enforceClosingTimeOnSelectedServices();
+            updateSummary();
+            resetTherapist();
+            maybeLoadTherapists();
+        });
+    }
+    if (additionalMinutesSelect) {
+        additionalMinutesSelect.addEventListener('change', () => {
             enforceClosingTimeOnSelectedServices();
             updateSummary();
             resetTherapist();

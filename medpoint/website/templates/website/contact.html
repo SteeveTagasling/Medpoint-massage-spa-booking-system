@@ -99,6 +99,9 @@
                             <div>
                                 <label for="contact-phone" class="form-label">Phone</label>
                                 {{ form.phone }}
+                                {% if form.phone.errors %}
+                                <span class="form-error">{{ form.phone.errors.0 }}</span>
+                                {% endif %}
                             </div>
                             <div>
                                 <label for="contact-subject" class="form-label">Subject <span
@@ -154,4 +157,89 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('contact-form');
+    if (!form) return;
+
+    const fields = {
+        name: {
+            element: document.getElementById('contact-name'),
+            validate(value) {
+                return /^[\p{L}\s.'’-]+$/u.test(value)
+                    ? ''
+                    : 'Full name can contain letters, spaces, hyphens, apostrophes, and periods only.';
+            }
+        },
+        email: {
+            element: document.getElementById('contact-email'),
+            validate(value, element) {
+                return element.validity.typeMismatch || !value
+                    ? 'Please enter a valid email address.'
+                    : '';
+            }
+        },
+        phone: {
+            element: document.getElementById('contact-phone'),
+            validate(value) {
+                return value && !/^\d+$/.test(value)
+                    ? 'Phone number must contain numbers only.'
+                    : '';
+            }
+        },
+        subject: {
+            element: document.getElementById('contact-subject'),
+            validate(value) {
+                return /^[\p{L}\s.,'’!?&()\/-]+$/u.test(value)
+                    ? ''
+                    : 'Subject can contain letters, spaces, and common punctuation only; numbers are not allowed.';
+            }
+        }
+    };
+
+    function clientErrorElement(element) {
+        let error = element.parentElement.querySelector('[data-client-error]');
+        if (!error) {
+            error = document.createElement('span');
+            error.className = 'form-error';
+            error.dataset.clientError = 'true';
+            element.insertAdjacentElement('afterend', error);
+        }
+        return error;
+    }
+
+    function validateField(config) {
+        const element = config.element;
+        if (!element) return true;
+        const value = element.value.trim();
+        const message = config.validate(value, element);
+        element.setCustomValidity(message);
+        const error = clientErrorElement(element);
+        error.textContent = message;
+        error.style.display = message ? 'block' : 'none';
+        element.setAttribute('aria-invalid', message ? 'true' : 'false');
+        return !message;
+    }
+
+    Object.values(fields).forEach(config => {
+        if (!config.element) return;
+        config.element.addEventListener('input', () => validateField(config));
+        config.element.addEventListener('blur', () => validateField(config));
+    });
+
+    form.addEventListener('submit', function (event) {
+        let firstInvalid = null;
+        Object.values(fields).forEach(config => {
+            if (!validateField(config) && !firstInvalid) firstInvalid = config;
+        });
+        if (firstInvalid) {
+            event.preventDefault();
+            firstInvalid.element.focus();
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -252,7 +252,6 @@ class Service(models.Model):
         displays = {**dict(self.CATEGORY_CHOICES), **displays}
         return ', '.join(str(displays.get(c.strip(), c.strip())) for c in codes if c.strip())
 
-
 class ServicePriceHistory(models.Model):
     """Historical and scheduled pricing for spa services."""
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='price_history')
@@ -505,9 +504,6 @@ class Booking(models.Model):
     ADDITIONAL_TIME_CHOICES = [
         (0, 'No additional time'),
         (30, '30 minutes (+₱200.00)'),
-        (60, '60 minutes (+₱400.00)'),
-        (90, '90 minutes (+₱600.00)'),
-        (120, '120 minutes (+₱800.00)'),
     ]
 
     booking_type = models.CharField(max_length=10, choices=BOOKING_TYPE_CHOICES, default='online')
@@ -561,6 +557,11 @@ class Booking(models.Model):
     @property
     def service_names(self):
         names = [service.name for service in self.services.all()]
+        if self.multiple_service_fee:
+            names.append(
+                f'Multiple Service Fee '
+                f'({self.multiple_service_count} × ₱200)'
+            )
         if self.additional_minutes:
             names.append(f'Additional Massage Time ({self.additional_minutes} min)')
         return ", ".join(names)
@@ -569,7 +570,32 @@ class Booking(models.Model):
     def total_discounted_price(self):
         if self.locked_price is not None:
             return self.locked_price
-        return sum(s.discounted_price for s in self.services.all()) + self.additional_time_fee
+        return (
+            sum(s.discounted_price for s in self.services.all())
+            + self.multiple_service_fee
+            + self.additional_time_fee
+        )
+
+    @property
+    def multiple_service_count(self):
+        """Number of services selected for a multi-service booking."""
+        return self.services.count()
+
+    @property
+    def multiple_service_fee(self):
+        """Charge ₱200 for every selected service when at least two are selected."""
+        count = self.multiple_service_count
+        return Decimal(count * 200) if count >= 2 else Decimal('0')
+
+    # Backwards-compatible aliases for templates and integrations that used
+    # the earlier, narrower property names.
+    @property
+    def multiple_massage_service_count(self):
+        return self.multiple_service_count
+
+    @property
+    def multiple_massage_service_fee(self):
+        return self.multiple_service_fee
 
     @property
     def additional_time_fee(self):
@@ -584,14 +610,49 @@ class Booking(models.Model):
         snapshots = []
         total = Decimal('0')
         for service in self.services.all():
+            promo_history = None
+            if service.discount_percentage and service.discount_percentage > 0:
+                promo_histories = service.price_history.filter(
+                    discount_percentage=service.discount_percentage,
+                ).order_by('-effective_from', '-created_at')
+                promo_history = promo_histories.filter(
+                    effective_from__lte=self.date,
+                ).filter(
+                    models.Q(effective_to__isnull=True)
+                    | models.Q(effective_to__gte=self.date)
+                ).first() or promo_histories.first()
+
             snapshots.append({
                 'service_id': service.id,
                 'name': service.name,
                 'base_price': float(service.price),
                 'discount_percentage': float(service.discount_percentage),
                 'discounted_price': float(service.discounted_price),
+                'promo_effective_from': (
+                    promo_history.effective_from.isoformat()
+                    if promo_history else None
+                ),
+                'promo_effective_to': (
+                    promo_history.effective_to.isoformat()
+                    if promo_history and promo_history.effective_to else None
+                ),
             })
             total += service.discounted_price
+
+        service_count = self.multiple_service_count
+        if service_count >= 2:
+            fee = self.multiple_service_fee
+            snapshots.append({
+                'service_id': None,
+                'name': f'Multiple Service Fee ({service_count} × ₱200)',
+                'category_label': 'Add-on',
+                'base_price': float(fee),
+                'discount_percentage': 0.0,
+                'discounted_price': float(fee),
+                'is_addon': True,
+                'multiple_service_count': service_count,
+            })
+            total += fee
 
         if self.additional_minutes:
             fee = self.additional_time_fee

@@ -1333,14 +1333,16 @@
                         <label
                             style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Effective
                             From *</label>
-                        <input type="date" name="effective_from" class="pc-input" style="width:100%;" required
-                            value="{{ today|date:'Y-m-d' }}">
+                        <input type="date" name="effective_from" id="addEffectiveFrom" class="pc-input"
+                            style="width:100%;" required value="{{ today|date:'Y-m-d' }}"
+                            min="{{ today|date:'Y-m-d' }}">
                     </div>
                     <div>
                         <label
                             style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Effective
                             Until <span style="font-weight:400; opacity:0.6;">(optional)</span></label>
-                        <input type="date" name="effective_to" class="pc-input" style="width:100%;">
+                        <input type="date" name="effective_to" id="addEffectiveTo" class="pc-input"
+                            style="width:100%;" min="{{ today|date:'Y-m-d' }}">
                     </div>
                 </div>
 
@@ -1569,14 +1571,14 @@
                             style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Effective
                             From *</label>
                         <input type="date" name="effective_from" id="editEffectiveFrom" class="pc-input"
-                            style="width:100%;" required>
+                            style="width:100%;" required min="{{ today|date:'Y-m-d' }}">
                     </div>
                     <div>
                         <label
                             style="display:block; font-size:0.75rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.3rem;">Effective
                             Until <span style="font-weight:400; opacity:0.6;">(optional)</span></label>
                         <input type="date" name="effective_to" id="editEffectiveTo" class="pc-input"
-                            style="width:100%;">
+                            style="width:100%;" min="{{ today|date:'Y-m-d' }}">
                     </div>
                 </div>
 
@@ -1623,6 +1625,8 @@
     document.addEventListener('DOMContentLoaded', function () {
         runInstantPriceInspection();
         updateModalLiveCalc();
+        initializeScheduledDateRange('addEffectiveFrom', 'addEffectiveTo');
+        initializeScheduledDateRange('editEffectiveFrom', 'editEffectiveTo');
 
         // Check URL parameters for tab
         var urlParams = new URLSearchParams(window.location.search);
@@ -1631,6 +1635,30 @@
             switchTab(tabParam, false);
         }
     });
+
+    function syncScheduledDateRange(startId, endId) {
+        var startInput = document.getElementById(startId);
+        var endInput = document.getElementById(endId);
+        if (!startInput || !endInput) return;
+
+        var today = '{{ today|date:"Y-m-d" }}';
+        var earliestEnd = startInput.value && startInput.value > today ? startInput.value : today;
+        startInput.min = today;
+        endInput.min = earliestEnd;
+
+        if (endInput.value && endInput.value < earliestEnd) {
+            endInput.value = '';
+        }
+    }
+
+    function initializeScheduledDateRange(startId, endId) {
+        var startInput = document.getElementById(startId);
+        if (!startInput) return;
+        startInput.addEventListener('change', function () {
+            syncScheduledDateRange(startId, endId);
+        });
+        syncScheduledDateRange(startId, endId);
+    }
 
     /* ─── Zero-Latency Tab Switcher ─── */
     function switchTab(tabKey, updateUrl = true) {
@@ -1843,6 +1871,7 @@
     /* ─── Add Price Modal Controller & Live Math ─── */
     function openAddPriceModal() {
         document.getElementById('addPriceModal').classList.add('open');
+        syncScheduledDateRange('addEffectiveFrom', 'addEffectiveTo');
         populateModalServiceData();
     }
     function closeAddPriceModal() {
@@ -2057,6 +2086,8 @@
 
         var toInput = document.getElementById('editEffectiveTo');
         if (toInput) toInput.value = effectiveTo || '';
+
+        syncScheduledDateRange('editEffectiveFrom', 'editEffectiveTo');
 
         var notesInput = document.getElementById('editNotes');
         if (notesInput) notesInput.value = notes || '';

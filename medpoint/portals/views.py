@@ -300,6 +300,16 @@ def _get_report_signatory_context(request):
 
 def _get_applied_discount_rows(bookings):
     """Build chronological promotion rows from prices locked on each booking."""
+    def snapshot_date(value):
+        if isinstance(value, date):
+            return value
+        if value:
+            try:
+                return date.fromisoformat(str(value))
+            except (TypeError, ValueError):
+                pass
+        return None
+
     booking_list = list(bookings)
     service_ids = {
         snapshot.get('service_id')
@@ -330,12 +340,38 @@ def _get_applied_discount_rows(bookings):
                 continue
 
             service_id = snapshot.get('service_id')
+            service_histories = histories_by_service.get(service_id, [])
             matching_history = next((
                 history for history in histories_by_service.get(service_id, [])
                 if history.discount_percentage == discount
                 and history.effective_from <= booking.date
                 and (history.effective_to is None or history.effective_to >= booking.date)
             ), None)
+            if matching_history is None:
+                same_discount_histories = [
+                    history for history in service_histories
+                    if history.discount_percentage == discount
+                ]
+                histories_started_before_booking = [
+                    history for history in same_discount_histories
+                    if history.effective_from <= booking.date
+                ]
+                if histories_started_before_booking:
+                    matching_history = max(
+                        histories_started_before_booking,
+                        key=lambda history: (history.effective_from, history.created_at),
+                    )
+                elif same_discount_histories:
+                    matching_history = min(
+                        same_discount_histories,
+                        key=lambda history: (history.effective_from, history.created_at),
+                    )
+
+            effective_from = snapshot_date(snapshot.get('promo_effective_from'))
+            effective_to = snapshot_date(snapshot.get('promo_effective_to'))
+            if effective_from is None and matching_history:
+                effective_from = matching_history.effective_from
+                effective_to = matching_history.effective_to
             service = services_by_id.get(service_id)
             rows.append({
                 'booking': booking,
@@ -350,8 +386,8 @@ def _get_applied_discount_rows(bookings):
                 'discount_amount': base_price - discounted_price,
                 'base_price': base_price,
                 'promotional_price': discounted_price,
-                'effective_from': matching_history.effective_from if matching_history else None,
-                'effective_to': matching_history.effective_to if matching_history else None,
+                'effective_from': effective_from,
+                'effective_to': effective_to,
                 'applied_date': booking.date,
             })
 
@@ -756,7 +792,9 @@ def booking_list(request):
     service_filter = request.GET.get('service', '')
     show_filter = request.GET.get('show', '')  # '' = active, 'archived' = archived
 
-    base_qs = Booking.objects.filter(Q(booking_type='walk_in') | Q(is_verified=True)).select_related('therapist').prefetch_related('services').order_by('-created_at')
+    # Include online requests that are still waiting for OTP verification so
+    # administrators can see every submission and its actual state.
+    base_qs = Booking.objects.select_related('therapist').prefetch_related('services').order_by('-created_at')
 
     if show_filter == 'archived':
         bookings = base_qs.filter(is_archived=True)
@@ -792,7 +830,7 @@ def booking_list(request):
         'show_filter': show_filter,
         'active_count': active_count,
         'archived_count': archived_count,
-        'status_choices': [c for c in Booking.STATUS_CHOICES if c[0] != 'awaiting_verification'],
+        'status_choices': Booking.STATUS_CHOICES,
         'type_choices': Booking.BOOKING_TYPE_CHOICES,
         'services': services,
     }
@@ -811,6 +849,8 @@ def booking_update_status(request, pk):
             return JsonResponse({'error': 'Only admins can cancel bookings.'}, status=403)
         if new_status in dict(Booking.STATUS_CHOICES):
             booking.status = new_status
+            if new_status in {'confirmed', 'completed'}:
+                booking.is_verified = True
             booking.save()
 
             # Legacy and imported bookings may predate price snapshots. Lock
@@ -2825,9 +2865,9 @@ def admin_reports(request):
     if booking_type_filter not in valid_booking_types:
         booking_type_filter = 'all'
 
-    # Base report data: walk-ins and verified online bookings within the date range.
+    # Base report data: walk-ins, verified online bookings, and confirmed/completed records.
     filtered_bookings = Booking.objects.filter(
-        Q(booking_type='walk_in') | Q(is_verified=True),
+        Q(booking_type='walk_in') | Q(is_verified=True) | Q(status__in=['confirmed', 'completed']),
         date__gte=start_date,
         date__lte=end_date,
     )
@@ -2856,6 +2896,10 @@ def admin_reports(request):
     ).prefetch_related('services').order_by('date', 'time', 'created_at')
 
     total_bookings_period = all_bookings_in_period.count()
+    period_bookings_total_amount = sum(
+        (b.total_discounted_price for b in all_bookings_in_period),
+        Decimal('0'),
+    )
 
     # ── Sales Report data ──
     staff_data = []
@@ -2881,6 +2925,9 @@ def admin_reports(request):
 
     online_count = all_bookings_in_period.filter(booking_type='online').count()
     walkin_count = all_bookings_in_period.filter(booking_type='walk_in').count()
+    confirmed_count = all_bookings_in_period.filter(status='confirmed').count()
+    pending_count = all_bookings_in_period.filter(status='pending').count()
+    cancelled_count = all_bookings_in_period.filter(status='cancelled').count()
 
     service_breakdown = []
     for svc in Service.objects.filter(is_active=True):
@@ -2930,6 +2977,10 @@ def admin_reports(request):
         'generated_date': timezone.localdate(),
         'online_count': online_count,
         'walkin_count': walkin_count,
+        'confirmed_count': confirmed_count,
+        'pending_count': pending_count,
+        'cancelled_count': cancelled_count,
+        'period_bookings_total_amount': period_bookings_total_amount,
         'status_filter': status_filter,
         'booking_type_filter': booking_type_filter,
         'status_filter_label': {
@@ -3324,7 +3375,17 @@ def price_checker_add_record(request):
             effective_from = datetime.strptime(effective_from_str, '%Y-%m-%d').date()
             effective_to = datetime.strptime(effective_to_str, '%Y-%m-%d').date() if effective_to_str else None
 
-            today = timezone.now().date()
+            today = timezone.localdate()
+            if effective_from < today:
+                messages.error(request, 'Effective From cannot be a previous date.')
+                return redirect(f"{reverse('portals:price_checker')}?tab=history")
+            if effective_to and effective_to < today:
+                messages.error(request, 'Effective Until cannot be a previous date.')
+                return redirect(f"{reverse('portals:price_checker')}?tab=history")
+            if effective_to and effective_to < effective_from:
+                messages.error(request, 'Effective Until must be on or after Effective From.')
+                return redirect(f"{reverse('portals:price_checker')}?tab=history")
+
             is_effective_today = (effective_from <= today) and (effective_to is None or effective_to >= today)
 
             ServicePriceHistory.objects.create(
@@ -3370,7 +3431,7 @@ def price_checker_delete_record(request, pk):
     if request.method == 'POST':
         try:
             record = ServicePriceHistory.objects.get(pk=pk)
-            today = timezone.now().date()
+            today = timezone.localdate()
             # Only allow deleting future / scheduled records
             if record.effective_from > today:
                 service_name = record.service.name
@@ -3399,7 +3460,7 @@ def price_checker_update_record(request, pk):
         from datetime import datetime as dt
         try:
             record = ServicePriceHistory.objects.get(pk=pk)
-            today = timezone.now().date()
+            today = timezone.localdate()
             if record.effective_from <= today:
                 messages.error(request, 'Only scheduled (future) price records can be edited.')
                 return redirect(f"{reverse('portals:price_checker')}?tab=history")
@@ -3410,10 +3471,22 @@ def price_checker_update_record(request, pk):
             to_str = request.POST.get('effective_to', '')
             notes = request.POST.get('notes', '').strip()
 
+            effective_from = dt.strptime(from_str, '%Y-%m-%d').date()
+            effective_to = dt.strptime(to_str, '%Y-%m-%d').date() if to_str else None
+            if effective_from < today:
+                messages.error(request, 'Effective From cannot be a previous date.')
+                return redirect(f"{reverse('portals:price_checker')}?tab=history")
+            if effective_to and effective_to < today:
+                messages.error(request, 'Effective Until cannot be a previous date.')
+                return redirect(f"{reverse('portals:price_checker')}?tab=history")
+            if effective_to and effective_to < effective_from:
+                messages.error(request, 'Effective Until must be on or after Effective From.')
+                return redirect(f"{reverse('portals:price_checker')}?tab=history")
+
             record.base_price = Decimal(base_price_str)
             record.discount_percentage = Decimal(discount_str or '0')
-            record.effective_from = dt.strptime(from_str, '%Y-%m-%d').date()
-            record.effective_to = dt.strptime(to_str, '%Y-%m-%d').date() if to_str else None
+            record.effective_from = effective_from
+            record.effective_to = effective_to
             record.notes = notes or 'Scheduled Price Adjustment'
             record.save()
 
@@ -3456,6 +3529,19 @@ def staff_my_bookings(request):
 
     if status_filter:
         bookings = bookings.filter(status=status_filter)
+
+    # Keep the staff workload focused on what is next: future/current
+    # appointments appear nearest-first, older unfinished records follow, and
+    # completed bookings always remain at the bottom of the list.
+    today = timezone.localdate()
+    bookings = bookings.annotate(
+        staff_booking_order=Case(
+            When(status='completed', then=Value(2)),
+            When(date__lt=today, then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        )
+    ).order_by('staff_booking_order', 'date', 'time', 'created_at')
 
     active_count = base_qs.filter(is_archived=False).count()
     archived_count = base_qs.filter(is_archived=True).count()

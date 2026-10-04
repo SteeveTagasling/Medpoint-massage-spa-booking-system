@@ -514,11 +514,16 @@
                         </button>
                     </div>
 
-                    {% if form.non_field_errors %}
+                    {% if form.errors %}
                     <div class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
                         <div class="flex items-center gap-2 mb-1"><i class="fas fa-exclamation-triangle"></i>
                             <strong>Please fix the following:</strong>
                         </div>
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                            <p><strong>{{ field.label }}:</strong> {{ error }}</p>
+                            {% endfor %}
+                        {% endfor %}
                         {% for error in form.non_field_errors %}
                         <p>{{ error }}</p>
                         {% endfor %}
@@ -629,7 +634,7 @@
                                             class="text-red-400">*</span></label>
                                     <p class="text-gray-500 text-xs mb-3"><i
                                             class="fas fa-info-circle text-purple-400/50"></i>
-                                        Click to select. You can choose multiple services to add-on.</p>
+                                        Click to select. When two or more services are selected, ₱200 is added for each selected service.</p>
                                     <div id="service-chips-container" class="mb-2">
                                         {% for group in service_groups %}
                                         <section class="service-category-group" data-service-category="{{ group.code }}">
@@ -728,6 +733,9 @@
                                     <div id="therapist-cards-container">
                                         <div class="loading-spinner"></div>
                                     </div>
+                                    {% if form.therapist.errors %}
+                                    <span class="form-error">{{ form.therapist.errors.0 }}</span>
+                                    {% endif %}
                                 </div>
                                 <!-- Hidden select kept for form submission -->
                                 <div style="display:none;">{{ form.therapist }}</div>
@@ -928,11 +936,8 @@
                                                     class="form-input member-additional-time" data-index="0">
                                                     <option value="0">No additional time</option>
                                                     <option value="30">30 minutes (+₱200.00)</option>
-                                                    <option value="60">60 minutes (+₱400.00)</option>
-                                                    <option value="90">90 minutes (+₱600.00)</option>
-                                                    <option value="120">120 minutes (+₱800.00)</option>
                                                 </select>
-                                                <p class="text-gray-500 text-xs mt-2">₱200 for every additional 30 minutes.</p>
+                                                <p class="text-gray-500 text-xs mt-2">MedPoint offers one optional 30-minute extension for ₱200.</p>
                                             </div>
                                             <div>
                                                 <label class="form-label">Therapist Preference <span
@@ -1216,11 +1221,8 @@
                     <select name="member_${index}_additional_minutes" class="form-input member-additional-time" data-index="${index}">
                         <option value="0">No additional time</option>
                         <option value="30">30 minutes (+₱200.00)</option>
-                        <option value="60">60 minutes (+₱400.00)</option>
-                        <option value="90">90 minutes (+₱600.00)</option>
-                        <option value="120">120 minutes (+₱800.00)</option>
                     </select>
-                    <p class="text-gray-500 text-xs mt-2">₱200 for every additional 30 minutes.</p>
+                    <p class="text-gray-500 text-xs mt-2">MedPoint offers one optional 30-minute extension for ₱200.</p>
                 </div>
                 <div class="sm:col-span-2">
                     <label class="form-label">Therapist Preference <span class="text-red-400">*</span></label>
@@ -1386,6 +1388,14 @@
                 totalDur += parseInt(cb.dataset.duration || 0);
                 names.push(cb.dataset.name);
             });
+
+            const serviceCount = chips.length;
+            if (serviceCount >= 2) {
+                const multipleServiceFee = serviceCount * 200;
+                totalPrice += multipleServiceFee;
+                totalOriginal += multipleServiceFee;
+                names.push(`Multiple Service Fee (${serviceCount} × ₱200)`);
+            }
 
             const additionalTimeSelect = card.querySelector('.member-additional-time');
             const additionalMinutes = additionalTimeSelect ? parseInt(additionalTimeSelect.value || 0, 10) : 0;
@@ -1789,7 +1799,9 @@
         const cardsContainer = document.getElementById('therapist-cards-container');
         const genderBadge = document.getElementById('gender-info-badge');
 
-        let selectedTherapistId = null;
+        let selectedTherapistId = therapistHidden && therapistHidden.value
+            ? therapistHidden.value
+            : null;
 
         // Enforce gender rules for therapist preference options
         function updatePreferenceOptions() {
@@ -2066,6 +2078,13 @@
                         names.push(d.name);
                     }
                 });
+                const serviceCount = ids.length;
+                if (serviceCount >= 2) {
+                    const multipleServiceFee = serviceCount * 200;
+                    total += multipleServiceFee;
+                    totalOriginal += multipleServiceFee;
+                    names.push(`Multiple Service Fee (${serviceCount} × ₱200)`);
+                }
                 const additionalMinutes = additionalMinutesSelect ? parseInt(additionalMinutesSelect.value || 0, 10) : 0;
                 if (additionalMinutes > 0) {
                     const additionalFee = (additionalMinutes / 30) * 200;
@@ -2267,7 +2286,7 @@
 
             if (serviceTotal + additionalMinutes > availableMins && additionalMinutesSelect) {
                 const allowedExtra = Math.max(0, Math.floor((availableMins - serviceTotal) / 30) * 30);
-                additionalMinutesSelect.value = String(Math.min(allowedExtra, 120));
+                additionalMinutesSelect.value = String(Math.min(allowedExtra, 30));
                 additionalMinutes = parseInt(additionalMinutesSelect.value || 0, 10);
             }
 
@@ -2306,7 +2325,7 @@
 
             if (serviceTotal + additionalMinutes > availableMins && memberAdditionalSelect) {
                 const allowedExtra = Math.max(0, Math.floor((availableMins - serviceTotal) / 30) * 30);
-                memberAdditionalSelect.value = String(Math.min(allowedExtra, 120));
+                memberAdditionalSelect.value = String(Math.min(allowedExtra, 30));
                 additionalMinutes = parseInt(memberAdditionalSelect.value || 0, 10);
             }
 

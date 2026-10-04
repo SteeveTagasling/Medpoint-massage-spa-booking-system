@@ -50,6 +50,23 @@ def validate_phone_number(value):
         raise ValidationError('Contact number must not exceed 20 digits.')
 
 
+def validate_contact_subject(value):
+    """Accept readable text subjects while rejecting numbers and symbols."""
+    value = value.strip()
+    allowed_punctuation = " .,'’!?&()/-"
+    if not value or not any(character.isalpha() for character in value):
+        raise ValidationError('Subject must contain letters.')
+    if any(
+        not character.isalpha()
+        and not character.isspace()
+        and character not in allowed_punctuation
+        for character in value
+    ):
+        raise ValidationError(
+            'Subject can contain letters, spaces, and common punctuation only; numbers are not allowed.'
+        )
+
+
 class BookingForm(forms.ModelForm):
     """Form for booking spa appointments with therapist gender preference."""
 
@@ -339,21 +356,32 @@ class ContactForm(forms.ModelForm):
                 'class': 'form-input',
                 'placeholder': 'Your Full Name',
                 'id': 'contact-name',
+                'autocomplete': 'name',
+                'pattern': "[A-Za-zÀ-ÖØ-öø-ÿÑñ .'-]+",
+                'title': 'Use letters only. Spaces, hyphens, apostrophes, and periods are allowed.',
             }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-input',
                 'placeholder': 'your.email@example.com',
                 'id': 'contact-email',
+                'autocomplete': 'email',
             }),
             'phone': forms.TextInput(attrs={
                 'class': 'form-input',
-                'placeholder': '+63 9XX XXX XXXX',
+                'placeholder': '639XXXXXXXXX',
                 'id': 'contact-phone',
+                'inputmode': 'numeric',
+                'pattern': '[0-9]+',
+                'maxlength': '20',
+                'autocomplete': 'tel',
+                'title': 'Phone number must contain numbers only.',
             }),
             'subject': forms.TextInput(attrs={
                 'class': 'form-input',
                 'placeholder': 'Subject',
                 'id': 'contact-subject',
+                'pattern': "[A-Za-zÀ-ÖØ-öø-ÿÑñ .,\'’!?&()/-]+",
+                'title': 'Use letters and common punctuation only; numbers are not allowed.',
             }),
             'message': forms.Textarea(attrs={
                 'class': 'form-input',
@@ -366,3 +394,19 @@ class ContactForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['phone'].required = False
+
+    def clean_name(self):
+        value = self.cleaned_data['name'].strip()
+        validate_full_name(value)
+        return value
+
+    def clean_phone(self):
+        value = self.cleaned_data.get('phone', '').strip()
+        if value:
+            validate_phone_number(value)
+        return value
+
+    def clean_subject(self):
+        value = self.cleaned_data['subject'].strip()
+        validate_contact_subject(value)
+        return value

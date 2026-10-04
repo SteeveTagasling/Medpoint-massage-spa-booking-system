@@ -102,9 +102,12 @@
         box-shadow: 0 2px 6px rgba(147, 51, 234, 0.3);
     }
 
-    /* Screen display: show Sales and Staff Performance; booking details are print-only. */
+    /* Screen display: Booking section only visible when a status filter is active */
     .booking-section {
         display: none;
+    }
+    .booking-section.filter-active {
+        display: block;
     }
 
     /* Screen Data Table typography & alignment */
@@ -207,8 +210,26 @@
         border-color: var(--purple-400);
         box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.15);
     }
+    .report-select-wrap.signatory-select-wrap {
+        flex: 1 1 330px;
+        min-width: 300px;
+        max-width: 440px;
+    }
+    .report-select-wrap.signatory-select-wrap select {
+        width: 100%;
+        min-width: 250px;
+        font-weight: 650;
+    }
+    .report-select-wrap.signatory-select-wrap select option {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        font-weight: 600;
+    }
 
     /* Commission badge */
+    .metric-card.metric-red::before {
+        background: linear-gradient(90deg, #f87171, #ef4444);
+    }
     .commission-badge {
         display: inline-flex;
         align-items: center;
@@ -587,6 +608,13 @@
         .report-select-wrap select {
             flex: 1;
         }
+        .report-select-wrap.signatory-select-wrap {
+            min-width: 0;
+            max-width: none;
+        }
+        .report-select-wrap.signatory-select-wrap select {
+            min-width: 0;
+        }
         .filter-submit-btn,
         .filter-reset-btn {
             flex: 1 1 140px;
@@ -611,20 +639,243 @@
         letter-spacing: 0.02em;
     }
 
-    /* Metric Card Enhancements */
-    .metric-subtext {
-        margin-top: 0.45rem;
+    /* ===================================================================
+       Sales Summary KPI Cards — Bigger, Uniform & Fully Screen Adaptable
+       =================================================================== */
+
+    /* Grid container: 4 cards spanning 100% width */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.15rem;
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Metric Card: spacious, authoritative executive card */
+    .metric-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 1.15rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.95rem;
+        min-height: 96px;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        border-radius: 14px 14px 0 0;
+    }
+
+    .metric-card.metric-purple::before { background: linear-gradient(90deg, var(--purple-500), var(--violet-600)); }
+    .metric-card.metric-green::before { background: linear-gradient(90deg, var(--green-400), #10b981); }
+    .metric-card.metric-blue::before { background: linear-gradient(90deg, var(--blue-400), #6366f1); }
+    .metric-card.metric-amber::before { background: linear-gradient(90deg, var(--amber-400), #f97316); }
+    .metric-card.metric-red::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+    .metric-card:hover {
+        border-color: var(--border-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Icon: Bigger, vibrant badge */
+    .metric-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+
+    .metric-purple .metric-icon { background: rgba(168, 85, 247, 0.14); color: var(--purple-400); }
+    .metric-green .metric-icon { background: rgba(34, 197, 94, 0.14); color: var(--green-400); }
+    .metric-blue .metric-icon { background: rgba(96, 165, 250, 0.14); color: var(--blue-400); }
+    .metric-amber .metric-icon { background: rgba(251, 191, 36, 0.14); color: var(--amber-400); }
+    .metric-red .metric-icon { background: rgba(239, 68, 68, 0.14); color: #f87171; }
+
+    /* Info wrapper */
+    .metric-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
+    }
+
+    /* Label: Uniform baseline alignment across all cards */
+    .metric-label {
         font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        line-height: 1.25;
+        min-height: 2.3em;
+        display: flex;
+        align-items: flex-end;
+        margin-bottom: 0.2rem;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+    }
+
+    /* Value: Prominent, bold and clean */
+    .metric-value {
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.15;
+        margin-bottom: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Subtext: Informative helper */
+    .metric-subtext {
+        font-size: 0.68rem;
         font-weight: 500;
         display: flex;
         align-items: center;
         gap: 0.35rem;
-        opacity: 0.9;
+        opacity: 0.88;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
+
     .metric-green .metric-subtext { color: var(--green-400); }
     .metric-purple .metric-subtext { color: var(--purple-400); }
     .metric-blue .metric-subtext { color: var(--blue-400); }
     .metric-amber .metric-subtext { color: var(--amber-400); }
+    .metric-red .metric-subtext { color: #f87171; }
+
+    /* Light Mode */
+    [data-theme="light"] .metric-card {
+        background: #ffffff;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    }
+    [data-theme="light"] .metric-purple .metric-icon { background: rgba(147, 51, 234, 0.09); color: var(--purple-600); }
+    [data-theme="light"] .metric-green .metric-icon { background: rgba(22, 163, 74, 0.09); color: var(--green-600); }
+    [data-theme="light"] .metric-blue .metric-icon { background: rgba(37, 99, 235, 0.09); color: var(--blue-600); }
+    [data-theme="light"] .metric-amber .metric-icon { background: rgba(217, 119, 6, 0.09); color: var(--amber-600); }
+    [data-theme="light"] .metric-red .metric-icon { background: rgba(220, 38, 38, 0.09); color: var(--red-600); }
+    [data-theme="light"] .metric-green .metric-subtext { color: var(--green-600); }
+    [data-theme="light"] .metric-purple .metric-subtext { color: var(--purple-600); }
+    [data-theme="light"] .metric-blue .metric-subtext { color: var(--blue-600); }
+    [data-theme="light"] .metric-amber .metric-subtext { color: var(--amber-600); }
+    [data-theme="light"] .metric-red .metric-subtext { color: var(--red-600); }
+
+    /* ===================================================================
+       Responsive Breakpoints: Adapt to every screen size
+       =================================================================== */
+
+    /* Large desktops (1400px+) */
+    @media (min-width: 1400px) {
+        .metrics-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+        }
+        .metric-card {
+            padding: 1.35rem 1.5rem;
+            min-height: 106px;
+            gap: 1.1rem;
+        }
+        .metric-icon { width: 50px; height: 50px; font-size: 1.25rem; }
+        .metric-label { font-size: 0.76rem; }
+        .metric-value { font-size: 1.85rem; }
+        .metric-subtext { font-size: 0.72rem; }
+    }
+
+    /* Standard Desktop / Laptop (1024px to 1399px): 4 equal columns */
+    @media (max-width: 1399px) and (min-width: 1024px) {
+        .metrics-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        .metric-card {
+            padding: 1.2rem 1.3rem;
+            min-height: 98px;
+            gap: 0.95rem;
+        }
+        .metric-icon { width: 46px; height: 46px; font-size: 1.15rem; }
+        .metric-label { font-size: 0.72rem; }
+        .metric-value { font-size: 1.65rem; }
+        .metric-subtext { font-size: 0.68rem; }
+    }
+
+    /* Tablets / Smaller Laptops (641px to 1023px): 2 columns x 2 rows, cards stay big & spacious */
+    @media (max-width: 1023px) and (min-width: 641px) {
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .metric-card {
+            padding: 1.2rem 1.35rem;
+            min-height: 98px;
+            gap: 1rem;
+        }
+        .metric-icon { width: 46px; height: 46px; font-size: 1.15rem; }
+        .metric-label { font-size: 0.74rem; }
+        .metric-value { font-size: 1.7rem; }
+        .metric-subtext { font-size: 0.7rem; }
+    }
+
+    /* Compact Tablets / Large Phones (481px to 640px): 2 columns */
+    @media (max-width: 640px) and (min-width: 481px) {
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.85rem;
+        }
+        .metric-card {
+            padding: 1rem 1.1rem;
+            min-height: 88px;
+            gap: 0.8rem;
+        }
+        .metric-icon { width: 40px; height: 40px; font-size: 1.05rem; }
+        .metric-label { font-size: 0.68rem; }
+        .metric-value { font-size: 1.45rem; }
+        .metric-subtext { font-size: 0.65rem; }
+    }
+
+    /* Mobile Phones (<= 480px): 2 columns compact */
+    @media (max-width: 480px) and (min-width: 381px) {
+        .metrics-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.6rem;
+        }
+        .metric-card {
+            padding: 0.85rem 0.85rem;
+            min-height: 82px;
+            gap: 0.65rem;
+        }
+        .metric-icon { width: 36px; height: 36px; font-size: 0.95rem; border-radius: 10px; }
+        .metric-label { font-size: 0.64rem; min-height: 2.2em; }
+        .metric-value { font-size: 1.3rem; }
+        .metric-subtext { font-size: 0.62rem; }
+    }
+
+    /* Very Narrow Mobile (<= 380px): 1 column */
+    @media (max-width: 380px) {
+        .metrics-grid {
+            grid-template-columns: 1fr;
+            gap: 0.6rem;
+        }
+    }
 
     /* Hide print-only summary elements on screen */
     .sales-summary-print-wrap,
@@ -1009,11 +1260,11 @@
                         <option value="online" {% if booking_type_filter == 'online' %}selected{% endif %}>Online</option>
                     </select>
                 </div>
-                <div class="report-select-wrap">
+                <div class="report-select-wrap signatory-select-wrap">
                     <label for="report-signatory-filter">Approved by</label>
-                    <select name="signatory" id="report-signatory-filter">
+                    <select name="signatory" id="report-signatory-filter" title="Select the report signatory">
                         {% for signatory in signatories %}
-                        <option value="{{ signatory.pk }}" {% if selected_signatory_id == signatory.pk %}selected{% endif %}>{{ signatory.name }} — {{ signatory.role }}</option>
+                        <option value="{{ signatory.pk }}" {% if selected_signatory_id == signatory.pk %}selected{% endif %}>{{ signatory.name }} — {{ signatory.role|upper }}</option>
                         {% empty %}
                         <option value="">No signatories added</option>
                         {% endfor %}
@@ -1088,7 +1339,7 @@
             <div class="signatory-manager-item">
                 <div class="signatory-manager-info">
                     <span class="signatory-manager-name">{{ signatory.name }}</span>
-                    <span class="signatory-manager-role">{{ signatory.role }}</span>
+                    <span class="signatory-manager-role">{{ signatory.role|upper }}</span>
                 </div>
                 <div class="signatory-manager-actions">
                     <button type="button" class="signatory-action-btn edit" data-id="{{ signatory.pk }}" data-name="{{ signatory.name }}" data-role="{{ signatory.role }}" onclick="editSignatory(this)" title="Edit {{ signatory.name }}" aria-label="Edit {{ signatory.name }}">
@@ -1111,8 +1362,8 @@
     </div>
 </dialog>
 
-{# ═══════════ BOOKING SECTION (hidden on screen, only visible when printing Bookings) ═══════════ #}
-<div class="booking-section">
+{# ═══════════ BOOKING SECTION (screen: only when status filter active; always visible in print) ═══════════ #}
+<div class="booking-section{% if active_filter_count %} filter-active{% endif %}">
 
     <!-- Booking Summary -->
     <div class="card summary-table-wrap" style="margin-bottom: 1.5rem;">
@@ -1133,10 +1384,30 @@
                         <td style="font-weight: 700; text-align: left; padding-left: 6px;">Total Bookings</td>
                         <td style="font-weight: 700; text-align: center;">{{ total_bookings_period }}</td>
                     </tr>
+                    {% if status_filter == 'all' or status_filter == 'completed' %}
                     <tr>
                         <td style="font-weight: 700; text-align: left; padding-left: 6px;">Completed</td>
                         <td style="font-weight: 700; text-align: center; color: var(--green-400);">{{ total_completed }}</td>
                     </tr>
+                    {% endif %}
+                    {% if status_filter == 'all' or status_filter == 'confirmed' %}
+                    <tr>
+                        <td style="font-weight: 700; text-align: left; padding-left: 6px;">Confirmed</td>
+                        <td style="font-weight: 700; text-align: center; color: #60a5fa;">{{ confirmed_count }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if status_filter == 'all' or status_filter == 'pending' %}
+                    <tr>
+                        <td style="font-weight: 700; text-align: left; padding-left: 6px;">Pending</td>
+                        <td style="font-weight: 700; text-align: center; color: #fbbf24;">{{ pending_count }}</td>
+                    </tr>
+                    {% endif %}
+                    {% if status_filter == 'all' or status_filter == 'cancelled' %}
+                    <tr>
+                        <td style="font-weight: 700; text-align: left; padding-left: 6px;">Cancelled</td>
+                        <td style="font-weight: 700; text-align: center; color: #f87171;">{{ cancelled_count }}</td>
+                    </tr>
+                    {% endif %}
                     <tr>
                         <td style="font-weight: 700; text-align: left; padding-left: 6px;">Online</td>
                         <td style="font-weight: 700; text-align: center;">{{ online_count }}</td>
@@ -1156,6 +1427,11 @@
             <span class="card-header-title">
                 <i class="fas fa-calendar-check" style="margin-right: 0.5rem; color: var(--purple-400); font-size: 0.85rem;"></i>
                 Booking List
+                {% if status_filter != 'all' %}
+                <span class="status-badge status-{{ status_filter }}" style="margin-left: 0.5rem; font-size: 0.65rem;">{{ status_filter_label }}</span>
+                {% elif booking_type_filter != 'all' %}
+                <span class="status-badge" style="margin-left: 0.5rem; font-size: 0.65rem; background: rgba(147, 51, 234, 0.15); color: var(--purple-400);">{{ booking_type_filter_label }}</span>
+                {% endif %}
             </span>
         </div>
         <div class="table-wrapper">
@@ -1217,8 +1493,20 @@
                 {% if all_bookings_in_period %}
                 <tfoot>
                     <tr>
-                        <td colspan="8" class="text-right" style="font-weight: 700; color: var(--text-primary);">TOTAL REVENUE (Completed)</td>
-                        <td class="text-right revenue-highlight" style="white-space: nowrap;">₱{{ total_revenue|floatformat:"2g" }}</td>
+                        <td colspan="8" class="text-right" style="font-weight: 700; color: var(--text-primary);">
+                            {% if status_filter == 'all' or status_filter == 'completed' %}
+                                TOTAL REVENUE (Completed)
+                            {% else %}
+                                TOTAL AMOUNT ({{ status_filter_label }})
+                            {% endif %}
+                        </td>
+                        <td class="text-right revenue-highlight" style="white-space: nowrap;">
+                            {% if status_filter == 'all' or status_filter == 'completed' %}
+                                ₱{{ total_revenue|floatformat:"2g" }}
+                            {% else %}
+                                ₱{{ period_bookings_total_amount|floatformat:"2g" }}
+                            {% endif %}
+                        </td>
                     </tr>
                 </tfoot>
                 {% endif %}
@@ -1250,7 +1538,7 @@
                         <div class="metric-label">Total Revenue</div>
                         <div class="metric-value">₱{{ total_revenue|floatformat:"2g" }}</div>
                         <div class="metric-subtext">
-                            <i class="fas fa-arrow-trend-up"></i> Gross Period Sales
+                            <i class="fas fa-arrow-trend-up"></i> Gross Sales
                         </div>
                     </div>
                 </div>
@@ -1262,31 +1550,31 @@
                         <div class="metric-label">Services Completed</div>
                         <div class="metric-value">{{ total_completed }}</div>
                         <div class="metric-subtext">
-                            <i class="fas fa-check-circle"></i> Fulfilled Sessions
+                            <i class="fas fa-check-circle"></i> Fulfilled
                         </div>
                     </div>
                 </div>
 
-                <!-- Online Bookings -->
+                <!-- Total Bookings -->
                 <div class="metric-card metric-blue">
-                    <div class="metric-icon"><i class="fas fa-globe"></i></div>
+                    <div class="metric-icon"><i class="fas fa-calendar-check"></i></div>
                     <div class="metric-info">
-                        <div class="metric-label">Online Bookings</div>
-                        <div class="metric-value">{{ online_count }}</div>
+                        <div class="metric-label">Total Bookings</div>
+                        <div class="metric-value">{{ total_bookings_period }}</div>
                         <div class="metric-subtext">
-                            <i class="fas fa-laptop"></i> Web Reservations
+                            <i class="fas fa-calendar-days"></i> All Reservations
                         </div>
                     </div>
                 </div>
 
-                <!-- Walk-In -->
+                <!-- Total Commission -->
                 <div class="metric-card metric-amber">
-                    <div class="metric-icon"><i class="fas fa-person-walking"></i></div>
+                    <div class="metric-icon"><i class="fas fa-hand-holding-dollar"></i></div>
                     <div class="metric-info">
-                        <div class="metric-label">Walk-In</div>
-                        <div class="metric-value">{{ walkin_count }}</div>
+                        <div class="metric-label">Total Commission</div>
+                        <div class="metric-value">₱{{ total_commission|floatformat:"2g" }}</div>
                         <div class="metric-subtext">
-                            <i class="fas fa-store"></i> Direct Visits
+                            <i class="fas fa-wallet"></i> Staff Payout
                         </div>
                     </div>
                 </div>
@@ -1307,12 +1595,12 @@
                         <td class="text-center" style="font-weight: 600;">{{ total_completed }}</td>
                     </tr>
                     <tr>
-                        <td>Online Bookings</td>
-                        <td class="text-center">{{ online_count }}</td>
+                        <td>Total Bookings</td>
+                        <td class="text-center" style="font-weight: 600;">{{ total_bookings_period }}</td>
                     </tr>
                     <tr>
-                        <td>Walk-in</td>
-                        <td class="text-center">{{ walkin_count }}</td>
+                        <td>Total Commission</td>
+                        <td class="text-center" style="font-weight: 600;">₱{{ total_commission|floatformat:"2g" }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -1518,7 +1806,7 @@
         <div class="print-sig-prep-label">Prepared by:</div>
         <div class="print-sig-name">{{ request.user.get_full_name|upper }}</div>
         <div class="print-sig-line"></div>
-        <div class="print-sig-role">Admin</div>
+        <div class="print-sig-role">ADMIN</div>
     </div>
     <div class="print-sig-block">
         <div class="print-sig-prep-label">Approved by:</div>

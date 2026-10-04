@@ -47,6 +47,13 @@
                             <span class="text-purple-300 font-medium">₱{{ svc.discounted_price|floatformat:0 }}</span>
                         </div>
                         {% endfor %}
+                        {% if b.multiple_service_fee %}
+                        <div class="flex items-start gap-2 rounded-lg bg-purple-500/10 border border-purple-500/15 px-3 py-2 mt-1">
+                            <i class="fas fa-plus-circle mt-1 w-4 text-center text-purple-400"></i>
+                            <span class="flex-1"><span class="block text-gray-300">Additional Service Charge</span><span class="block text-xs text-purple-300">{{ b.multiple_service_count }} services × ₱200</span></span>
+                            <span class="text-purple-300 font-medium">₱{{ b.multiple_service_fee|floatformat:"0g" }}</span>
+                        </div>
+                        {% endif %}
                         {% if b.additional_minutes %}
                         <div class="flex items-start gap-2 rounded-lg bg-purple-500/10 border border-purple-500/15 px-3 py-2 mt-1">
                             <i class="fas fa-clock mt-1 w-4 text-center text-purple-400"></i>
@@ -91,6 +98,13 @@
                         <span class="text-purple-300 font-medium">₱{{ svc.discounted_price|floatformat:0 }}</span>
                     </div>
                     {% endfor %}
+                    {% if booking.multiple_service_fee %}
+                    <div class="flex items-start gap-2 pl-6 rounded-lg bg-purple-500/10 border border-purple-500/15 px-3 py-2">
+                        <i class="fas fa-plus-circle mt-1 w-4 text-center text-purple-400"></i>
+                        <span class="flex-1"><span class="block text-gray-300">Additional Service Charge</span><span class="block text-xs text-purple-300">{{ booking.multiple_service_count }} services × ₱200</span></span>
+                        <span class="text-purple-300 font-medium">₱{{ booking.multiple_service_fee|floatformat:"0g" }}</span>
+                    </div>
+                    {% endif %}
                     {% if booking.additional_minutes %}
                     <div class="flex items-start gap-2 pl-6 rounded-lg bg-purple-500/10 border border-purple-500/15 px-3 py-2">
                         <i class="fas fa-clock mt-1 w-4 text-center text-purple-400"></i>

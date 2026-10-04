@@ -190,14 +190,13 @@
                 <div>
                     <h4 class="font-display font-semibold text-white mb-4">Services</h4>
                     <ul class="space-y-2.5 text-sm">
-                        <li><a href="{% url 'website:services' %}?category=massage"
-                                class="text-gray-400 hover:text-purple-400 transition-colors">Massage Therapy</a></li>
-                        <li><a href="{% url 'website:services' %}?category=facial"
-                                class="text-gray-400 hover:text-purple-400 transition-colors">Facial Treatments</a></li>
-                        <li><a href="{% url 'website:services' %}?category=body"
-                                class="text-gray-400 hover:text-purple-400 transition-colors">Body Treatments</a></li>
-                        <li><a href="{% url 'website:services' %}?category=aromatherapy"
-                                class="text-gray-400 hover:text-purple-400 transition-colors">Aromatherapy</a></li>
+                        {% for category in footer_service_categories %}
+                        <li><a href="{% url 'website:services' %}?category={{ category.code|urlencode }}"
+                                class="text-gray-400 hover:text-purple-400 transition-colors">{{ category.name }}</a></li>
+                        {% empty %}
+                        <li><a href="{% url 'website:services' %}"
+                                class="text-gray-400 hover:text-purple-400 transition-colors">View All Services</a></li>
+                        {% endfor %}
                     </ul>
                 </div>
                 <div>

@@ -258,8 +258,10 @@
         align-items: center;
         gap: 0.4rem;
         height: 100%;
+        flex: 1 1 340px;
+        min-width: 300px;
         padding: 0 0.55rem;
-        border: 1px solid transparent;
+        border: 1px solid var(--border-color);
         border-radius: 7px;
         background: var(--bg-secondary);
         transition: var(--transition);
@@ -269,14 +271,22 @@
         box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.15);
     }
     .signatory-input-wrapper select {
-        max-width: 230px;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
         border: 0;
         background: transparent;
         color: var(--text-primary);
         font: inherit;
-        font-size: 0.78rem;
+        font-size: 0.8rem;
+        font-weight: 650;
         outline: none;
         cursor: pointer;
+    }
+    .signatory-input-wrapper select option {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        font-weight: 600;
     }
     .filter-submit-btn {
         background: linear-gradient(135deg, var(--purple-600), var(--violet-600));
@@ -337,6 +347,37 @@
     .sales-summary-print-wrap,
     .sales-summary-print {
         display: none !important;
+    }
+
+    @media screen and (max-width: 1500px) {
+        .header-row > div:first-child,
+        .custom-date-filter {
+            width: 100%;
+        }
+        .custom-date-filter {
+            height: auto;
+            min-height: 42px;
+            flex-wrap: wrap;
+        }
+        .filter-submit-btn {
+            height: 42px;
+            justify-content: center;
+        }
+    }
+
+    @media screen and (max-width: 760px) {
+        .date-input-wrapper,
+        .signatory-input-wrapper {
+            flex: 1 1 100%;
+            min-width: 0;
+            min-height: 42px;
+        }
+        .date-separator {
+            display: none;
+        }
+        .filter-submit-btn {
+            flex: 1 1 100%;
+        }
     }
 
     /* Print styles */
@@ -603,7 +644,7 @@
         .promotion-table th:nth-child(9), .promotion-table td:nth-child(9) { width: 10%; }
 
         /* ── Signature Fields ── */
-        .print-signatures { display: flex !important; gap: 60px; margin-top: 32px; }
+        .print-signatures { display: flex !important; gap: 60px; margin-top: 24px; page-break-inside: avoid !important; break-inside: avoid !important; }
         .print-sig-block { flex: 1; text-align: center; }
         .print-sig-prep-label { font-size: 8pt !important; font-weight: 600 !important; color: #000 !important; text-align: left; margin-bottom: 18px; }
         .print-sig-name { font-size: 8pt !important; font-weight: 700 !important; color: #000 !important; text-align: center; letter-spacing: 0.04em; margin-bottom: 0; }
@@ -713,9 +754,9 @@
             </div>
             <div class="signatory-input-wrapper">
                 <i class="fas fa-signature" style="color:var(--purple-400);"></i>
-                <select name="signatory" aria-label="Report signatory" title="Approved by">
+                <select name="signatory" aria-label="Report signatory" title="Select the report signatory">
                     {% for signatory in signatories %}
-                    <option value="{{ signatory.pk }}" {% if selected_signatory_id == signatory.pk %}selected{% endif %}>{{ signatory.name }} — {{ signatory.role }}</option>
+                    <option value="{{ signatory.pk }}" {% if selected_signatory_id == signatory.pk %}selected{% endif %}>{{ signatory.name }} — {{ signatory.role|upper }}</option>
                     {% empty %}
                     <option value="">No signatories available</option>
                     {% endfor %}
@@ -1059,7 +1100,7 @@
         <div class="print-sig-prep-label">Prepared by:</div>
         <div class="print-sig-name">{{ therapist.name|default:request.user.get_full_name|upper }}</div>
         <div class="print-sig-line"></div>
-        <div class="print-sig-role">{{ therapist.title|default:"Therapist" }}</div>
+        <div class="print-sig-role">{{ therapist.title|default:"Therapist"|upper }}</div>
     </div>
     <div class="print-sig-block">
         <div class="print-sig-prep-label">Approved by:</div>
@@ -1082,6 +1123,8 @@ document.addEventListener('click', function(e) {
     }
 });
 
+var originalStaffPageTitle = document.title;
+
 function printReport(type) {
     var dropdown = document.getElementById('printDropdown');
     if (dropdown) dropdown.classList.remove('open');
@@ -1099,12 +1142,16 @@ function printReport(type) {
         document.body.classList.add('print-sales');
     }
 
+    originalStaffPageTitle = document.title;
+    document.title = ' ';
+
     setTimeout(function() {
         window.print();
     }, 50);
 }
 
 window.addEventListener('afterprint', function() {
+    document.title = originalStaffPageTitle;
     document.body.classList.remove('print-bookings', 'print-sales', 'print-both');
 });
 </script>

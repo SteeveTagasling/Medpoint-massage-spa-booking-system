@@ -235,7 +235,8 @@ class WalkInBookingForm(forms.ModelForm):
         model = Booking
         fields = [
             'client_name', 'client_gender', 'client_email', 'client_phone',
-            'services', 'therapist_preference', 'therapist', 'date', 'time', 'notes'
+            'services', 'additional_minutes', 'therapist_preference', 'therapist',
+            'date', 'time', 'notes'
         ]
         widgets = {
             'client_name': forms.TextInput(attrs={
@@ -252,6 +253,7 @@ class WalkInBookingForm(forms.ModelForm):
                 'maxlength': '20', 'autocomplete': 'tel',
             }),
             'services': forms.SelectMultiple(attrs={'class': 'portal-input'}),
+            'additional_minutes': forms.Select(attrs={'class': 'portal-input'}),
             'therapist_preference': forms.Select(attrs={'class': 'portal-input'}),
             'therapist': forms.Select(attrs={'class': 'portal-input'}),
             'time': forms.Select(attrs={'class': 'portal-input'}),
@@ -298,11 +300,15 @@ class WalkInBookingForm(forms.ModelForm):
             self.add_error('client_name', DUPLICATE_BOOKING_ERROR)
 
         services = cleaned_data.get('services')
+        additional_minutes = cleaned_data.get('additional_minutes') or 0
         if time_val and services:
             try:
                 start_hour, start_minute = (int(part) for part in time_val.split(':'))
                 available_minutes = (24 * 60) - (start_hour * 60 + start_minute)
-                total_duration = sum(service.duration_minutes for service in services)
+                total_duration = (
+                    sum(service.duration_minutes for service in services)
+                    + additional_minutes
+                )
                 if total_duration > available_minutes:
                     self.add_error(
                         'services',
@@ -334,7 +340,10 @@ class WalkInBookingForm(forms.ModelForm):
             try:
                 requested_start_time = datetime.datetime.strptime(time_val, '%H:%M').time()
                 requested_start = datetime.datetime.combine(date, requested_start_time)
-                total_duration = sum(service.duration_minutes for service in services)
+                total_duration = (
+                    sum(service.duration_minutes for service in services)
+                    + additional_minutes
+                )
                 requested_end = requested_start + datetime.timedelta(minutes=total_duration)
 
                 if StaffLeave.objects.filter(

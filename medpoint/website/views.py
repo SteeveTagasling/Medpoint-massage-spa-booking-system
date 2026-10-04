@@ -1,10 +1,11 @@
 from decimal import Decimal
-from django.db.models import Q
+from django.db.models import Avg, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.utils import timezone
+from django.utils.html import format_html
 
 from .models import (
     Service, ServiceCategory, Therapist, Testimonial, GalleryImage,
@@ -77,6 +78,10 @@ def _get_site_stats():
     happy_clients_display = f"{happy_clients_count:,}"
     active_therapists_count = Therapist.objects.filter(is_active=True).count()
     active_services_count = Service.objects.filter(is_active=True).count()
+    approved_average = Testimonial.objects.filter(is_approved=True).aggregate(
+        average_rating=Avg('rating')
+    )['average_rating']
+    average_rating = round(float(approved_average), 1) if approved_average is not None else 0.0
 
     return {
         'happy_clients_count': happy_clients_count,
@@ -84,6 +89,7 @@ def _get_site_stats():
         'years_experience': years_experience,
         'active_therapists_count': active_therapists_count,
         'active_services_count': active_services_count,
+        'average_rating': average_rating,
     }
 
 
@@ -346,7 +352,11 @@ def _handle_single_booking(request):
         _send_booking_otp(request, [booking_obj], booking_obj.client_email)
         return redirect('website:verify_booking')
     else:
-        messages.error(request, 'Please correct the errors below.')
+        first_error = next(
+            (str(error) for errors in form.errors.values() for error in errors),
+            'Please correct the highlighted booking details.',
+        )
+        messages.error(request, first_error)
         return render(request, 'website/booking.html', {
             'form': form,
             **_booking_catalog_context(),
@@ -953,8 +963,12 @@ def _send_booking_otp(request, bookings, email, is_creation=True):
         if request:
             messages.warning(
                 request,
-                f'We could not send the OTP to <strong>{email}</strong>. '
-                'Please check that your email address is correct, or contact the spa directly.'
+                format_html(
+                    'We could not send the OTP to '
+                    '<strong class="font-semibold text-white">{}</strong>. '
+                    'Please check that your email address is correct, or contact the spa directly.',
+                    email,
+                )
             )
         return False
 
