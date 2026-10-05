@@ -64,7 +64,7 @@ class WalkInBookingPricingTests(TestCase):
         data.update(overrides)
         return data
 
-    def test_walk_in_saves_extension_and_multiple_massage_fee(self):
+    def test_walk_in_saves_extension_without_multiple_service_fee(self):
         first = self.make_service('Shiatsu Massage', 'walkin-shiatsu', Decimal('400.00'))
         second = self.make_service('Swedish Massage', 'walkin-swedish', Decimal('500.00'))
 
@@ -78,8 +78,7 @@ class WalkInBookingPricingTests(TestCase):
         self.assertEqual(booking.additional_minutes, 30)
         self.assertEqual(booking.booking_type, 'walk_in')
         self.assertEqual(booking.status, 'confirmed')
-        self.assertEqual(booking.multiple_massage_service_fee, Decimal('400.00'))
-        self.assertEqual(booking.total_discounted_price, Decimal('1500.00'))
+        self.assertEqual(booking.total_discounted_price, Decimal('1100.00'))
 
     def test_walk_in_extension_is_included_in_closing_time_validation(self):
         late_service = self.make_service(

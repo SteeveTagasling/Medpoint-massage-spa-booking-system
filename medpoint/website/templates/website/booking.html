@@ -634,7 +634,7 @@
                                             class="text-red-400">*</span></label>
                                     <p class="text-gray-500 text-xs mb-3"><i
                                             class="fas fa-info-circle text-purple-400/50"></i>
-                                        Click to select. When two or more services are selected, ₱200 is added for each selected service.</p>
+                                        Click to select. You can choose one or more services.</p>
                                     <div id="service-chips-container" class="mb-2">
                                         {% for group in service_groups %}
                                         <section class="service-category-group" data-service-category="{{ group.code }}">
@@ -875,7 +875,7 @@
                                                         class="text-red-400">*</span></label>
                                                 <p class="text-gray-500 text-xs mb-3"><i
                                                         class="fas fa-info-circle text-purple-400/50"></i> Click to
-                                                    select. You can choose multiple services to add-on.</p>
+                                                    select. You can choose one or more services.</p>
                                                 <div class="mb-2 family-chip-grid"
                                                     data-member-index="0">
                                                     {% for group in service_groups %}
@@ -1204,7 +1204,7 @@
             <div class="grid sm:grid-cols-2 gap-4 mt-4">
                 <div class="sm:col-span-2">
                     <label class="form-label">Select Service(s) <span class="text-red-400">*</span></label>
-                    <p class="text-gray-500 text-xs mb-3"><i class="fas fa-info-circle text-purple-400/50"></i> Click to select. You can choose multiple services to add-on.</p>
+                    <p class="text-gray-500 text-xs mb-3"><i class="fas fa-info-circle text-purple-400/50"></i> Click to select. You can choose one or more services.</p>
                     <div class="mb-2 family-chip-grid" data-member-index="${index}">
                         ${familyChipOptionsHTML(index)}
                     </div>
@@ -1388,14 +1388,6 @@
                 totalDur += parseInt(cb.dataset.duration || 0);
                 names.push(cb.dataset.name);
             });
-
-            const serviceCount = chips.length;
-            if (serviceCount >= 2) {
-                const multipleServiceFee = serviceCount * 200;
-                totalPrice += multipleServiceFee;
-                totalOriginal += multipleServiceFee;
-                names.push(`Multiple Service Fee (${serviceCount} × ₱200)`);
-            }
 
             const additionalTimeSelect = card.querySelector('.member-additional-time');
             const additionalMinutes = additionalTimeSelect ? parseInt(additionalTimeSelect.value || 0, 10) : 0;
@@ -2078,13 +2070,6 @@
                         names.push(d.name);
                     }
                 });
-                const serviceCount = ids.length;
-                if (serviceCount >= 2) {
-                    const multipleServiceFee = serviceCount * 200;
-                    total += multipleServiceFee;
-                    totalOriginal += multipleServiceFee;
-                    names.push(`Multiple Service Fee (${serviceCount} × ₱200)`);
-                }
                 const additionalMinutes = additionalMinutesSelect ? parseInt(additionalMinutesSelect.value || 0, 10) : 0;
                 if (additionalMinutes > 0) {
                     const additionalFee = (additionalMinutes / 30) * 200;

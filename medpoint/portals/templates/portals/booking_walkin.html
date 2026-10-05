@@ -459,7 +459,7 @@
                     <label class="form-label">Select Service(s) <span style="color: var(--red-400);">*</span></label>
                     <p style="font-size: 0.72rem; color: var(--text-muted); margin: 0 0 0.65rem;">
                         <i class="fas fa-info-circle" style="color: var(--purple-400);"></i>
-                        Click to select. If two or more services are selected, ₱200 is added for each selected service.
+                        Click to select. You can choose one or more services.
                     </p>
                 </div>
                 <!-- Hidden multi-select synced with chips -->
@@ -636,11 +636,6 @@ document.addEventListener('DOMContentLoaded', () => {
             total += parseFloat(chip.dataset.price) || 0;
             mins  += parseInt(chip.dataset.duration) || 0;
         });
-        const serviceCount = selectedServiceIds.length;
-        if (serviceCount >= 2) {
-            total += serviceCount * 200;
-            feeDescriptions.push(`Service fee: ${serviceCount} × ₱200`);
-        }
         const additionalMinutes = additionalMinutesSelect
             ? (parseInt(additionalMinutesSelect.value, 10) || 0)
             : 0;

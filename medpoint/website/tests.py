@@ -148,19 +148,17 @@ class BookingPricingRuleTests(TestCase):
             time='10:00',
         )
 
-    def test_two_massage_services_charge_two_hundred_each(self):
+    def test_multiple_services_only_charge_their_service_prices(self):
         self.booking.services.set([self.first, self.second])
-        self.assertEqual(self.booking.multiple_massage_service_count, 2)
-        self.assertEqual(self.booking.multiple_massage_service_fee, 400)
         self.booking.lock_current_price()
-        self.assertEqual(self.booking.locked_price, 1300)
+        self.assertEqual(self.booking.locked_price, 900)
 
-    def test_two_mixed_services_charge_two_hundred_each(self):
+    def test_mixed_services_have_no_multiple_service_surcharge(self):
         self.booking.services.set([self.first, self.non_massage])
-        self.assertEqual(self.booking.multiple_service_count, 2)
-        self.assertEqual(self.booking.multiple_service_fee, 400)
+        self.booking.lock_current_price()
+        self.assertEqual(self.booking.locked_price, 750)
 
-    def test_booking_summary_displays_additional_service_charge(self):
+    def test_booking_summary_does_not_display_multiple_service_charge(self):
         self.booking.services.set([self.first, self.non_massage])
         self.booking.lock_current_price()
         session = self.client.session
@@ -170,9 +168,7 @@ class BookingPricingRuleTests(TestCase):
 
         response = self.client.get(reverse('website:booking_success'))
 
-        self.assertContains(response, 'Additional Service Charge')
-        self.assertContains(response, '2 services')
-        self.assertContains(response, '₱400')
+        self.assertNotContains(response, 'Additional Service Charge')
 
     def test_only_thirty_minute_extension_is_offered(self):
         self.assertEqual(

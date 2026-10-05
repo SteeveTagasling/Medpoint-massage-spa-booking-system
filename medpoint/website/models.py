@@ -557,11 +557,6 @@ class Booking(models.Model):
     @property
     def service_names(self):
         names = [service.name for service in self.services.all()]
-        if self.multiple_service_fee:
-            names.append(
-                f'Multiple Service Fee '
-                f'({self.multiple_service_count} × ₱200)'
-            )
         if self.additional_minutes:
             names.append(f'Additional Massage Time ({self.additional_minutes} min)')
         return ", ".join(names)
@@ -572,30 +567,8 @@ class Booking(models.Model):
             return self.locked_price
         return (
             sum(s.discounted_price for s in self.services.all())
-            + self.multiple_service_fee
             + self.additional_time_fee
         )
-
-    @property
-    def multiple_service_count(self):
-        """Number of services selected for a multi-service booking."""
-        return self.services.count()
-
-    @property
-    def multiple_service_fee(self):
-        """Charge ₱200 for every selected service when at least two are selected."""
-        count = self.multiple_service_count
-        return Decimal(count * 200) if count >= 2 else Decimal('0')
-
-    # Backwards-compatible aliases for templates and integrations that used
-    # the earlier, narrower property names.
-    @property
-    def multiple_massage_service_count(self):
-        return self.multiple_service_count
-
-    @property
-    def multiple_massage_service_fee(self):
-        return self.multiple_service_fee
 
     @property
     def additional_time_fee(self):
@@ -638,21 +611,6 @@ class Booking(models.Model):
                 ),
             })
             total += service.discounted_price
-
-        service_count = self.multiple_service_count
-        if service_count >= 2:
-            fee = self.multiple_service_fee
-            snapshots.append({
-                'service_id': None,
-                'name': f'Multiple Service Fee ({service_count} × ₱200)',
-                'category_label': 'Add-on',
-                'base_price': float(fee),
-                'discount_percentage': 0.0,
-                'discounted_price': float(fee),
-                'is_addon': True,
-                'multiple_service_count': service_count,
-            })
-            total += fee
 
         if self.additional_minutes:
             fee = self.additional_time_fee
