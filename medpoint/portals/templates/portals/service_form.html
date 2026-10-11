@@ -323,12 +323,6 @@
                     {{ form.price }}
                     {% if form.price.errors %}<span class="error-text">{{ form.price.errors.0 }}</span>{% endif %}
                 </div>
-                <div class="form-group">
-                    <label class="form-label" for="id_discount_percentage">Discount %</label>
-                    {{ form.discount_percentage }}
-                    <span class="form-hint">Set > 0 to apply a promo discount</span>
-                    {% if form.discount_percentage.errors %}<span class="error-text">{{ form.discount_percentage.errors.0 }}</span>{% endif %}
-                </div>
                 <div class="form-group full-width">
                     <label class="form-label" for="id_short_description">Short Description</label>
                     {{ form.short_description }}
@@ -362,12 +356,6 @@
                     <label class="form-label" for="id_order">Display Order</label>
                     {{ form.order }}
                     {% if form.order.errors %}<span class="error-text">{{ form.order.errors.0 }}</span>{% endif %}
-                </div>
-                <div class="form-group">
-                    <div class="checkbox-wrap">
-                        {{ form.is_featured }}
-                        <label for="id_is_featured">Featured Service</label>
-                    </div>
                 </div>
                 <div class="form-group">
                     <div class="checkbox-wrap">

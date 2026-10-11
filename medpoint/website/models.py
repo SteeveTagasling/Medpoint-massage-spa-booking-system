@@ -555,11 +555,115 @@ class Booking(models.Model):
         return f"{self.client_name} - {services_names} on {self.date}"
 
     @property
-    def service_names(self):
+    def service_display_names(self):
+        """Service names that survive archive/restore and service deletion."""
         names = [service.name for service in self.services.all()]
+        if names:
+            return names
+
+        # Historical bookings keep a price/name snapshot. Use it when the
+        # original service relation is no longer available (for example, when
+        # an old service was removed from the catalogue).
+        for item in self.service_prices_snapshot or []:
+            name = str(item.get('name') or '').strip()
+            if not name or item.get('is_addon') or name.lower().startswith('additional massage time'):
+                continue
+            if name not in names:
+                names.append(name)
+        return names
+
+    @property
+    def service_names(self):
+        names = list(self.service_display_names)
         if self.additional_minutes:
             names.append(f'Additional Massage Time ({self.additional_minutes} min)')
         return ", ".join(names)
+
+    def preserve_service_snapshot(self):
+        """Persist service identity before archival without changing its links.
+
+        Current bookings already receive a snapshot at creation. This fallback
+        protects legacy/imported bookings that predate that feature.
+        """
+        if self.service_prices_snapshot:
+            return False
+
+        snapshots = []
+        current_total = Decimal('0')
+        for service in self.services.all():
+            sale_price = Decimal(str(service.discounted_price))
+            snapshots.append({
+                'service_id': service.pk,
+                'name': service.name,
+                'category_label': service.get_category_display,
+                'base_price': float(service.price),
+                'discount_percentage': float(service.discount_percentage),
+                'discounted_price': float(sale_price),
+                'duration_minutes': service.duration_minutes,
+            })
+            current_total += sale_price
+
+        if self.additional_minutes:
+            fee = self.additional_time_fee
+            snapshots.append({
+                'service_id': None,
+                'name': f'Additional Massage Time ({self.additional_minutes} min)',
+                'category_label': 'Add-on',
+                'base_price': float(fee),
+                'discount_percentage': 0.0,
+                'discounted_price': float(fee),
+                'is_addon': True,
+                'duration_minutes': self.additional_minutes,
+            })
+            current_total += fee
+
+        if not snapshots:
+            return False
+
+        # Preserve a legacy locked total even if catalogue prices have changed
+        # since the booking was created.
+        if self.locked_price is not None and current_total > 0:
+            target_total = Decimal(str(self.locked_price))
+            factor = target_total / current_total
+            allocated = Decimal('0')
+            for index, item in enumerate(snapshots):
+                item['base_price'] = float(Decimal(str(item['base_price'])) * factor)
+                if index == len(snapshots) - 1:
+                    sale_price = target_total - allocated
+                else:
+                    sale_price = Decimal(str(item['discounted_price'])) * factor
+                    allocated += sale_price
+                item['discounted_price'] = float(sale_price)
+
+        self.service_prices_snapshot = snapshots
+        update_fields = ['service_prices_snapshot']
+        if self.locked_price is None:
+            self.locked_price = current_total
+            update_fields.append('locked_price')
+        self.save(update_fields=update_fields)
+        return True
+
+    def restore_service_links_from_snapshot(self):
+        """Re-link existing catalogue services if a relation was lost."""
+        if self.services.exists():
+            return False
+
+        service_ids = []
+        for item in self.service_prices_snapshot or []:
+            service_id = item.get('service_id')
+            if service_id and service_id not in service_ids:
+                service_ids.append(service_id)
+
+        if not service_ids:
+            return False
+
+        existing = Service.objects.in_bulk(service_ids)
+        services = [existing[service_id] for service_id in service_ids if service_id in existing]
+        if not services:
+            return False
+
+        self.services.set(services)
+        return True
         
     @property
     def total_discounted_price(self):

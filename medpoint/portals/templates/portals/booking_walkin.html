@@ -748,13 +748,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const gender = genderSelect.value;
         Array.from(prefSelect.options).forEach(opt => {
             opt.disabled    = false;
+            opt.hidden      = false;
             opt.style.display = '';
         });
         if (gender === 'female') {
             Array.from(prefSelect.options).forEach(opt => {
-                if (opt.value === 'male') { opt.disabled = true; opt.style.display = 'none'; }
+                if (opt.value !== 'female') {
+                    opt.disabled = true;
+                    opt.hidden = true;
+                    opt.style.display = 'none';
+                }
             });
-            if (prefSelect.value === 'male') prefSelect.value = 'female';
+            prefSelect.value = 'female';
         }
         maybeLoadTherapists();
     }
@@ -803,7 +808,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = `{% url 'website:api_therapists' %}?preference=${pref}&client_gender=${clientGender}${dateQ}${timeQ}${svcPart}${additionalPart}`;
         fetch(url)
             .then(r => r.json())
-            .then(data => renderCards(data.therapists))
+            .then(data => {
+                let therapists = data.therapists || [];
+                if (clientGender === 'female') {
+                    therapists = therapists.filter(t => (
+                        t.gender === 'female'
+                        && !t.is_off
+                        && !t.is_booked
+                        && !t.is_closed
+                        && !t.is_outside_schedule
+                        && !t.is_on_break
+                    ));
+                }
+                renderCards(therapists);
+            })
             .catch(() => {
                 cardsContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.82rem; padding: 1rem 0;"><i class="fas fa-exclamation-circle" style="color: var(--red-400);"></i> Unable to load therapists.</p>';
             });

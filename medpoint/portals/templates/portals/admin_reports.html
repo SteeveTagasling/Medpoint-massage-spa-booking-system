@@ -879,9 +879,19 @@
 
     /* Hide print-only summary elements on screen */
     .sales-summary-print-wrap,
+    .sales-summary-dates,
+    .business-summary-reference,
+    .staff-performance-summary-reference,
     .sales-summary-print {
         display: none !important;
     }
+    .booking-category-card { margin-bottom: 1.25rem; }
+    .booking-category-icon { margin-right: .5rem; color: var(--purple-400); font-size: .85rem; }
+    .booking-category-subtotal-label { font-weight: 750; color: var(--text-primary); padding-right: 12px !important; }
+    .booking-category-empty { padding: 1.5rem; }
+    .booking-combined-revenue { width: 100%; margin-top: 1.5rem; }
+    .booking-summary-reference { margin-bottom: 1.5rem; }
+    .booking-reference-dates { display: none; }
 
     /* Print styles: viewable and printable, compact & neat */
     @media print {
@@ -897,7 +907,6 @@
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
-        
         /* Hide all non-essential UI */
         .sidebar, .topbar-actions, .mobile-header, .sidebar-footer, .print-dropdown-wrap,
         .period-tabs, .sidebar-toggle, .no-profile-alert, .header-row, .topbar { display: none !important; }
@@ -938,18 +947,18 @@
         /* ── Print Header (matches image format) ── */
         .print-logo-header {
             display: flex !important;
-            justify-content: space-between;
-            align-items: flex-start;
+            justify-content: center;
+            align-items: center;
             padding-bottom: 8px;
-            margin-bottom: 18px;
+            margin-bottom: 10px;
         }
-        .print-logo-left { display: flex; align-items: flex-start; gap: 8px; }
+        .print-logo-left { display: flex; justify-content: center; align-items: center; gap: 8px; }
         .print-logo-icon { font-size: 20pt; color: #000 !important; margin-top: 2px; }
-        .print-logo-text, .print-date-block { display: grid; grid-template-rows: 18px 18px; align-items: start; }
-        .print-logo-name { font-size: 11pt; font-weight: 800; letter-spacing: 0.04em; color: #000 !important; line-height: 18px; }
+        .print-logo-text { display: block; width: 310px; text-align: center; }
+        .print-logo-name { font-size: 17pt; font-weight: 900; letter-spacing: 0.025em; color: #000 !important; line-height: 24px; }
         .print-logo-sub  { font-size: 7.5pt; color: #000 !important; margin-top: 1px; }
-        .print-logo-address { font-size: 7.5pt; color: #000 !important; margin: 0; line-height: 18px; white-space: nowrap; }
-        .print-logo-right { text-align: left; }
+        .print-logo-address { width: 100%; font-size: 8pt; letter-spacing: .075em; text-align: center; color: #000 !important; margin: 0; line-height: 14px; white-space: nowrap; }
+        .print-logo-right { display: none !important; }
         .print-main-title {
             display: block !important;
             margin: 0 0 14px 0 !important;
@@ -960,11 +969,45 @@
         }
         .print-logo-report-title { }
         .print-logo-report-title h2 { font-size: 11pt; font-weight: 700; margin: 0 0 6px 0; color: #000 !important; }
-        .print-date-block { font-size: 7.5pt; color: #000 !important; line-height: 1.5; }
+        .print-date-block { display: block; font-size: 8pt; color: #000 !important; line-height: 1.45; }
         .print-date-label { font-weight: 700; margin-bottom: 2px; color: #000 !important; }
         .print-date-range { padding-left: 1.25rem; }
-        .print-date-row { display: flex; align-items: baseline; gap: 4px; height: 18px; line-height: 18px; color: #000 !important; }
+        .print-date-row { display: grid; grid-template-columns: 70px minmax(0, 1fr); align-items: baseline; column-gap: 8px; min-height: 19px; line-height: 1.45; color: #000 !important; }
+        .print-date-row strong { color: #000 !important; text-align: left; white-space: nowrap; }
+        .print-date-row span { color: #000 !important; text-align: left; white-space: nowrap; }
         .print-date-lbl { display: inline-block; width: 42px; text-align: right; color: #000 !important; }
+        .print-global-meta {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+            align-items: start;
+            width: 100%;
+            margin: 0 0 14px;
+        }
+        .print-global-dates {
+            grid-column: 3;
+            min-width: 0;
+            color: #000 !important;
+            font-size: 8pt !important;
+            line-height: 1.45;
+        }
+        .print-global-dates > div {
+            display: grid;
+            grid-template-columns: 70px minmax(0, 1fr);
+            align-items: baseline;
+            column-gap: 8px;
+            min-height: 19px;
+        }
+        .print-global-dates strong,
+        .print-global-dates span { color: #000 !important; text-align: left; white-space: nowrap; }
+        body.print-bookings .print-global-meta { display: none !important; }
+        body.print-staff .print-global-meta { display: none !important; }
+        body.print-bookings .print-logo-header { text-align: center !important; margin-bottom: 14px !important; padding-bottom: 0 !important; }
+        body.print-bookings .print-logo-left { justify-content: center !important; align-items: center !important; }
+        body.print-bookings .print-logo-text { display: block !important; width: 310px !important; text-align: center !important; }
+        body.print-bookings .print-logo-name { font-size: 17pt !important; line-height: 24px !important; font-weight: 900 !important; }
+        body.print-bookings .print-logo-address { display: block !important; width: 100% !important; text-align: center !important; font-size: 8pt !important; line-height: 14px !important; letter-spacing: .075em !important; }
+        body.print-bookings .print-logo-right { display: none !important; }
+        body.print-bookings .print-main-title { margin-bottom: 22px !important; font-size: 13pt !important; letter-spacing: .015em !important; }
 
         /* General Card adjustments (Remove bloated wrappers) */
         .card { 
@@ -987,7 +1030,8 @@
             table-layout: fixed !important;
         }
         .summary-table-wrap th, .summary-table-wrap td {
-            border: 1px solid #777 !important;
+            border: 1px solid #000 !important;
+            background: #fff !important;
             padding: 3px 6px !important;
             color: #000 !important;
             font-size: 6.8pt !important;
@@ -1003,7 +1047,7 @@
             font-weight: 700 !important;
         }
         .summary-table-wrap th {
-            background: #f0f0f0 !important;
+            background: #fff !important;
             font-weight: 700 !important;
             text-transform: uppercase !important;
             font-size: 6.2pt !important;
@@ -1020,9 +1064,11 @@
         }
 
         /* Ultra-compact Data Tables */
-        .table-wrapper { overflow: visible !important; }
+        .table-wrapper { width: 100% !important; min-width: 0 !important; max-width: 100% !important; overflow: visible !important; }
         table.data-table { 
             width: 100% !important; 
+            min-width: 0 !important;
+            max-width: 100% !important;
             border-collapse: collapse !important; 
             margin: 0 !important;
             table-layout: fixed !important;
@@ -1032,8 +1078,9 @@
         table.data-table tfoot { display: table-footer-group !important; }
         
         table.data-table th, table.data-table td { 
-            color: #111 !important; 
-            border: 1px solid #777 !important; 
+            color: #000 !important;
+            background-color: #fff !important;
+            border: 1px solid #000 !important;
             padding: 3px 4px !important; 
             font-size: 6.2pt !important;
             line-height: 1.25 !important;
@@ -1055,7 +1102,7 @@
             padding: 3px 2px !important;
         }
         table.data-table th { 
-            background-color: #f0f0f0 !important; 
+            background-color: #fff !important;
             font-weight: 700 !important; 
             font-size: 6.2pt !important;
             text-transform: uppercase !important;
@@ -1069,7 +1116,7 @@
         }
         table.data-table tfoot td,
         table.data-table tfoot td * {
-            background-color: #f7f7f7 !important;
+            background-color: #fff !important;
             -webkit-print-color-adjust: exact !important; 
             print-color-adjust: exact !important;
             font-weight: 700 !important;
@@ -1096,9 +1143,9 @@
         /* Specific Column Widths & Alignments for Booking List in print */
         .booking-list-table th:nth-child(1), .booking-list-table td:nth-child(1) { width: 6% !important; text-align: center !important; white-space: nowrap !important; padding: 3px 2px !important; }
         .booking-list-table th:nth-child(2), .booking-list-table td:nth-child(2) { width: 17% !important; text-align: left !important; padding-left: 5px !important; padding-right: 5px !important; }
-        .booking-list-table th:nth-child(3), .booking-list-table td:nth-child(3) { width: 23% !important; text-align: left !important; padding-left: 5px !important; padding-right: 5px !important; }
+        .booking-list-table th:nth-child(3), .booking-list-table td:nth-child(3) { width: 20% !important; text-align: left !important; padding-left: 5px !important; padding-right: 5px !important; }
         .booking-list-table th:nth-child(4), .booking-list-table td:nth-child(4) { width: 12% !important; text-align: left !important; padding-left: 5px !important; padding-right: 5px !important; }
-        .booking-list-table th:nth-child(5), .booking-list-table td:nth-child(5) { width: 9% !important; text-align: center !important; white-space: nowrap !important; }
+        .booking-list-table th:nth-child(5), .booking-list-table td:nth-child(5) { width: 12% !important; text-align: center !important; white-space: nowrap !important; overflow: visible !important; }
         .booking-list-table th:nth-child(6), .booking-list-table td:nth-child(6) { width: 7% !important; text-align: center !important; white-space: nowrap !important; }
         .booking-list-table th:nth-child(7), .booking-list-table td:nth-child(7) { width: 6% !important; text-align: center !important; }
         .booking-list-table th:nth-child(8), .booking-list-table td:nth-child(8) { width: 9% !important; text-align: center !important; }
@@ -1106,6 +1153,22 @@
 
         .booking-list-table tfoot td:first-child { text-align: right !important; padding-right: 12px !important; }
         .booking-list-table tfoot td:last-child { width: 11% !important; text-align: right !important; white-space: nowrap !important; padding-right: 6px !important; }
+        body.print-bookings .booking-category-card { page-break-inside: avoid !important; margin-bottom: 12px !important; }
+        body.print-bookings .booking-category-card .card-header { margin-bottom: 3px !important; }
+        body.print-bookings .booking-category-card .card-header-title { font-size: 8pt !important; }
+        body.print-bookings .booking-category-icon { display: none !important; }
+        body.print-bookings .booking-category-subtotal-label { text-align: right !important; padding-right: 8px !important; }
+        body.print-bookings .booking-summary-reference { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important; align-items: start !important; column-gap: 0 !important; width: 100% !important; margin-bottom: 14px !important; }
+        body.print-bookings .booking-summary-reference .summary-table-wrap { grid-column: 1 !important; min-width: 0 !important; width: 100% !important; max-width: 100% !important; overflow: hidden !important; margin: 0 !important; }
+        body.print-bookings .booking-summary-reference .summary-table { width: 100% !important; min-width: 0 !important; max-width: 100% !important; }
+        body.print-bookings .booking-summary-reference .card-header { display: none !important; }
+        body.print-bookings .booking-summary-reference .summary-table td { height: 17px !important; border: none !important; padding: 2px 4px !important; line-height: 13px !important; }
+        body.print-bookings .booking-summary-reference .summary-table td:first-child { border-bottom: none !important; }
+        body.print-bookings .booking-summary-reference .summary-table td:last-child { padding-right: 8px !important; text-align: right !important; }
+        body.print-bookings .booking-reference-dates { display: block !important; visibility: visible !important; opacity: 1 !important; grid-column: 3 !important; min-width: 0 !important; width: 100% !important; max-width: 100% !important; overflow: visible !important; padding-top: 1px !important; color: #000 !important; font-size: 8pt !important; line-height: 1.45 !important; }
+        body.print-bookings .booking-reference-dates > div { display: grid !important; grid-template-columns: 70px minmax(0, 1fr) !important; align-items: baseline !important; column-gap: 8px !important; min-height: 19px !important; color: #000 !important; white-space: normal !important; }
+        body.print-bookings .booking-reference-dates strong { display: inline-block !important; color: #000 !important; text-align: left !important; white-space: nowrap !important; }
+        body.print-bookings .booking-reference-dates span { display: inline-block !important; color: #000 !important; text-align: left !important; white-space: nowrap !important; }
 
         /* Specific Column Widths & Alignments for Staff Performance in print */
         .staff-table th:nth-child(1), .staff-table td:nth-child(1) { width: 18%; text-align: left; padding-left: 5px; }
@@ -1141,7 +1204,7 @@
         .print-sig-block { flex: 1; text-align: center; }
         .print-sig-prep-label { font-size: 8pt !important; font-weight: 600 !important; color: #000 !important; text-align: left; margin-bottom: 18px; }
         .print-sig-name { font-size: 8pt !important; font-weight: 700 !important; color: #000 !important; text-align: center; letter-spacing: 0.04em; margin-bottom: 0; }
-        .print-sig-line { border-bottom: 1.5px solid #000; margin-bottom: 3px; height: 0; }
+        .print-sig-line { width: 82%; border-bottom: 1.5px solid #000; margin: 0 auto 3px; height: 0; }
         .print-sig-role { font-size: 7.5pt !important; color: #000 !important; text-align: center; font-weight: 400 !important; }
 
         /* Sales Summary: hide screen cards in print, show print summary table */
@@ -1156,9 +1219,200 @@
             letter-spacing: 0.04em;
         }
         .sales-summary-print  { display: table !important; width: 100% !important; border-collapse: collapse !important; margin-bottom: 8px !important; }
-        .sales-summary-print td { padding: 3px 6px !important; font-size: 8pt !important; border: 1px solid #aaa !important; color: #000 !important; }
+        .sales-summary-print td { padding: 3px 6px !important; font-size: 8pt !important; border: 1px solid #000 !important; background: #fff !important; color: #000 !important; }
         .sales-summary-print td:first-child { font-weight: 700 !important; width: 50% !important; }
         .sales-summary-print td:last-child { width: 50% !important; text-align: center !important; }
+
+        /* Standalone Sales Report: reference layout with a three-part summary. */
+        body.print-sales .print-global-meta { display: none !important; }
+        body.print-sales .sales-summary-print-wrap {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+            align-items: start !important;
+            width: 100% !important;
+            margin: 0 0 22px !important;
+        }
+        body.print-sales .sales-summary-print-content {
+            grid-column: 1 !important;
+            min-width: 0 !important;
+            width: 100% !important;
+        }
+        body.print-sales .sales-summary-print-content .print-summary-title { display: none !important; }
+        body.print-sales .sales-summary-print {
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            table-layout: fixed !important;
+            margin: 0 !important;
+        }
+        body.print-sales .sales-summary-print td {
+            height: 18px !important;
+            padding: 2px 4px !important;
+            border: none !important;
+            font-size: 8pt !important;
+            line-height: 13px !important;
+        }
+        body.print-sales .sales-summary-print td:first-child { width: 65% !important; text-align: left !important; }
+        body.print-sales .sales-summary-print td:last-child { width: 35% !important; padding-right: 8px !important; text-align: right !important; font-weight: 700 !important; }
+        body.print-sales .sales-summary-dates {
+            display: block !important;
+            grid-column: 3 !important;
+            min-width: 0 !important;
+            padding-top: 1px !important;
+            color: #000 !important;
+            font-size: 8pt !important;
+            line-height: 1.45 !important;
+        }
+        body.print-sales .sales-summary-dates > div {
+            display: grid !important;
+            grid-template-columns: 70px minmax(0, 1fr) !important;
+            align-items: baseline !important;
+            column-gap: 8px !important;
+            min-height: 19px !important;
+        }
+        body.print-sales .sales-summary-dates strong,
+        body.print-sales .sales-summary-dates span { color: #000 !important; text-align: left !important; white-space: nowrap !important; }
+        body.print-sales .sales-section > .card { margin-bottom: 18px !important; }
+
+        /* Combined Business Report: booking summary at the top; sales stays in its section. */
+        body.print-both .print-global-meta,
+        body.print-both .booking-summary-reference { display: none !important; }
+        body.print-both .business-summary-reference {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+            align-items: start !important;
+            column-gap: 0 !important;
+            width: 100% !important;
+            margin: 0 0 22px !important;
+        }
+        body.print-both .business-summary-block,
+        body.print-both .business-summary-dates { min-width: 0 !important; }
+        body.print-both .business-summary-block { grid-column: 1 !important; }
+        body.print-both .business-summary-dates { grid-column: 3 !important; }
+        body.print-both .business-summary-title {
+            margin: 0 0 5px !important;
+            color: #000 !important;
+            font-size: 8.5pt !important;
+            font-weight: 800 !important;
+            letter-spacing: .035em !important;
+            text-transform: uppercase !important;
+        }
+        body.print-both .business-summary-table {
+            width: 100% !important;
+            min-width: 0 !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+        }
+        body.print-both .business-summary-table td {
+            height: 17px !important;
+            padding: 2px 4px !important;
+            border: none !important;
+            background: #fff !important;
+            color: #000 !important;
+            font-size: 8pt !important;
+            line-height: 13px !important;
+        }
+        body.print-both .business-summary-table td:first-child { width: 68% !important; font-weight: 700 !important; text-align: left !important; }
+        body.print-both .business-summary-table td:last-child { width: 32% !important; padding-right: 6px !important; font-weight: 700 !important; text-align: right !important; }
+        body.print-both .business-summary-dates { width: 100% !important; max-width: 100% !important; padding-top: 19px !important; color: #000 !important; font-size: 8pt !important; line-height: 1.45 !important; overflow: visible !important; }
+        body.print-both .business-summary-dates > div {
+            display: grid !important;
+            grid-template-columns: 70px minmax(0, 1fr) !important;
+            align-items: baseline !important;
+            column-gap: 8px !important;
+            min-height: 19px !important;
+        }
+        body.print-both .business-summary-dates strong,
+        body.print-both .business-summary-dates span { color: #000 !important; text-align: left !important; white-space: nowrap !important; }
+
+        /* Standalone Staff Performance Report: summary left and report dates right. */
+        body.print-staff .staff-performance-summary-reference {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+            align-items: start !important;
+            column-gap: 0 !important;
+            width: 100% !important;
+            margin: 0 0 22px !important;
+        }
+        body.print-staff .staff-performance-summary-block {
+            grid-column: 1 !important;
+            min-width: 0 !important;
+        }
+        body.print-staff .staff-performance-summary-table {
+            width: 100% !important;
+            min-width: 0 !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+        }
+        body.print-staff .staff-performance-summary-table td {
+            height: 18px !important;
+            padding: 2px 4px !important;
+            border: none !important;
+            background: #fff !important;
+            color: #000 !important;
+            font-size: 8pt !important;
+            line-height: 13px !important;
+        }
+        body.print-staff .staff-performance-summary-table td:first-child {
+            width: 68% !important;
+            font-weight: 700 !important;
+            text-align: left !important;
+        }
+        body.print-staff .staff-performance-summary-table td:last-child {
+            width: 32% !important;
+            padding-right: 6px !important;
+            font-weight: 700 !important;
+            text-align: right !important;
+            white-space: nowrap !important;
+        }
+        body.print-staff .staff-performance-summary-dates {
+            grid-column: 3 !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            color: #000 !important;
+            font-size: 8pt !important;
+            line-height: 1.45 !important;
+            overflow: visible !important;
+        }
+        body.print-staff .staff-performance-summary-dates > div {
+            display: grid !important;
+            grid-template-columns: 70px minmax(0, 1fr) !important;
+            align-items: baseline !important;
+            column-gap: 8px !important;
+            min-height: 19px !important;
+        }
+        body.print-staff .staff-performance-summary-dates strong,
+        body.print-staff .staff-performance-summary-dates span {
+            color: #000 !important;
+            text-align: left !important;
+            white-space: nowrap !important;
+        }
+        body.print-staff .staff-performance-section > .card > .card-header {
+            margin-bottom: 4px !important;
+        }
+        body.print-staff .staff-performance-section > .card > .card-header .card-header-title {
+            font-size: 8pt !important;
+        }
+
+        .booking-combined-revenue {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 18px 0 20px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+        .booking-combined-revenue .card-header { margin-bottom: 4px !important; }
+        .booking-combined-revenue .card-header-title { font-size: 8pt !important; }
+        .booking-combined-revenue-table td {
+            padding: 3px 6px !important;
+            border: 1px solid #000 !important;
+            background: #fff !important;
+            color: #000 !important;
+            font-size: 7pt !important;
+        }
+        .booking-combined-revenue-table td:first-child { width: 68% !important; }
+        .booking-combined-revenue-table td:last-child { width: 32% !important; white-space: nowrap !important; }
 
         /* Uniform, formal report typography */
         .card-header-title,
@@ -1206,12 +1460,38 @@
     </div>
     <div class="print-logo-right">
         <div class="print-date-block">
-            <div class="print-date-row"><strong>As of:</strong>&nbsp; {{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</div>
-            <div class="print-date-row"><strong>Generated:</strong>&nbsp; {{ generated_date|date:"F d, Y" }}</div>
+            <div class="print-date-row"><strong>As of:</strong><span>{{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</span></div>
+            <div class="print-date-row"><strong>Generated:</strong><span>{{ generated_date|date:"F d, Y" }}</span></div>
         </div>
     </div>
 </div>
-<h2 class="print-main-title" id="print-report-title" style="display:none;">Booking Report</h2>
+<h2 class="print-main-title" id="print-report-title" style="display:none;">BOOKING REPORT</h2>
+<div class="print-global-meta" style="display:none;">
+    <div class="print-global-dates">
+        <div><strong>As of:</strong><span>{{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</span></div>
+        <div><strong>Generated:</strong><span>{{ generated_date|date:"F d, Y" }}</span></div>
+    </div>
+</div>
+<div class="business-summary-reference" style="display:none;">
+    <section class="business-summary-block">
+        <h3 class="business-summary-title">Booking Summary</h3>
+        <table class="business-summary-table">
+            <tbody>
+                <tr><td>Total Bookings</td><td>{{ total_bookings_period }}</td></tr>
+                <tr><td>Completed</td><td>{{ total_completed }}</td></tr>
+                <tr><td>Confirmed</td><td>{{ confirmed_count }}</td></tr>
+                <tr><td>Pending</td><td>{{ pending_count }}</td></tr>
+                <tr><td>Cancelled</td><td>{{ cancelled_count }}</td></tr>
+                <tr><td>Online</td><td>{{ online_count }}</td></tr>
+                <tr><td>Walk-in</td><td>{{ walkin_count }}</td></tr>
+            </tbody>
+        </table>
+    </section>
+    <div class="business-summary-dates">
+        <div><strong>As of:</strong><span>{{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</span></div>
+        <div><strong>Generated:</strong><span>{{ generated_date|date:"F d, Y" }}</span></div>
+    </div>
+</div>
 
 <!-- Header -->
 <div class="header-row">
@@ -1234,17 +1514,17 @@
                 <div class="custom-date-filter">
                     <div class="date-input-wrapper">
                         <i class="fas fa-calendar-day" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
-                        <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" required title="Start Date">
+                        <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" required title="Start Date" onchange="this.form.requestSubmit()">
                     </div>
                     <span class="date-separator"><i class="fas fa-arrow-right"></i></span>
                     <div class="date-input-wrapper">
                         <i class="fas fa-calendar-day" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
-                        <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" required title="End Date">
+                        <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" required title="End Date" onchange="this.form.requestSubmit()">
                     </div>
                 </div>
                 <div class="report-select-wrap">
                     <label for="report-status-filter">Status</label>
-                    <select name="status" id="report-status-filter">
+                    <select name="status" id="report-status-filter" onchange="this.form.requestSubmit()">
                         <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
                         <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
                         <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
@@ -1254,7 +1534,7 @@
                 </div>
                 <div class="report-select-wrap">
                     <label for="report-type-filter">Booking Type</label>
-                    <select name="booking_type" id="report-type-filter">
+                    <select name="booking_type" id="report-type-filter" onchange="this.form.requestSubmit()">
                         <option value="all" {% if booking_type_filter == 'all' %}selected{% endif %}>All Types</option>
                         <option value="walk_in" {% if booking_type_filter == 'walk_in' %}selected{% endif %}>Walk-in</option>
                         <option value="online" {% if booking_type_filter == 'online' %}selected{% endif %}>Online</option>
@@ -1262,7 +1542,7 @@
                 </div>
                 <div class="report-select-wrap signatory-select-wrap">
                     <label for="report-signatory-filter">Approved by</label>
-                    <select name="signatory" id="report-signatory-filter" title="Select the report signatory">
+                    <select name="signatory" id="report-signatory-filter" title="Select the report signatory" onchange="this.form.requestSubmit()">
                         {% for signatory in signatories %}
                         <option value="{{ signatory.pk }}" {% if selected_signatory_id == signatory.pk %}selected{% endif %}>{{ signatory.name }} — {{ signatory.role|upper }}</option>
                         {% empty %}
@@ -1272,11 +1552,6 @@
                 </div>
                 <button type="button" class="add-signatory-btn" onclick="openSignatoryDialog()" title="Add signatory" aria-label="Add signatory">
                     <i class="fas fa-user-plus"></i>
-                </button>
-                <button type="submit" class="filter-submit-btn apply-booking-filters">
-                    <i class="fas fa-filter"></i>
-                    <span>Apply Filters</span>
-                    {% if active_filter_count %}<span class="active-filter-count" title="{{ active_filter_count }} active filter{{ active_filter_count|pluralize }}">{{ active_filter_count }}</span>{% endif %}
                 </button>
                 <!-- Print Dropdown -->
                 <div class="print-dropdown-wrap" id="printDropdownWrap">
@@ -1366,6 +1641,7 @@
 <div class="booking-section{% if active_filter_count %} filter-active{% endif %}">
 
     <!-- Booking Summary -->
+    <div class="booking-summary-reference">
     <div class="card summary-table-wrap" style="margin-bottom: 1.5rem;">
         <div class="card-header">
             <span class="card-header-title">
@@ -1420,7 +1696,18 @@
             </table>
         </div>
     </div>
+    <div class="booking-reference-dates">
+        <div><strong>As of:</strong><span>{{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</span></div>
+        <div><strong>Generated:</strong><span>{{ generated_date|date:"F d, Y" }}</span></div>
+    </div>
+    </div>
 
+    <!-- Booking tables grouped by current service category -->
+    {% include "portals/includes/booking_category_tables.html" %}
+
+    {% include "portals/includes/booking_combined_revenue.html" %}
+
+    {% comment %}Legacy single-table booking layout retained only for template history.
     <!-- Booking List -->
     <div class="card">
         <div class="card-header">
@@ -1513,6 +1800,7 @@
             </table>
         </div>
     </div>
+    {% endcomment %}
 
 </div>{# end booking-section #}
 
@@ -1583,6 +1871,7 @@
 
         <!-- Print-only view: 2-col vertical table -->
         <div class="sales-summary-print-wrap">
+            <div class="sales-summary-print-content">
             <div class="print-summary-title">Sales Summary</div>
             <table class="sales-summary-print">
                 <tbody>
@@ -1595,21 +1884,40 @@
                         <td class="text-center" style="font-weight: 600;">{{ total_completed }}</td>
                     </tr>
                     <tr>
-                        <td>Total Bookings</td>
-                        <td class="text-center" style="font-weight: 600;">{{ total_bookings_period }}</td>
+                        <td>Online Bookings</td>
+                        <td class="text-center" style="font-weight: 600;">{{ online_count }}</td>
                     </tr>
                     <tr>
-                        <td>Total Commission</td>
-                        <td class="text-center" style="font-weight: 600;">₱{{ total_commission|floatformat:"2g" }}</td>
+                        <td>Walk-in</td>
+                        <td class="text-center" style="font-weight: 600;">{{ walkin_count }}</td>
                     </tr>
                 </tbody>
             </table>
+            </div>
+            <div class="sales-summary-dates">
+                <div><strong>As of:</strong><span>{{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</span></div>
+                <div><strong>Generated:</strong><span>{{ generated_date|date:"F d, Y" }}</span></div>
+            </div>
         </div>
     </div>
 
 </div>{# end sales-section before standalone staff performance #}
 
 <div class="staff-performance-section">
+    <div class="staff-performance-summary-reference" style="display:none;">
+        <section class="staff-performance-summary-block">
+            <table class="staff-performance-summary-table">
+                <tbody>
+                    <tr><td>Total Staff/Therapist (Active)</td><td>{{ active_therapist_count }}</td></tr>
+                    <tr><td>Total Commission</td><td>₱{{ total_commission|floatformat:"2g" }}</td></tr>
+                </tbody>
+            </table>
+        </section>
+        <div class="staff-performance-summary-dates">
+            <div><strong>As of:</strong><span>{{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</span></div>
+            <div><strong>Generated:</strong><span>{{ generated_date|date:"F d, Y" }}</span></div>
+        </div>
+    </div>
     <!-- Staff Performance -->
     <div class="card" style="margin-bottom: 1.5rem;">
         <div class="card-header">
@@ -1869,26 +2177,20 @@ function printReport(type) {
     var titleEl = document.getElementById('print-report-title');
     document.body.classList.remove('print-sales', 'print-bookings', 'print-both', 'print-staff');
     if (type === 'bookings') {
-        if (titleEl) titleEl.textContent = 'Booking Report';
+        if (titleEl) titleEl.textContent = 'BOOKING REPORT';
         document.body.classList.add('print-bookings');
     } else if (type === 'both') {
-        if (titleEl) titleEl.textContent = 'Business Report';
+        if (titleEl) titleEl.textContent = 'BUSINESS REPORT';
         document.body.classList.add('print-both');
     } else if (type === 'staff') {
-        if (titleEl) titleEl.textContent = 'Staff Performance Report';
+        if (titleEl) titleEl.textContent = 'STAFF PERFORMANCE REPORTS';
         document.body.classList.add('print-staff');
     } else {
-        if (titleEl) titleEl.textContent = 'Sales Report';
+        if (titleEl) titleEl.textContent = 'SALES REPORT';
         document.body.classList.add('print-sales');
     }
 
-    setTimeout(function() {
-        window.print();
-    }, 50);
+    window.print();
 }
-
-window.addEventListener('afterprint', function() {
-    document.body.classList.remove('print-bookings', 'print-sales', 'print-both', 'print-staff');
-});
 </script>
 {% endblock %}

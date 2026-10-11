@@ -139,7 +139,6 @@
         <input type="date" id="rev-date-from" style="background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; padding:0.3rem 0.6rem; font-size:0.78rem; font-family:inherit; cursor:pointer;">
         <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted); white-space:nowrap;">To</label>
         <input type="date" id="rev-date-to" style="background:var(--bg-card); border:1px solid var(--border-color); color:var(--text-primary); border-radius:6px; padding:0.3rem 0.6rem; font-size:0.78rem; font-family:inherit; cursor:pointer;">
-        <button id="rev-apply-custom" style="background:linear-gradient(135deg,var(--purple-600),var(--violet-600)); color:#fff; border:none; border-radius:6px; padding:0.35rem 1rem; font-size:0.75rem; font-weight:600; cursor:pointer; font-family:inherit; transition:opacity 0.2s;" onmouseenter="this.style.opacity='0.85'" onmouseleave="this.style.opacity='1'"><i class="fas fa-check" style="margin-right:0.35rem;"></i>Apply</button>
     </div>
     <div style="padding: 1.25rem 1.5rem 1rem; position: relative; min-height: 300px;">
         <div id="revenue-chart-loading" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background: var(--bg-card); border-radius: 8px; z-index:5; opacity:0; pointer-events:none; transition: opacity 0.2s;">
@@ -837,7 +836,6 @@
     const customRangePanel = document.getElementById('revenue-custom-range');
     const revDateFrom = document.getElementById('rev-date-from');
     const revDateTo = document.getElementById('rev-date-to');
-    const revApply = document.getElementById('rev-apply-custom');
 
     // Set default date range to current month for the picker
     (function initDatePicker() {
@@ -850,15 +848,23 @@
         revDateFrom.max = todayStr;
     })();
 
-    revApply.addEventListener('click', function() {
+    function applyCustomRevenueRange() {
         const f = revDateFrom.value;
         const t = revDateTo.value;
-        if (!f || !t) { alert('Please select both From and To dates.'); return; }
-        if (f > t) { alert('"From" date must be before "To" date.'); return; }
+        if (!f || !t) return;
+        if (f > t) {
+            revDateTo.setCustomValidity('The To date must be on or after the From date.');
+            revDateTo.reportValidity();
+            return;
+        }
+        revDateTo.setCustomValidity('');
         customDateFrom = f;
         customDateTo = t;
         loadRevenueChart('custom', customDateFrom, customDateTo);
-    });
+    }
+
+    revDateFrom.addEventListener('change', applyCustomRevenueRange);
+    revDateTo.addEventListener('change', applyCustomRevenueRange);
 
     // Period tab switching
     document.querySelectorAll('.rev-tab').forEach(btn => {
@@ -868,6 +874,7 @@
             currentPeriod = this.dataset.period;
             if (currentPeriod === 'custom') {
                 customRangePanel.style.display = 'flex';
+                applyCustomRevenueRange();
             } else {
                 customRangePanel.style.display = 'none';
                 loadRevenueChart(currentPeriod);

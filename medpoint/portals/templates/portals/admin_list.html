@@ -110,19 +110,30 @@
     <div class="overview-card card"><span class="overview-icon overview-red"><i class="fas fa-user-lock"></i></span><div><strong>{{ inactive_admins }}</strong><span>Deactivated accounts</span></div></div>
 </div>
 
-<form method="get" class="admin-toolbar card" role="search">
+<form method="get" class="admin-toolbar card" role="search" id="admin-filter-form">
     <div class="admin-search">
         <i class="fas fa-search"></i>
-        <input class="admin-input" type="search" name="search" value="{{ search }}" placeholder="Search by name, username, or email" aria-label="Search administrators">
+        <input class="admin-input" id="admin-search-input" type="search" name="search" value="{{ search }}" placeholder="Search by name, username, or email" aria-label="Search administrators">
     </div>
-    <select name="status" class="admin-select" aria-label="Filter account status">
+    <select name="status" class="admin-select" aria-label="Filter account status" onchange="this.form.requestSubmit()">
         <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All statuses</option>
         <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
         <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Deactivated</option>
     </select>
-    <button class="btn-filter" type="submit"><i class="fas fa-filter"></i> Apply</button>
     {% if search or status_filter != 'all' %}<a href="{% url 'portals:admin_management_list' %}" class="btn-clear"><i class="fas fa-rotate-left"></i> Clear</a>{% endif %}
 </form>
+
+<script>
+    (() => {
+        const form = document.getElementById('admin-filter-form');
+        const searchInput = document.getElementById('admin-search-input');
+        let searchTimer;
+        searchInput.addEventListener('input', () => {
+            window.clearTimeout(searchTimer);
+            searchTimer = window.setTimeout(() => form.requestSubmit(), 450);
+        });
+    })();
+</script>
 
 <div class="admin-list">
     {% for admin_user in admins %}

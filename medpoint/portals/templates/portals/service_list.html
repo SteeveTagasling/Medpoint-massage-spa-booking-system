@@ -430,8 +430,13 @@
             <option value="{{ value }}" {% if category_filter == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
+        <select name="status" class="filter-select" onchange="this.form.submit()" aria-label="Filter service status">
+            <option value="">All Statuses</option>
+            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+            <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+        </select>
         <button type="submit" class="btn-search"><i class="fas fa-search"></i> Search</button>
-        {% if search_query or category_filter %}
+        {% if search_query or category_filter or status_filter %}
         <a href="{% url 'portals:service_list' %}" class="btn-clear-search" title="Clear search and filter"><i class="fas fa-times"></i> Clear</a>
         {% endif %}
     </form>

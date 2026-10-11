@@ -4,7 +4,7 @@ from unittest.mock import patch
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.middleware import SessionMiddleware
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.test.client import RequestFactory
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -54,6 +54,59 @@ class BookingVerificationMessageTests(TestCase):
         self.assertNotIn('&lt;strong&gt;', rendered)
         self.assertNotIn('<script>alert(1)</script>', rendered)
         self.assertIn('fa-triangle-exclamation', rendered)
+
+
+class BookingOtpFirstVerifiedTests(TestCase):
+    def make_booking(self, client_name, otp):
+        return Booking.objects.create(
+            client_name=client_name,
+            client_email=f'{client_name.lower().replace(" ", "-")}@example.com',
+            client_phone='639171234567',
+            client_gender='male',
+            therapist_preference='random',
+            date=datetime.date.today() + datetime.timedelta(days=7),
+            time='10:00',
+            status='awaiting_verification',
+            is_verified=False,
+            verification_otp=otp,
+        )
+
+    def set_booking_session(self, client, booking):
+        session = client.session
+        session['last_booking_id'] = booking.pk
+        session['last_booking_ids'] = [booking.pk]
+        session.save()
+
+    def test_first_verified_booking_wins_same_date_and_time(self):
+        first_booking = self.make_booking('First Client', '111111')
+        later_booking = self.make_booking('Later Client', '222222')
+        first_client = Client()
+        later_client = Client()
+        self.set_booking_session(first_client, first_booking)
+        self.set_booking_session(later_client, later_booking)
+
+        first_response = first_client.post(
+            reverse('website:verify_booking'),
+            {'otp': '111111'},
+        )
+        later_response = later_client.post(
+            reverse('website:verify_booking'),
+            {'otp': '222222'},
+            follow=True,
+        )
+
+        self.assertRedirects(first_response, reverse('website:booking_success'))
+        first_booking.refresh_from_db()
+        later_booking.refresh_from_db()
+        self.assertTrue(first_booking.is_verified)
+        self.assertEqual(first_booking.status, 'pending')
+        self.assertFalse(later_booking.is_verified)
+        self.assertEqual(later_booking.status, 'awaiting_verification')
+        self.assertContains(
+            later_response,
+            'The selected date and time are already booked. '
+            'Please choose a different date or time.',
+        )
 
 
 class FooterServiceCategoryTests(TestCase):

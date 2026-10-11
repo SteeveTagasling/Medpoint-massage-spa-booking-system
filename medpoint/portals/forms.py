@@ -24,8 +24,8 @@ class ServiceForm(forms.ModelForm):
         model = Service
         fields = [
             'name', 'category', 'description', 'short_description',
-            'duration_minutes', 'price', 'discount_percentage',
-            'image', 'is_featured', 'is_active', 'order'
+            'duration_minutes', 'price',
+            'image', 'is_active', 'order'
         ]
         widgets = {
             'name': forms.TextInput(attrs={
@@ -44,11 +44,6 @@ class ServiceForm(forms.ModelForm):
             }),
             'price': forms.NumberInput(attrs={
                 'class': 'portal-input', 'placeholder': '0.00', 'step': '0.01',
-                'inputmode': 'decimal', 'onwheel': 'this.blur()',
-            }),
-            'discount_percentage': forms.NumberInput(attrs={
-                'class': 'portal-input', 'placeholder': '0',
-                'min': 0, 'max': 100, 'step': '0.01',
                 'inputmode': 'decimal', 'onwheel': 'this.blur()',
             }),
             'image': forms.ClearableFileInput(attrs={'class': 'portal-input'}),
@@ -267,6 +262,20 @@ class WalkInBookingForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['services'].queryset = Service.objects.filter(is_active=True)
         self.fields['therapist'].queryset = Therapist.objects.filter(is_active=True)
+        gender_field_name = self.add_prefix('client_gender')
+        selected_gender = (
+            self.data.get(gender_field_name)
+            if self.is_bound
+            else self.initial.get('client_gender')
+        )
+        if selected_gender == 'female':
+            self.fields['therapist_preference'].choices = [
+                ('female', 'Female Therapist'),
+            ]
+            self.fields['therapist'].queryset = Therapist.objects.filter(
+                is_active=True,
+                gender='female',
+            )
         self.fields['therapist'].required = True
         self.fields['therapist'].error_messages = {
             'required': 'Please select a therapist.'
@@ -332,6 +341,12 @@ class WalkInBookingForm(forms.ModelForm):
                     'therapist',
                     'The selected therapist does not match the therapist preference.'
                 )
+
+        if client_gender == 'female' and therapist_preference != 'female':
+            self.add_error(
+                'therapist_preference',
+                'Female clients must select a female therapist preference.'
+            )
 
         if date and time_val and services and therapist:
             import datetime

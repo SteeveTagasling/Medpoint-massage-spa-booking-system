@@ -1,0 +1,28 @@
+<div class="card booking-combined-revenue">
+    <div class="card-header">
+        <span class="card-header-title">COMBINED TOTAL REVENUE</span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table booking-combined-revenue-table">
+            <tbody>
+                {% for group in booking_category_groups %}
+                <tr>
+                    <td class="text-left">{{ group.name }}</td>
+                    <td class="text-right">₱{{ group.subtotal|floatformat:"2g" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td class="text-left">No booking revenue recorded</td>
+                    <td class="text-right">₱0.00</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td class="text-left"><strong>TOTAL REVENUE</strong></td>
+                    <td class="text-right"><strong>₱{{ booking_category_total|floatformat:"2g" }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>

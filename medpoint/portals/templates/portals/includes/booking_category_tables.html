@@ -1,0 +1,66 @@
+{% for group in booking_category_groups %}
+<div class="card booking-category-card">
+    <div class="card-header">
+        <span class="card-header-title">
+            <i class="fas fa-layer-group booking-category-icon"></i>
+            {{ group.name }}
+        </span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table booking-list-table category-booking-table">
+            <colgroup>
+                <col style="width: 6%;">
+                <col style="width: 17%;">
+                <col style="width: 20%;">
+                <col style="width: 12%;">
+                <col style="width: 12%;">
+                <col style="width: 7%;">
+                <col style="width: 6%;">
+                <col style="width: 9%;">
+                <col style="width: 11%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th class="text-center">BK ID</th>
+                    <th class="text-left">Client Name</th>
+                    <th class="text-left">Service</th>
+                    <th class="text-left">Therapist</th>
+                    <th class="text-center">Date</th>
+                    <th class="text-center">Time</th>
+                    <th class="text-center">Type</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-right">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in group.rows %}
+                <tr>
+                    <td class="text-center" style="white-space:nowrap;">{{ row.booking.pk|stringformat:"04d" }}</td>
+                    <td class="text-left" style="font-weight:500;">{{ row.booking.client_name }}</td>
+                    <td class="text-left">{{ row.service_name }}</td>
+                    <td class="text-left">{% if row.booking.therapist %}{{ row.booking.therapist.name }}{% else %}—{% endif %}</td>
+                    <td class="text-center" style="white-space:nowrap;">{{ row.booking.date|date:"F d, Y" }}</td>
+                    <td class="text-center" style="white-space:nowrap;">{{ row.booking.get_time_display }}</td>
+                    <td class="text-center">{{ row.booking.get_booking_type_display }}</td>
+                    <td class="text-center">{{ row.booking.get_status_display }}</td>
+                    <td class="text-right revenue-highlight" style="white-space:nowrap;">₱{{ row.amount|floatformat:"2g" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="8" class="text-right booking-category-subtotal-label">SUBTOTAL</td>
+                    <td class="text-right revenue-highlight" style="white-space:nowrap;">₱{{ group.subtotal|floatformat:"2g" }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% empty %}
+<div class="card booking-category-empty">
+    <div class="empty-state">
+        <i class="fas fa-calendar-times"></i>
+        <p>No bookings found for this period</p>
+    </div>
+</div>
+{% endfor %}

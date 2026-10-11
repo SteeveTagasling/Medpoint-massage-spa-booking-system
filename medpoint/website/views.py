@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django.db import transaction
 from django.db.models import Avg, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -94,18 +95,15 @@ def _get_site_stats():
 
 
 def home(request):
-    """Homepage view with featured services, testimonials, and gallery."""
+    """Homepage view with active services, testimonials, and gallery."""
     Service.sync_all_for_today()
-    featured_services = Service.objects.filter(is_featured=True, is_active=True)[:6]
-    all_services = Service.objects.filter(is_active=True)[:8]
+    active_services = Service.objects.filter(is_active=True)[:8]
     testimonials = Testimonial.objects.filter(is_featured=True, is_approved=True)[:6]
     gallery_images = GalleryImage.objects.filter(is_active=True)[:8]
     therapists = Therapist.objects.filter(is_active=True)[:4]
 
-    services_to_show = featured_services if featured_services.exists() else all_services
-
     context = {
-        'services': services_to_show,
+        'services': active_services,
         'testimonials': testimonials,
         'gallery_images': gallery_images,
         'therapists': therapists,
@@ -652,6 +650,10 @@ def my_bookings(request):
         bookings = Booking.objects.filter(
             client_email__iexact=email
         ).exclude(status='awaiting_verification').select_related('therapist').prefetch_related('services').order_by('-created_at')
+        notifications = BookingNotification.objects.filter(
+            booking__client_email__iexact=email,
+            is_read=False,
+        ).select_related('booking').distinct().order_by('-created_at')
         has_completed_booking = bookings.filter(status='completed').exists()
         if has_completed_booking:
             completed_services = Service.objects.filter(
@@ -980,48 +982,89 @@ def verify_booking(request):
         
     if request.method == 'POST':
         entered_otp = request.POST.get('otp', '').strip()
-        bookings = Booking.objects.filter(pk__in=booking_ids)
-        
-        first_booking = bookings.first()
-        if first_booking and first_booking.verification_otp == entered_otp:
-            current_booking_ids = list(bookings.values_list('pk', flat=True))
-            duplicate_names = []
-            submitted_names = set()
-            for booking_obj in bookings:
-                normalized_name = ' '.join(booking_obj.client_name.casefold().split())
-                if (
-                    normalized_name in submitted_names
-                    or duplicate_booking_exists(
-                        booking_obj.client_name,
-                        booking_obj.date,
-                        booking_obj.time,
-                        exclude_booking_ids=current_booking_ids,
-                    )
-                ):
-                    duplicate_names.append(booking_obj.client_name)
-                submitted_names.add(normalized_name)
+        requested_bookings = list(
+            Booking.objects.filter(pk__in=booking_ids).order_by('pk')
+        )
 
-            if duplicate_names:
-                names = ', '.join(sorted(set(duplicate_names), key=str.casefold))
-                messages.error(
-                    request,
-                    f'Unable to verify this appointment because {names} already has a '
-                    'booking at the selected date and time. Please choose a different '
-                    'date or time.'
+        if requested_bookings:
+            # Lock every submitted request for the requested slot. Competing OTP
+            # verifications are therefore serialized: the first transaction that
+            # verifies wins, and the next one sees that the slot is already taken.
+            slot_filter = Q()
+            for booking_obj in requested_bookings:
+                slot_filter |= Q(date=booking_obj.date, time=booking_obj.time)
+
+            with transaction.atomic():
+                locked_slot_bookings = list(
+                    Booking.objects.select_for_update()
+                    .filter(slot_filter)
+                    .order_by('pk')
                 )
-                return redirect('website:booking')
+                current_booking_ids = {
+                    booking_obj.pk for booking_obj in requested_bookings
+                }
+                bookings = [
+                    booking_obj for booking_obj in locked_slot_bookings
+                    if booking_obj.pk in current_booking_ids
+                ]
+                first_booking = bookings[0] if bookings else None
 
-            bookings.update(is_verified=True, verification_otp=None, status='pending')
-            
-            is_family = len(booking_ids) > 1
-            if is_family:
-                messages.success(request, f'Family appointment verified successfully for {len(booking_ids)} members! We will confirm your appointments shortly.')
-            else:
-                messages.success(request, f'Your appointment has been verified successfully! Booking reference: #{first_booking.pk:04d}. We will confirm your appointment shortly.')
-                
-            return redirect('website:booking_success')
-        else:
-            messages.error(request, 'Invalid OTP. Please try again.')
+                if first_booking and first_booking.verification_otp == entered_otp:
+                    slot_is_taken = any(
+                        booking_obj.pk not in current_booking_ids
+                        and booking_obj.is_verified
+                        and booking_obj.status != 'cancelled'
+                        for booking_obj in locked_slot_bookings
+                    )
+                    if slot_is_taken:
+                        messages.error(
+                            request,
+                            'The selected date and time are already booked. '
+                            'Please choose a different date or time.'
+                        )
+                        return redirect('website:booking')
+
+                    duplicate_names = []
+                    submitted_names = set()
+                    for booking_obj in bookings:
+                        normalized_name = ' '.join(booking_obj.client_name.casefold().split())
+                        if (
+                            normalized_name in submitted_names
+                            or duplicate_booking_exists(
+                                booking_obj.client_name,
+                                booking_obj.date,
+                                booking_obj.time,
+                                exclude_booking_ids=current_booking_ids,
+                            )
+                        ):
+                            duplicate_names.append(booking_obj.client_name)
+                        submitted_names.add(normalized_name)
+
+                    if duplicate_names:
+                        names = ', '.join(sorted(set(duplicate_names), key=str.casefold))
+                        messages.error(
+                            request,
+                            f'Unable to verify this appointment because {names} already has a '
+                            'booking at the selected date and time. Please choose a different '
+                            'date or time.'
+                        )
+                        return redirect('website:booking')
+
+                    Booking.objects.filter(pk__in=current_booking_ids).update(
+                        is_verified=True,
+                        verification_otp=None,
+                        status='pending',
+                    )
+
+                    is_family = len(current_booking_ids) > 1
+                    if is_family:
+                        messages.success(request, f'Family appointment verified successfully for {len(current_booking_ids)} members! We will confirm your appointments shortly.')
+                    else:
+                        messages.success(request, f'Your appointment has been verified successfully! Booking reference: #{first_booking.pk:04d}. We will confirm your appointment shortly.')
+
+                    return redirect('website:booking_success')
+
+        messages.error(request, 'Invalid OTP. Please try again.')
             
     return render(request, 'website/booking_verify.html', {'booking_ids': booking_ids})
 

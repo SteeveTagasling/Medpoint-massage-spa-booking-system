@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Discount applied to your MedPoint booking</title>
+</head>
+<body style="margin:0;padding:0;background:#f3eff8;font-family:Arial,Helvetica,sans-serif;color:#281c38;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3eff8;">
+    <tr>
+        <td align="center" style="padding:32px 14px;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:620px;background:#ffffff;border:1px solid #e6d9f4;border-radius:20px;overflow:hidden;box-shadow:0 12px 34px rgba(82,35,120,.14);">
+                <tr>
+                    <td align="center" style="padding:30px 28px;background:#251235;background-image:linear-gradient(135deg,#20102f 0%,#5b1f86 58%,#8b2be2 100%);">
+                        <div style="display:inline-block;width:48px;height:48px;line-height:48px;border-radius:14px;background:#9233ea;color:#ffffff;font-size:25px;font-weight:bold;text-align:center;margin-bottom:12px;">✦</div>
+                        <div style="color:#ffffff;font-family:Georgia,'Times New Roman',serif;font-size:25px;font-weight:700;letter-spacing:.8px;">MEDPOINT</div>
+                        <div style="margin-top:4px;color:#dcc5f3;font-size:11px;font-weight:700;letter-spacing:3px;">MASSAGE &amp; SPA</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:34px 34px 10px;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td style="vertical-align:top;">
+                                    <div style="color:#7e22ce;font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;">A little wellness bonus</div>
+                                    <h1 style="margin:8px 0 8px;color:#281436;font-family:Georgia,'Times New Roman',serif;font-size:29px;line-height:1.15;">Your booking just got better!</h1>
+                                    <p style="margin:0;color:#756581;font-size:14px;line-height:1.6;">Hi {{ client_name }}, a new promotion has been applied automatically to your appointment.</p>
+                                </td>
+                                <td width="118" align="right" style="vertical-align:top;padding-left:14px;">
+                                    <div style="display:inline-block;padding:13px 15px;border-radius:14px;background:#f0e3ff;border:1px solid #d8b4fe;color:#7e22ce;font-size:21px;font-weight:900;white-space:nowrap;">{{ discount_percentage|floatformat:"-2" }}% OFF</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:18px 34px 0;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#faf7fd;border:1px solid #eadff3;border-radius:14px;">
+                            <tr>
+                                <td style="padding:20px 22px;">
+                                    <div style="margin-bottom:14px;color:#7e22ce;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;">Booking #{{ booking_id|stringformat:"04d" }}</div>
+                                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                        <tr>
+                                            <td style="padding:5px 0;color:#80728b;font-size:13px;">Service</td>
+                                            <td align="right" style="padding:5px 0;color:#30223b;font-size:13px;font-weight:700;">{{ service_name }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:5px 0;color:#80728b;font-size:13px;">Schedule</td>
+                                            <td align="right" style="padding:5px 0;color:#30223b;font-size:13px;font-weight:700;">{{ booking_date|date:"F d, Y" }} at {{ booking_time }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:5px 0;color:#80728b;font-size:13px;">Therapist</td>
+                                            <td align="right" style="padding:5px 0;color:#30223b;font-size:13px;font-weight:700;">{{ therapist_name }}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:18px 34px 0;">
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #dec8f2;border-radius:14px;">
+                            <tr>
+                                <td style="padding:18px 22px;color:#756581;font-size:13px;">Previous service price</td>
+                                <td align="right" style="padding:18px 22px;color:#94879e;font-size:14px;text-decoration:line-through;">₱{{ old_service_price|floatformat:"2g" }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:0 22px 18px;color:#5b1f86;font-size:13px;font-weight:800;">Your discounted price</td>
+                                <td align="right" style="padding:0 22px 18px;color:#7e22ce;font-size:21px;font-weight:900;">₱{{ discounted_price|floatformat:"2g" }}</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="padding:0 22px;"><div style="height:1px;background:#eadff3;"></div></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:18px 22px;color:#30223b;font-size:14px;font-weight:800;">Updated Booking Total</td>
+                                <td align="right" style="padding:18px 22px;color:#15945f;font-size:22px;font-weight:900;">₱{{ updated_total|floatformat:"2g" }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:22px 34px 34px;">
+                        <div style="padding:15px 18px;border-radius:12px;background:#f3eafd;color:#5f4b6b;font-size:13px;line-height:1.55;text-align:center;">
+                            <strong style="color:#7e22ce;">No action needed.</strong> Your booking and total price have already been updated.
+                        </div>
+                        <p style="margin:24px 0 0;color:#756581;font-size:13px;line-height:1.6;">We look forward to welcoming you for a relaxing MedPoint experience.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" style="padding:21px 28px;background:#170c22;border-top:1px solid #352044;">
+                        <div style="color:#d8c2ea;font-size:12px;font-weight:700;">MedPoint Massage &amp; Spa</div>
+                        <div style="margin-top:6px;color:#8f7a9f;font-size:11px;">Gallares Street, Tagbilaran City, Bohol, Philippines</div>
+                        <div style="margin-top:8px;color:#705d7f;font-size:10px;">This is an automatic booking update.</div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

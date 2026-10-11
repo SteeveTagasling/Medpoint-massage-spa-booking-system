@@ -535,6 +535,68 @@ def _get_booking_report_snapshots(booking):
     return snapshots
 
 
+def _get_booking_category_groups(bookings):
+    """Group booking-service rows by their current primary service category."""
+    booking_list = list(bookings)
+    service_ids = {
+        snapshot.get('service_id')
+        for booking in booking_list
+        for snapshot in _get_booking_report_snapshots(booking)
+        if snapshot.get('service_id')
+    }
+    services_by_id = {
+        service.pk: service
+        for service in Service.objects.filter(pk__in=service_ids)
+    }
+    category_records = list(ServiceCategory.objects.all().order_by('order', 'name'))
+    category_names = {category.code: category.name for category in category_records}
+    category_order = {category.code: index for index, category in enumerate(category_records)}
+    legacy_names = dict(Service.CATEGORY_CHOICES)
+    groups = {}
+
+    for booking in booking_list:
+        for snapshot in _get_booking_report_snapshots(booking):
+            service = services_by_id.get(snapshot.get('service_id'))
+            if snapshot.get('is_addon'):
+                category_code = 'add_ons'
+                category_name = 'Add-ons'
+                order = len(category_order) + 100
+            elif service:
+                service_categories = [
+                    value.strip() for value in (service.category or '').split(',')
+                    if value.strip()
+                ]
+                category_code = service_categories[0] if service_categories else 'uncategorized'
+                category_name = category_names.get(
+                    category_code,
+                    legacy_names.get(category_code, category_code.replace('_', ' ').title()),
+                )
+                order = category_order.get(category_code, len(category_order) + 10)
+            else:
+                category_name = snapshot.get('category_label') or 'Other Services'
+                category_code = str(category_name).lower().replace(' ', '_')
+                order = len(category_order) + 50
+
+            amount = Decimal(str(
+                snapshot.get('discounted_price', snapshot.get('base_price', 0))
+            )).quantize(Decimal('0.01'))
+            group = groups.setdefault(category_code, {
+                'code': category_code,
+                'name': category_name,
+                'order': order,
+                'rows': [],
+                'subtotal': Decimal('0'),
+            })
+            group['rows'].append({
+                'booking': booking,
+                'service_name': snapshot.get('name', 'Service'),
+                'amount': amount,
+            })
+            group['subtotal'] += amount
+
+    return sorted(groups.values(), key=lambda group: (group['order'], group['name']))
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  DASHBOARD
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -558,7 +620,7 @@ def dashboard(request):
     unread_messages = ContactMessage.objects.filter(is_read=False).count()
     online_bookings = Booking.objects.filter(booking_type='online', is_verified=True).count()
     walkin_bookings = Booking.objects.filter(booking_type='walk_in').count()
-    recent_bookings = Booking.objects.filter(Q(booking_type='walk_in') | Q(is_verified=True)).select_related('therapist').prefetch_related('services').order_by('-created_at')[:8]
+    recent_bookings = Booking.objects.filter(Q(booking_type='walk_in') | Q(is_verified=True)).select_related('therapist').prefetch_related('services').order_by('-created_at', '-pk')[:5]
 
     context = {
         'total_bookings': total_bookings,
@@ -792,8 +854,8 @@ def booking_list(request):
     service_filter = request.GET.get('service', '')
     show_filter = request.GET.get('show', '')  # '' = active, 'archived' = archived
 
-    # Include online requests that are still waiting for OTP verification so
-    # administrators can see every submission and its actual state.
+    # Keep awaiting-verification requests visible in Bookings so administrators
+    # can review every submitted request. Calendar applies stricter visibility.
     base_qs = Booking.objects.select_related('therapist').prefetch_related('services').order_by('-created_at')
 
     if show_filter == 'archived':
@@ -835,6 +897,81 @@ def booking_list(request):
         'services': services,
     }
     return render(request, 'portals/booking_list.html', context)
+
+
+@login_required(login_url='portals:login')
+def booking_detail(request, pk):
+    """Show the full booking and its locked, client-facing price breakdown."""
+    if not request.user.is_staff:
+        return redirect('portals:login')
+
+    booking_queryset = Booking.objects.select_related('therapist').prefetch_related('services')
+    if request.user.is_superuser:
+        booking = get_object_or_404(booking_queryset, pk=pk)
+        back_url_name = 'portals:booking_list'
+    else:
+        therapist = _get_staff_therapist(request)
+        if therapist is None:
+            messages.error(request, 'Your account is not linked to a therapist profile.')
+            return redirect('portals:staff_my_bookings')
+        booking = get_object_or_404(booking_queryset, pk=pk, therapist=therapist)
+        back_url_name = 'portals:staff_my_bookings'
+
+    price_rows = []
+    total_original = Decimal('0')
+    calculated_total = Decimal('0')
+    for snapshot in _get_booking_report_snapshots(booking):
+        original_price = Decimal(str(snapshot.get('base_price', 0))).quantize(Decimal('0.01'))
+        final_price = Decimal(str(
+            snapshot.get('discounted_price', original_price)
+        )).quantize(Decimal('0.01'))
+        discount_percentage = Decimal(str(
+            snapshot.get('discount_percentage', 0)
+        )).quantize(Decimal('0.01'))
+        savings = max(original_price - final_price, Decimal('0'))
+        has_discount = discount_percentage > 0 and savings > 0
+
+        promo_from = snapshot.get('promo_effective_from')
+        promo_to = snapshot.get('promo_effective_to')
+        try:
+            promo_from = date.fromisoformat(promo_from) if promo_from else None
+        except (TypeError, ValueError):
+            promo_from = None
+        try:
+            promo_to = date.fromisoformat(promo_to) if promo_to else None
+        except (TypeError, ValueError):
+            promo_to = None
+
+        price_rows.append({
+            'name': snapshot.get('name', 'Service'),
+            'category_label': snapshot.get('category_label', '—'),
+            'original_price': original_price,
+            'discount_percentage': discount_percentage,
+            'final_price': final_price,
+            'savings': savings,
+            'has_discount': has_discount,
+            'is_addon': bool(snapshot.get('is_addon')),
+            'promo_from': promo_from,
+            'promo_to': promo_to,
+        })
+        total_original += original_price
+        calculated_total += final_price
+
+    final_total = (
+        Decimal(str(booking.locked_price)).quantize(Decimal('0.01'))
+        if booking.locked_price is not None else calculated_total
+    )
+    total_savings = max(total_original - final_total, Decimal('0'))
+
+    return render(request, 'portals/booking_detail.html', {
+        'booking': booking,
+        'price_rows': price_rows,
+        'total_original': total_original,
+        'final_total': final_total,
+        'total_savings': total_savings,
+        'has_any_discount': any(row['has_discount'] for row in price_rows),
+        'back_url_name': back_url_name,
+    })
 
 
 @login_required(login_url='portals:login')
@@ -1436,7 +1573,8 @@ def booking_archive(request, pk):
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
-    booking = get_object_or_404(Booking, pk=pk)
+    booking = get_object_or_404(Booking.objects.prefetch_related('services'), pk=pk)
+    booking.preserve_service_snapshot()
     booking.is_archived = True
     booking.save(update_fields=['is_archived'])
     return JsonResponse({'success': True, 'is_archived': True})
@@ -1449,7 +1587,8 @@ def booking_restore(request, pk):
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
-    booking = get_object_or_404(Booking, pk=pk)
+    booking = get_object_or_404(Booking.objects.prefetch_related('services'), pk=pk)
+    booking.restore_service_links_from_snapshot()
     booking.is_archived = False
     booking.save(update_fields=['is_archived'])
     return JsonResponse({'success': True, 'is_archived': False})
@@ -1468,8 +1607,11 @@ def booking_bulk_archive(request):
         ids = [int(i) for i in data.get('ids', [])]
     except Exception:
         return JsonResponse({'error': 'Invalid payload'}, status=400)
-    Booking.objects.filter(pk__in=ids).update(is_archived=True)
-    return JsonResponse({'success': True, 'count': len(ids)})
+    bookings = list(Booking.objects.filter(pk__in=ids).prefetch_related('services'))
+    for booking in bookings:
+        booking.preserve_service_snapshot()
+    Booking.objects.filter(pk__in=[booking.pk for booking in bookings]).update(is_archived=True)
+    return JsonResponse({'success': True, 'count': len(bookings)})
 
 
 @login_required(login_url='portals:login')
@@ -1485,8 +1627,11 @@ def booking_bulk_restore(request):
         ids = [int(i) for i in data.get('ids', [])]
     except Exception:
         return JsonResponse({'error': 'Invalid payload'}, status=400)
-    Booking.objects.filter(pk__in=ids).update(is_archived=False)
-    return JsonResponse({'success': True, 'count': len(ids)})
+    bookings = list(Booking.objects.filter(pk__in=ids).prefetch_related('services'))
+    for booking in bookings:
+        booking.restore_service_links_from_snapshot()
+    Booking.objects.filter(pk__in=[booking.pk for booking in bookings]).update(is_archived=False)
+    return JsonResponse({'success': True, 'count': len(bookings)})
 
 
 @login_required(login_url='portals:login')
@@ -1512,6 +1657,9 @@ def service_list(request):
     # Both admin and staff can manage services
     search_query = request.GET.get('q', '').strip()
     category_filter = request.GET.get('category', '')
+    status_filter = request.GET.get('status', '')
+    if status_filter not in {'', 'active', 'inactive'}:
+        status_filter = ''
     services = Service.objects.all()
     if search_query:
         matching_category_codes = ServiceCategory.objects.filter(
@@ -1533,10 +1681,15 @@ def service_list(request):
             | Q(category__endswith=f',{category_filter}')
             | Q(category__contains=f',{category_filter},')
         )
+    if status_filter == 'active':
+        services = services.filter(is_active=True)
+    elif status_filter == 'inactive':
+        services = services.filter(is_active=False)
     context = {
         'services': services,
         'categories': ServiceCategory.choices(include_inactive=True),
         'category_filter': category_filter,
+        'status_filter': status_filter,
         'search_query': search_query,
     }
     return render(request, 'portals/service_list.html', context)
@@ -1580,12 +1733,11 @@ def service_edit(request, pk):
         return check
     service = get_object_or_404(Service, pk=pk)
     old_price = service.price
-    old_discount = service.discount_percentage
     if request.method == 'POST':
         form = ServiceForm(request.POST, request.FILES, instance=service)
         if form.is_valid():
             service = form.save()
-            if service.price != old_price or service.discount_percentage != old_discount:
+            if service.price != old_price:
                 from website.models import ServicePriceHistory
                 today = timezone.now().date()
                 # Close previous active record
@@ -1593,8 +1745,6 @@ def service_edit(request, pk):
                 note_parts = []
                 if service.price != old_price:
                     note_parts.append(f"Price: ₱{old_price} ➔ ₱{service.price}")
-                if service.discount_percentage != old_discount:
-                    note_parts.append(f"Discount: {old_discount}% ➔ {service.discount_percentage}%")
                 ServicePriceHistory.objects.create(
                     service=service,
                     base_price=service.price,
@@ -2669,10 +2819,14 @@ def booking_calendar(request):
 
     # For staff role, only show their bookings
     bookings_qs = Booking.objects.select_related('therapist').prefetch_related('services').filter(
-        date__gte=month_start, date__lte=month_end
+        Q(booking_type='walk_in') | Q(is_verified=True) | Q(status__in=['confirmed', 'completed']),
+        date__gte=month_start,
+        date__lte=month_end,
+    ).exclude(
+        status='awaiting_verification',
     ).exclude(
         date__lt=today,
-        status__in=['pending', 'awaiting_verification'],
+        status='pending',
     )
     if _is_staff_only(request):
         therapist = _get_staff_therapist(request)
@@ -2683,7 +2837,7 @@ def booking_calendar(request):
 
     calendar_counts = bookings_qs.aggregate(
         total=Count('pk'),
-        pending=Count('pk', filter=Q(status__in=['pending', 'awaiting_verification'])),
+        pending=Count('pk', filter=Q(status='pending')),
         confirmed=Count('pk', filter=Q(status='confirmed')),
         completed=Count('pk', filter=Q(status='completed')),
         cancelled=Count('pk', filter=Q(status='cancelled')),
@@ -2882,11 +3036,13 @@ def admin_reports(request):
         'therapist'
     ).prefetch_related('services')
 
-    # Revenue — sum across all services per booking (M2M)
-    total_revenue = Decimal('0')
-    for b in completed:
-        for svc in b.services.all():
-            total_revenue += svc.discounted_price
+    # Use the amount locked on each booking. Promotions applied after the
+    # booking was created update this value, so report revenue and commission
+    # both reflect the price the client will actually pay.
+    total_revenue = sum(
+        (booking.total_discounted_price for booking in completed),
+        Decimal('0'),
+    )
 
     total_completed = completed.count()
 
@@ -2908,10 +3064,10 @@ def admin_reports(request):
     for t in therapists:
         t_bookings = completed.filter(therapist=t)
         t_count = t_bookings.count()
-        t_revenue = Decimal('0')
-        for b in t_bookings:
-            for svc in b.services.all():
-                t_revenue += svc.discounted_price
+        t_revenue = sum(
+            (booking.total_discounted_price for booking in t_bookings),
+            Decimal('0'),
+        )
         t_commission = t_revenue * (t.commission_percentage / Decimal('100'))
         total_commission += t_commission
         staff_data.append({
@@ -2944,6 +3100,11 @@ def admin_reports(request):
     report_service_tables = _get_report_service_tables(
         completed.order_by('date', 'time', 'created_at')
     )
+    booking_category_groups = _get_booking_category_groups(all_bookings_in_period)
+    booking_category_total = sum(
+        (group['subtotal'] for group in booking_category_groups),
+        Decimal('0'),
+    )
     total_revenue = report_service_tables['combined_revenue']
 
     from urllib.parse import urlencode
@@ -2971,7 +3132,10 @@ def admin_reports(request):
         'total_commission': total_commission,
         'total_bookings_period': total_bookings_period,
         'all_bookings_in_period': all_bookings_in_period,
+        'booking_category_groups': booking_category_groups,
+        'booking_category_total': booking_category_total,
         'staff_data': staff_data,
+        'active_therapist_count': therapists.count(),
         'service_breakdown': service_breakdown,
         **report_service_tables,
         'generated_date': timezone.localdate(),
@@ -3350,6 +3514,193 @@ def price_checker(request):
     return render(request, 'portals/price_checker.html', context)
 
 
+def _apply_discount_to_existing_bookings(price_record):
+    """Apply a newly scheduled discount to active bookings in its date range."""
+    if price_record.discount_percentage <= 0:
+        return 0
+
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from website.models import BookingNotification
+
+    service = price_record.service
+    discounted_price = price_record.discounted_price.quantize(Decimal('0.01'))
+    affected_emails = []
+    updated_count = 0
+
+    with transaction.atomic():
+        bookings = Booking.objects.select_for_update().filter(
+            services=service,
+            date__gte=price_record.effective_from,
+            status__in=['pending', 'confirmed'],
+        ).filter(
+            Q(is_verified=True) | Q(booking_type='walk_in')
+        )
+        if price_record.effective_to:
+            bookings = bookings.filter(date__lte=price_record.effective_to)
+        # A booking-service relation is unique, so no DISTINCT is needed; this
+        # also keeps SELECT FOR UPDATE compatible with PostgreSQL.
+        bookings = bookings.prefetch_related('services').order_by('pk')
+
+        for booking in bookings:
+            snapshots = [dict(item) for item in (booking.service_prices_snapshot or [])]
+            target_index = next((
+                index for index, item in enumerate(snapshots)
+                if str(item.get('service_id')) == str(service.pk)
+            ), None)
+
+            # Rebuild legacy snapshots using the rate effective on the booking date.
+            if target_index is None:
+                snapshots = []
+                for booked_service in booking.services.all():
+                    effective_records = booked_service.price_history.filter(
+                        effective_from__lte=booking.date,
+                    ).filter(
+                        Q(effective_to__isnull=True)
+                        | Q(effective_to__gte=booking.date)
+                    )
+                    if booked_service.pk == service.pk:
+                        # Reconstruct the price that was in effect before this
+                        # newly-created promotion was added.
+                        effective_records = effective_records.exclude(pk=price_record.pk)
+                    effective_record = effective_records.order_by(
+                        '-effective_from', '-created_at'
+                    ).first()
+                    base_price = (
+                        effective_record.base_price
+                        if effective_record else booked_service.price
+                    )
+                    discount = (
+                        effective_record.discount_percentage
+                        if effective_record else Decimal('0')
+                    )
+                    final_price = (
+                        effective_record.discounted_price
+                        if effective_record else base_price
+                    )
+                    snapshots.append({
+                        'service_id': booked_service.pk,
+                        'name': booked_service.name,
+                        'category_label': booked_service.get_category_display,
+                        'base_price': float(base_price),
+                        'discount_percentage': float(discount),
+                        'discounted_price': float(final_price),
+                        'promo_effective_from': (
+                            effective_record.effective_from.isoformat()
+                            if effective_record and discount > 0 else None
+                        ),
+                        'promo_effective_to': (
+                            effective_record.effective_to.isoformat()
+                            if effective_record and effective_record.effective_to and discount > 0
+                            else None
+                        ),
+                    })
+                if booking.additional_minutes:
+                    fee = booking.additional_time_fee
+                    snapshots.append({
+                        'service_id': None,
+                        'name': f'Additional Massage Time ({booking.additional_minutes} min)',
+                        'category_label': 'Add-on',
+                        'base_price': float(fee),
+                        'discount_percentage': 0.0,
+                        'discounted_price': float(fee),
+                        'is_addon': True,
+                        'duration_minutes': booking.additional_minutes,
+                    })
+                target_index = next((
+                    index for index, item in enumerate(snapshots)
+                    if str(item.get('service_id')) == str(service.pk)
+                ), None)
+
+            if target_index is None:
+                continue
+
+            old_service_price = Decimal(str(
+                snapshots[target_index].get(
+                    'discounted_price',
+                    snapshots[target_index].get('base_price', service.price),
+                )
+            )).quantize(Decimal('0.01'))
+
+            # A promotion may lower a locked price, but never raise it later.
+            if discounted_price >= old_service_price:
+                continue
+
+            snapshots[target_index].update({
+                'service_id': service.pk,
+                'name': service.name,
+                'category_label': service.get_category_display,
+                'base_price': float(price_record.base_price),
+                'discount_percentage': float(price_record.discount_percentage),
+                'discounted_price': float(discounted_price),
+                'promo_effective_from': price_record.effective_from.isoformat(),
+                'promo_effective_to': (
+                    price_record.effective_to.isoformat()
+                    if price_record.effective_to else None
+                ),
+            })
+            updated_total = sum(
+                (Decimal(str(item.get('discounted_price', 0))) for item in snapshots),
+                Decimal('0'),
+            ).quantize(Decimal('0.01'))
+            booking.service_prices_snapshot = snapshots
+            booking.locked_price = updated_total
+            booking.save(update_fields=['service_prices_snapshot', 'locked_price'])
+
+            notification_message = (
+                f'A {price_record.discount_percentage:g}% discount was applied to '
+                f'{service.name} for your booking on {booking.date.strftime("%B %d, %Y")}. '
+                f'The service price was reduced from ₱{old_service_price:,.2f} to '
+                f'₱{discounted_price:,.2f}. Your updated booking total is '
+                f'₱{updated_total:,.2f}.'
+            )
+            BookingNotification.objects.create(
+                booking=booking,
+                notification_type='reminder',
+                message=notification_message,
+            )
+            affected_emails.append({
+                'email': booking.client_email,
+                'booking_id': booking.pk,
+                'client_name': booking.client_name,
+                'service_name': service.name,
+                'discount_percentage': price_record.discount_percentage,
+                'booking_date': booking.date,
+                'booking_time': booking.get_time_display(),
+                'therapist_name': (
+                    booking.therapist.name if booking.therapist else 'To be assigned'
+                ),
+                'old_service_price': old_service_price,
+                'discounted_price': discounted_price,
+                'updated_total': updated_total,
+                'notification_message': notification_message,
+            })
+            updated_count += 1
+
+    for email_context in affected_emails:
+        if email_context['email']:
+            plain_message = (
+                f"Hello {email_context['client_name']},\n\n"
+                f"{email_context['notification_message']}\n\n"
+                'No action is required. Your booking has already been updated.\n\n'
+                'Thank you,\nMedpoint Massage & Spa'
+            )
+            html_message = render_to_string(
+                'website/emails/discount_applied.html',
+                email_context,
+            )
+            send_mail(
+                subject=f"Discount applied to booking #{email_context['booking_id']:04d}",
+                message=plain_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email_context['email']],
+                html_message=html_message,
+                fail_silently=True,
+            )
+
+    return updated_count
+
+
 @login_required(login_url='portals:login')
 def price_checker_add_record(request):
     """Admin manually adds or schedules a price change record."""
@@ -3361,7 +3712,6 @@ def price_checker_add_record(request):
         from website.models import Service, ServicePriceHistory
         from datetime import datetime
         service_id = request.POST.get('service_id')
-        base_price_str = request.POST.get('base_price')
         discount_percentage_str = request.POST.get('discount_percentage', '0')
         effective_from_str = request.POST.get('effective_from')
         effective_to_str = request.POST.get('effective_to')
@@ -3370,7 +3720,7 @@ def price_checker_add_record(request):
 
         try:
             service = Service.objects.get(pk=int(service_id))
-            base_price = Decimal(base_price_str)
+            base_price = service.price
             discount_percentage = Decimal(discount_percentage_str or '0')
             effective_from = datetime.strptime(effective_from_str, '%Y-%m-%d').date()
             effective_to = datetime.strptime(effective_to_str, '%Y-%m-%d').date() if effective_to_str else None
@@ -3388,7 +3738,7 @@ def price_checker_add_record(request):
 
             is_effective_today = (effective_from <= today) and (effective_to is None or effective_to >= today)
 
-            ServicePriceHistory.objects.create(
+            price_record = ServicePriceHistory.objects.create(
                 service=service,
                 base_price=base_price,
                 discount_percentage=discount_percentage,
@@ -3410,11 +3760,19 @@ def price_checker_add_record(request):
 
             # Ensure all services' rates and statuses are kept in sync
             Service.sync_all_for_today()
+            affected_bookings = _apply_discount_to_existing_bookings(price_record)
 
             if effective_from > today:
                 messages.success(request, f'Price schedule for "{service.name}" saved! It will automatically become effective on {effective_from.strftime("%b %d, %Y")}.')
             else:
                 messages.success(request, f'Price record for "{service.name}" added successfully.')
+            if affected_bookings:
+                booking_label = 'booking' if affected_bookings == 1 else 'bookings'
+                messages.success(
+                    request,
+                    f'The discounted price was applied to {affected_bookings} existing '
+                    f'{booking_label}, and the affected clients were notified.'
+                )
         except Exception as e:
             messages.error(request, f'Failed to add price record: {e}')
 
@@ -3465,7 +3823,6 @@ def price_checker_update_record(request, pk):
                 messages.error(request, 'Only scheduled (future) price records can be edited.')
                 return redirect(f"{reverse('portals:price_checker')}?tab=history")
 
-            base_price_str = request.POST.get('base_price')
             discount_str = request.POST.get('discount_percentage', '0')
             from_str = request.POST.get('effective_from')
             to_str = request.POST.get('effective_to', '')
@@ -3483,7 +3840,6 @@ def price_checker_update_record(request, pk):
                 messages.error(request, 'Effective Until must be on or after Effective From.')
                 return redirect(f"{reverse('portals:price_checker')}?tab=history")
 
-            record.base_price = Decimal(base_price_str)
             record.discount_percentage = Decimal(discount_str or '0')
             record.effective_from = effective_from
             record.effective_to = effective_to
@@ -3492,7 +3848,15 @@ def price_checker_update_record(request, pk):
 
             # Re-sync all services' live rates and statuses
             Service.sync_all_for_today()
+            affected_bookings = _apply_discount_to_existing_bookings(record)
             messages.success(request, f'Scheduled price for "{record.service.name}" updated successfully and all statuses refreshed.')
+            if affected_bookings:
+                booking_label = 'booking' if affected_bookings == 1 else 'bookings'
+                messages.success(
+                    request,
+                    f'The discounted price was applied to {affected_bookings} existing '
+                    f'{booking_label}, and the affected clients were notified.'
+                )
         except ServicePriceHistory.DoesNotExist:
             messages.error(request, 'Price record not found.')
         except Exception as e:
@@ -3661,6 +4025,15 @@ def staff_my_reports(request):
         messages.success(request, "Report filtered by custom date range.")
     start_date, end_date, period_label = _get_date_range(request)
 
+    status_filter = request.GET.get('status', 'all')
+    booking_type_filter = request.GET.get('booking_type', 'all')
+    valid_statuses = {'all', 'confirmed', 'pending', 'completed', 'cancelled'}
+    valid_booking_types = {'all', 'walk_in', 'online'}
+    if status_filter not in valid_statuses:
+        status_filter = 'all'
+    if booking_type_filter not in valid_booking_types:
+        booking_type_filter = 'all'
+
     services_rendered = 0
     total_revenue = Decimal('0')
     commission_earned = Decimal('0')
@@ -3670,6 +4043,8 @@ def staff_my_reports(request):
     online_count = 0
     walkin_count = 0
     report_service_tables = _get_report_service_tables([])
+    booking_category_groups = []
+    booking_category_total = Decimal('0')
 
     if therapist:
         # All bookings in period for this therapist (for the Bookings section)
@@ -3679,6 +4054,10 @@ def staff_my_reports(request):
             date__gte=start_date,
             date__lte=end_date,
         ).prefetch_related('services').order_by('date', 'time', 'created_at')
+        if status_filter != 'all':
+            all_bookings_qs = all_bookings_qs.filter(status=status_filter)
+        if booking_type_filter != 'all':
+            all_bookings_qs = all_bookings_qs.filter(booking_type=booking_type_filter)
 
         all_bookings_in_period = all_bookings_qs
         total_bookings_period = all_bookings_qs.count()
@@ -3699,6 +4078,11 @@ def staff_my_reports(request):
         if therapist.commission_percentage:
             commission_earned = total_revenue * (therapist.commission_percentage / Decimal('100'))
         report_service_tables = _get_report_service_tables(completed)
+        booking_category_groups = _get_booking_category_groups(all_bookings_in_period)
+        booking_category_total = sum(
+            (group['subtotal'] for group in booking_category_groups),
+            Decimal('0'),
+        )
         total_revenue = report_service_tables['combined_revenue']
 
     context = {
@@ -3712,9 +4096,13 @@ def staff_my_reports(request):
         'commission_earned': commission_earned,
         'booking_details': booking_details,
         'all_bookings_in_period': all_bookings_in_period,
+        'booking_category_groups': booking_category_groups,
+        'booking_category_total': booking_category_total,
         'total_bookings_period': total_bookings_period,
         'online_count': online_count,
         'walkin_count': walkin_count,
+        'status_filter': status_filter,
+        'booking_type_filter': booking_type_filter,
         **report_service_tables,
         'generated_date': timezone.localdate(),
         **_get_report_signatory_context(request),

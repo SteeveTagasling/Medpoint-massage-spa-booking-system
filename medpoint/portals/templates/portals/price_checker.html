@@ -942,7 +942,7 @@
             style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem;">
             Month:
         </label>
-        <select name="month" class="pc-select" id="monthDropdown" onchange="clearCustomDatesOnMonthChange();">
+        <select name="month" class="pc-select" id="monthDropdown" onchange="clearCustomDatesOnMonthChange(); this.form.requestSubmit();">
             <option value="">Choose Month...</option>
             {% for m in available_months %}
             <option value="{{ m.value }}" {% if selected_month == m.value %}selected{% endif %}>{{ m.label }}</option>
@@ -952,24 +952,20 @@
         <span style="color: var(--text-muted); font-size: 0.75rem;">or custom range:</span>
 
         <input type="date" name="start_date" id="startDateField" class="pc-input" title="Start Date"
-            oninput="clearMonthOnDateChange();" {% if request.GET.start_date %}value="{{ request.GET.start_date }}"{% endif %}>
+            onchange="clearMonthOnDateChange(); submitPriceCheckerDateRange();" {% if request.GET.start_date %}value="{{ request.GET.start_date }}"{% endif %}>
         <span style="color: var(--text-muted); font-size: 0.75rem;">➔</span>
         <input type="date" name="end_date" id="endDateField" class="pc-input" title="End Date"
-            oninput="clearMonthOnDateChange();" {% if request.GET.end_date %}value="{{ request.GET.end_date }}"{% endif %}>
+            onchange="clearMonthOnDateChange(); submitPriceCheckerDateRange();" {% if request.GET.end_date %}value="{{ request.GET.end_date }}"{% endif %}>
 
         <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-left: 0.35rem;">
             Service:
         </label>
-        <select name="service_id" class="pc-select" style="max-width: 200px;">
+        <select name="service_id" class="pc-select" style="max-width: 200px;" onchange="this.form.requestSubmit()">
             <option value="">All Services</option>
             {% for s in all_services %}
             <option value="{{ s.id }}" {% if selected_service_id == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
             {% endfor %}
         </select>
-
-        <button type="submit" class="btn-pc-primary" style="padding: 0.42rem 0.95rem;">
-            <i class="fas fa-filter"></i> Apply Filter
-        </button>
 
         {% if selected_service_id or request.GET.start_date or request.GET.end_date or request.GET.month %}
         <a href="?tab={{ active_tab }}" class="btn-pc-secondary" style="padding: 0.42rem 0.75rem; font-size: 0.75rem;"
@@ -1009,7 +1005,7 @@
             </div>
 
             <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
-                <span>Audit Period: <strong>{{ period_label }}</strong> vs <strong>Today's Live Catalog</strong></span>
+                <span>Audit Period: <strong>{{ period_label }}</strong> vs <strong>Today's Catalog</strong></span>
             </div>
         </div>
 
@@ -1265,7 +1261,7 @@
                     <option value="">Choose a service...</option>
                     {% for s in all_services %}
                     <option value="{{ s.id }}" data-price="{{ s.price }}" data-discount="{{ s.discount_percentage }}">
-                        {{ s.name }} — ₱{{ s.discounted_price|floatformat:2 }} live
+                        {{ s.name }} — ₱{{ s.discounted_price|floatformat:2 }}
                     </option>
                     {% endfor %}
                 </select>
@@ -1283,7 +1279,8 @@
                             Catalog Price (₱) *</label>
                         <input type="number" step="0.01" min="0" name="base_price" id="modalBasePrice" class="pc-input"
                             inputmode="decimal" onwheel="this.blur()"
-                            style="width:100%;" required placeholder="0.00" oninput="updateModalLiveCalc()">
+                            style="width:100%; cursor:not-allowed; background:var(--bg-secondary);" required placeholder="0.00"
+                            readonly aria-readonly="true">
                     </div>
                     <div>
                         <label
@@ -1362,7 +1359,7 @@
                             style="font-size:0.82rem; font-weight:600; color:var(--text-primary); margin-bottom:0.15rem;">
                             <i class="fas fa-bolt"
                                 style="color:var(--amber-400); font-size:0.78rem; margin-right:0.25rem;"></i>
-                            Push to live catalog immediately
+                            Push to catalog immediately
                         </div>
                         <div style="font-size:0.72rem; color:var(--text-muted); line-height:1.45;">
                             The main spa booking page will reflect this new rate right away.
@@ -1468,7 +1465,7 @@
             </div>
             <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.55; margin: 0;">
                 Are you sure you want to permanently remove this scheduled price record?
-                The live catalog status for all services will be re-synced automatically.
+                The catalog status for all services will be re-synced automatically.
             </p>
         </div>
 
@@ -1520,7 +1517,8 @@
                             Catalog Price (₱) *</label>
                         <input type="number" step="0.01" min="0" name="base_price" id="editBasePrice" class="pc-input"
                             inputmode="decimal" onwheel="this.blur()"
-                            style="width:100%;" required placeholder="0.00" oninput="updateEditLiveCalc()">
+                            style="width:100%; cursor:not-allowed; background:var(--bg-secondary);" required placeholder="0.00"
+                            readonly aria-readonly="true">
                     </div>
                     <div>
                         <label
@@ -1691,7 +1689,7 @@
     }
 
     /* ─── Filter Form Helpers ─── */
-    // When month dropdown changes → clear the custom date inputs (don't auto-submit)
+    // When month dropdown changes → clear the custom date inputs
     function clearCustomDatesOnMonthChange() {
         document.getElementById('startDateField').value = '';
         document.getElementById('endDateField').value = '';
@@ -1699,6 +1697,13 @@
     // When custom dates are typed → deselect the month dropdown
     function clearMonthOnDateChange() {
         document.getElementById('monthDropdown').value = '';
+    }
+    function submitPriceCheckerDateRange() {
+        var startDate = document.getElementById('startDateField');
+        var endDate = document.getElementById('endDateField');
+        if (startDate.value && endDate.value) {
+            document.getElementById('mainFilterForm').requestSubmit();
+        }
     }
 
     /* ─── Inspector Expand / Collapse ─── */
@@ -1803,7 +1808,7 @@
             '</div>' +
             '</div>' +
             '<div style="text-align: right; border-left: 1px dashed var(--border-color); padding-left: 1.25rem;">' +
-            '<div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Current Live Rate Today</div>' +
+            '<div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Current Catalog Rate Today</div>' +
             '<div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-top: 0.15rem;">₱' + Number(currentFinal).toFixed(2) + '</div>' +
             (isDiff ?
                 (diff > 0 ?

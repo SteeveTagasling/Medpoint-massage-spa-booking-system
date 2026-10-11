@@ -428,6 +428,14 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    .bookings-table th:first-child,
+    .bookings-table td:first-child {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+    }
     .bookings-table td.service-td {
         white-space: normal;
         overflow: hidden;
@@ -727,6 +735,16 @@
         font-weight: 500;
         white-space: nowrap;
     }
+    .booking-row-link { cursor: pointer; }
+    .booking-row-link:focus-visible { outline: 2px solid var(--purple-500); outline-offset: -2px; }
+    .booking-row-link:hover td { background: rgba(147, 51, 234, 0.035); }
+    .btn-view {
+        color: var(--purple-500);
+        background: rgba(147, 51, 234, 0.1);
+        border-color: rgba(147, 51, 234, 0.24);
+        text-decoration: none;
+    }
+    .btn-view:hover { color: #fff; background: var(--purple-600); border-color: var(--purple-600); }
 </style>
 {% endblock %}
 
@@ -782,33 +800,33 @@
     </div>
 
     <!-- Filter Bar -->
-    <form class="bookings-filter-bar" method="get" action="{% url 'portals:booking_list' %}">
+    <form class="bookings-filter-bar" id="booking-filter-form" method="get" action="{% url 'portals:booking_list' %}">
         {% if show_filter %}
         <input type="hidden" name="show" value="{{ show_filter }}">
         {% endif %}
 
         <div class="filter-search-wrap">
             <i class="fas fa-search"></i>
-            <input type="text" name="search" class="filter-search-input" placeholder="Search client, email, phone..." value="{{ search }}">
+            <input type="text" id="booking-search-input" name="search" class="filter-search-input" placeholder="Search client, email, phone..." value="{{ search }}">
         </div>
 
-        <select name="status" class="filter-select-item" style="width: 175px;">
+        <select name="status" class="filter-select-item" style="width: 175px;" onchange="this.form.requestSubmit()">
             <option value="">All Statuses</option>
             {% for value, label in status_choices %}
             <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
 
-        <select name="type" class="filter-select-item" style="width: 110px;">
+        <select name="type" class="filter-select-item" style="width: 110px;" onchange="this.form.requestSubmit()">
             <option value="">All Types</option>
             {% for value, label in type_choices %}
             <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}
         </select>
 
-        <input type="date" name="date" class="filter-date-item" value="{{ date_filter }}" title="Filter by date">
+        <input type="date" name="date" class="filter-date-item" value="{{ date_filter }}" title="Filter by date" onchange="this.form.requestSubmit()">
 
-        <select name="service" class="filter-select-item" style="width: 150px;">
+        <select name="service" class="filter-select-item" style="width: 150px;" onchange="this.form.requestSubmit()">
             <option value="">All Services</option>
             {% for s in services %}
             <option value="{{ s.id }}" {% if service_filter == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
@@ -816,9 +834,6 @@
         </select>
 
         <div class="filter-action-group">
-            <button type="submit" class="filter-submit-btn">
-                <i class="fas fa-filter"></i> Filter
-            </button>
             {% if status_filter or type_filter or search or date_filter or service_filter %}
             <a href="{% url 'portals:booking_list' %}{% if show_filter %}?show={{ show_filter }}{% endif %}" class="filter-reset-btn" title="Reset Filters">
                 <i class="fas fa-rotate-left"></i> Reset
@@ -826,6 +841,18 @@
             {% endif %}
         </div>
     </form>
+
+    <script>
+        (() => {
+            const form = document.getElementById('booking-filter-form');
+            const searchInput = document.getElementById('booking-search-input');
+            let searchTimer;
+            searchInput.addEventListener('input', () => {
+                window.clearTimeout(searchTimer);
+                searchTimer = window.setTimeout(() => form.requestSubmit(), 450);
+            });
+        })();
+    </script>
 
     <!-- Bookings Table -->
     <div class="table-wrapper">
@@ -842,12 +869,12 @@
                     <th style="width: 85px;">Type</th>
                     <th style="width: 125px;">Schedule</th>
                     <th style="width: 105px;">Status</th>
-                    <th style="width: 120px; text-align: right; padding-right: 1rem;">Action</th>
+                    <th style="width: 150px; text-align: right; padding-right: 1rem;">Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for booking in bookings %}
-                <tr id="booking-row-{{ booking.pk }}">
+                <tr id="booking-row-{{ booking.pk }}" class="booking-row-link" data-detail-url="{% url 'portals:booking_detail' booking.pk %}" tabindex="0" aria-label="View booking #{{ booking.pk }} details">
                     <td style="text-align: center;">
                         <input type="checkbox" class="booking-cb row-cb" data-id="{{ booking.pk }}">
                     </td>
@@ -859,21 +886,18 @@
                             <div class="client-avatar">{{ booking.client_name|slice:":2" }}</div>
                             <div class="client-info">
                                 <span class="client-name" title="{{ booking.client_name }}">{{ booking.client_name }}</span>
-                                <span class="client-contact" title="{{ booking.client_email }}{% if booking.client_phone %} · {{ booking.client_phone }}{% endif %}">
+                                <span class="client-contact" title="{{ booking.client_email }}">
                                     {{ booking.client_email }}
-                                    {% if booking.client_phone %}
-                                    <span class="contact-sep">•</span>{{ booking.client_phone }}
-                                    {% endif %}
                                 </span>
                             </div>
                         </div>
                     </td>
                     <td class="service-td">
                         <div class="service-cell" title="{{ booking.service_names }}">
-                            {% for s in booking.services.all %}
+                            {% for service_name in booking.service_display_names %}
                             <div class="service-line">
                                 <i class="fas fa-spa"></i>
-                                <span>{{ s.name }}</span>
+                                <span>{{ service_name }}</span>
                             </div>
                             {% empty %}
                             <span style="color: var(--text-muted); font-size: 0.8rem;">{{ booking.service_names|default:"—" }}</span>
@@ -913,6 +937,9 @@
                     </td>
                     <td style="text-align: right; padding-right: 1rem;">
                         <div class="action-cell" id="action-cell-{{ booking.pk }}" data-status="{{ booking.status }}">
+                            <a class="action-btn btn-view" href="{% url 'portals:booking_detail' booking.pk %}" title="View complete booking details">
+                                <i class="fas fa-eye"></i>
+                            </a>
                             {% if show_filter == 'archived' %}
                                 <button class="btn-restore-sm" onclick="restoreBooking({{ booking.pk }})" title="Restore to active bookings">
                                     <i class="fas fa-undo"></i>
@@ -971,6 +998,20 @@
 
 {% block extra_js %}
 <script>
+    document.querySelectorAll('.booking-row-link').forEach(row => {
+        const openDetails = event => {
+            if (event.target.closest('a, button, input, select, textarea, label, form')) return;
+            window.location.href = row.dataset.detailUrl;
+        };
+        row.addEventListener('click', openDetails);
+        row.addEventListener('keydown', event => {
+            if ((event.key === 'Enter' || event.key === ' ') && event.target === row) {
+                event.preventDefault();
+                window.location.href = row.dataset.detailUrl;
+            }
+        });
+    });
+
     // ── Checkbox & Bulk Selection ──────────────────────────────────────────────
     const selectAllCb     = document.getElementById('booking-select-all');
     const bulkBar         = document.getElementById('booking-bulk-bar');

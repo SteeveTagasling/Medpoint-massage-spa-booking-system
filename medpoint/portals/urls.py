@@ -16,6 +16,7 @@ urlpatterns = [
     path('bookings/walk-in/', views.booking_create_walkin, name='booking_walkin'),
     path('bookings/bulk-archive/', views.booking_bulk_archive, name='booking_bulk_archive'),
     path('bookings/bulk-restore/', views.booking_bulk_restore, name='booking_bulk_restore'),
+    path('bookings/<int:pk>/', views.booking_detail, name='booking_detail'),
     path('bookings/<int:pk>/update-status/', views.booking_update_status, name='booking_update_status'),
     path('bookings/<int:pk>/delete/', views.booking_delete, name='booking_delete'),
     path('bookings/<int:pk>/archive/', views.booking_archive, name='booking_archive'),

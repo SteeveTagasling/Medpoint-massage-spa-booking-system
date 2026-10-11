@@ -322,6 +322,14 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    .bookings-table th:first-child,
+    .bookings-table td:first-child {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+    }
     .bookings-table td.service-td {
         white-space: normal;
         overflow: hidden;
@@ -604,6 +612,16 @@
         font-weight: 500;
         white-space: nowrap;
     }
+    .booking-row-link { cursor: pointer; }
+    .booking-row-link:focus-visible { outline: 2px solid var(--purple-500); outline-offset: -2px; }
+    .booking-row-link:hover td { background: rgba(147, 51, 234, 0.035); }
+    .btn-view {
+        color: var(--purple-500);
+        background: rgba(147, 51, 234, 0.1);
+        border-color: rgba(147, 51, 234, 0.24);
+        text-decoration: none;
+    }
+    .btn-view:hover { color:#fff; background:var(--purple-600); border-color:var(--purple-600); }
 </style>
 {% endblock %}
 
@@ -697,12 +715,12 @@
                     <th style="width: 85px;">Type</th>
                     <th style="width: 130px;">Schedule</th>
                     <th style="width: 105px;">Status</th>
-                    <th style="width: 135px; text-align: right; padding-right: 1rem;">Action</th>
+                    <th style="width: 150px; text-align: right; padding-right: 1rem;">Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% for booking in bookings %}
-                <tr id="booking-row-{{ booking.pk }}">
+                <tr id="booking-row-{{ booking.pk }}" class="booking-row-link" data-detail-url="{% url 'portals:booking_detail' booking.pk %}" tabindex="0" aria-label="View booking #{{ booking.pk }} details">
                     <td style="text-align: center;">
                         <input type="checkbox" class="booking-cb row-cb" data-id="{{ booking.pk }}">
                     </td>
@@ -724,10 +742,10 @@
                     </td>
                     <td class="service-td">
                         <div class="service-cell" title="{{ booking.service_names }}">
-                            {% for s in booking.services.all %}
+                            {% for service_name in booking.service_display_names %}
                             <div class="service-line">
                                 <i class="fas fa-spa"></i>
-                                <span>{{ s.name }}</span>
+                                <span>{{ service_name }}</span>
                             </div>
                             {% empty %}
                             <span style="color: var(--text-muted); font-size: 0.8rem;">{{ booking.service_names|default:"—" }}</span>
@@ -758,6 +776,9 @@
                     </td>
                     <td style="text-align: right; padding-right: 1rem;">
                         <div class="action-cell" id="action-cell-{{ booking.pk }}" data-status="{{ booking.status }}">
+                            <a class="action-btn btn-view" href="{% url 'portals:booking_detail' booking.pk %}" title="View complete booking details">
+                                <i class="fas fa-eye"></i>
+                            </a>
                             {% if show_filter == 'archived' %}
                                 <button class="btn-restore-sm" onclick="restoreBooking({{ booking.pk }})" title="Restore booking">
                                     <i class="fas fa-undo"></i>
@@ -818,6 +839,20 @@
 
 {% block extra_js %}
 <script>
+    document.querySelectorAll('.booking-row-link').forEach(row => {
+        const openDetails = event => {
+            if (event.target.closest('a, button, input, select, textarea, label, form')) return;
+            window.location.href = row.dataset.detailUrl;
+        };
+        row.addEventListener('click', openDetails);
+        row.addEventListener('keydown', event => {
+            if ((event.key === 'Enter' || event.key === ' ') && event.target === row) {
+                event.preventDefault();
+                window.location.href = row.dataset.detailUrl;
+            }
+        });
+    });
+
     // Set the filter dropdown to the currently active filter
     (function () {
         var filterSelect = document.getElementById('status-filter-select');
