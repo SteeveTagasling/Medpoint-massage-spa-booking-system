@@ -988,9 +988,14 @@
                 // Update action buttons
                 const cell = document.getElementById(`action-cell-${bookingId}`);
                 if (cell) { renderActionButtons(cell, newStatus); }
+            } else {
+                alert(data.error || 'The booking status could not be updated.');
             }
         })
-        .catch(err => console.error('Error:', err));
+        .catch(err => {
+            alert('The booking status could not be updated. Please try again.');
+            console.error('Error:', err);
+        });
     }
 </script>
 {% endblock %}

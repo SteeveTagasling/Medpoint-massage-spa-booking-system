@@ -1153,8 +1153,23 @@
 
         .booking-list-table tfoot td:first-child { text-align: right !important; padding-right: 12px !important; }
         .booking-list-table tfoot td:last-child { width: 11% !important; text-align: right !important; white-space: nowrap !important; padding-right: 6px !important; }
-        body.print-bookings .booking-category-card { page-break-inside: avoid !important; margin-bottom: 12px !important; }
-        body.print-bookings .booking-category-card .card-header { margin-bottom: 3px !important; }
+        /* Category tables can be taller than a printed page. Let the table
+           continue row-by-row instead of pushing the entire card to page 2. */
+        body.print-bookings .booking-category-card {
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+            margin-bottom: 12px !important;
+        }
+        body.print-bookings .booking-category-card .card-header {
+            margin-bottom: 3px !important;
+            page-break-after: avoid !important;
+            break-after: avoid-page !important;
+        }
+        body.print-bookings .category-booking-table,
+        body.print-bookings .category-booking-table tbody {
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+        }
         body.print-bookings .booking-category-card .card-header-title { font-size: 8pt !important; }
         body.print-bookings .booking-category-icon { display: none !important; }
         body.print-bookings .booking-category-subtotal-label { text-align: right !important; padding-right: 8px !important; }

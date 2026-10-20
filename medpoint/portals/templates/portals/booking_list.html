@@ -1175,6 +1175,8 @@
     }
 
     function updateBookingStatus(bookingId, newStatus) {
+        const cell = document.getElementById(`action-cell-${bookingId}`);
+        const originalStatus = cell ? cell.getAttribute('data-status') : null;
         setActionCellLoading(bookingId);
         fetch(`/portal/bookings/${bookingId}/update-status/`, {
             method: 'POST',
@@ -1190,11 +1192,17 @@
                     const labels = { pending: 'Pending', confirmed: 'Confirmed', completed: 'Completed', cancelled: 'Cancelled' };
                     badge.textContent = labels[newStatus] || newStatus;
                 }
-                const cell = document.getElementById(`action-cell-${bookingId}`);
                 if (cell) { renderActionButtons(cell, newStatus); }
+            } else {
+                if (cell && originalStatus) { renderActionButtons(cell, originalStatus); }
+                alert(data.error || 'The booking status could not be updated.');
             }
         })
-        .catch(err => console.error('Error:', err));
+        .catch(err => {
+            if (cell && originalStatus) { renderActionButtons(cell, originalStatus); }
+            alert('The booking status could not be updated. Please try again.');
+            console.error('Error:', err);
+        });
     }
 
     function getCookie(name) {

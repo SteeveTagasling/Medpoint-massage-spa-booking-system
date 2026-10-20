@@ -510,6 +510,71 @@ class BookingDetailTests(TestCase):
         self.assertEqual(other_response.status_code, 404)
 
 
+class BookingCompletionDateTests(TestCase):
+    def setUp(self):
+        self.staff_user = User.objects.create_user(
+            username='completion-date-staff',
+            password='test-password',
+            is_staff=True,
+        )
+        self.client.force_login(self.staff_user)
+
+    def make_booking(self, booking_date):
+        return Booking.objects.create(
+            client_name='Completion Date Client',
+            client_email='',
+            client_phone='639171111111',
+            client_gender='female',
+            therapist_preference='female',
+            date=booking_date,
+            time='10:00',
+            status='confirmed',
+            is_verified=True,
+        )
+
+    def complete(self, booking):
+        return self.client.post(
+            reverse('portals:booking_update_status', args=[booking.pk]),
+            {'status': 'completed'},
+        )
+
+    def test_future_booking_cannot_be_completed(self):
+        today = timezone.localdate()
+        booking = self.make_booking(today + datetime.timedelta(days=17))
+
+        response = self.complete(booking)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['code'], 'booking_date_mismatch')
+        self.assertEqual(response.json()['current_date'], today.isoformat())
+        self.assertEqual(response.json()['booking_date'], booking.date.isoformat())
+        self.assertIn('Only bookings scheduled for today', response.json()['error'])
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, 'confirmed')
+
+    def test_past_booking_cannot_be_completed(self):
+        booking = self.make_booking(
+            timezone.localdate() - datetime.timedelta(days=1),
+        )
+
+        response = self.complete(booking)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['code'], 'booking_date_mismatch')
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, 'confirmed')
+
+    def test_booking_scheduled_for_today_can_be_completed(self):
+        booking = self.make_booking(timezone.localdate())
+
+        response = self.complete(booking)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, 'completed')
+
+
 class BookingArchiveServicePreservationTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(
@@ -1118,6 +1183,16 @@ class ReportPrintDialogTests(TestCase):
                 self.assertContains(response, 'border: 1px solid #000 !important;')
                 self.assertNotContains(response, '#f0f0f0 !important')
                 self.assertNotContains(response, '#f7f7f7 !important')
+                self.assertContains(
+                    response,
+                    'body.print-bookings .booking-category-card {',
+                )
+                self.assertContains(response, 'break-inside: auto !important;')
+                self.assertContains(response, 'break-after: avoid-page !important;')
+                self.assertNotContains(
+                    response,
+                    'body.print-bookings .booking-category-card { page-break-inside: avoid !important;',
+                )
 
     def test_staff_booking_summary_includes_total_commission(self):
         response = self.client.get(reverse('portals:staff_my_reports'))

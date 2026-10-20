@@ -984,6 +984,24 @@ def booking_update_status(request, pk):
         new_status = request.POST.get('status')
         if new_status == 'cancelled' and not request.user.is_superuser:
             return JsonResponse({'error': 'Only admins can cancel bookings.'}, status=403)
+        if new_status == 'completed':
+            today = timezone.localdate()
+            if booking.date != today:
+                booking_date_display = (
+                    f"{booking.date.strftime('%B')} {booking.date.day}, {booking.date.year}"
+                )
+                today_display = f"{today.strftime('%B')} {today.day}, {today.year}"
+                return JsonResponse({
+                    'error': (
+                        'Cannot complete this booking. Only bookings scheduled '
+                        f'for today ({today_display}) can be completed. This '
+                        f'booking is scheduled for {booking_date_display}.'
+                    ),
+                    'code': 'booking_date_mismatch',
+                    'status': booking.status,
+                    'booking_date': booking.date.isoformat(),
+                    'current_date': today.isoformat(),
+                }, status=400)
         if new_status in dict(Booking.STATUS_CHOICES):
             booking.status = new_status
             if new_status in {'confirmed', 'completed'}:
