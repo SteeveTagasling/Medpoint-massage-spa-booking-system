@@ -1528,8 +1528,14 @@ def rebooking_options(request, token):
     ).select_related('therapist').prefetch_related('services').first()
 
     if not booking:
+        previously_rebooked = Booking.objects.filter(
+            rebooking_token=token,
+            status='cancelled',
+            rebooking_completed=True,
+        ).exists()
         return render(request, 'website/rebooking_options.html', {
             'expired': True,
+            'already_rebooked': previously_rebooked,
         })
 
     if request.method == 'POST':
@@ -1655,7 +1661,8 @@ def rebooking_therapists_api(request, token):
 
     booking = Booking.objects.filter(
         rebooking_token=token,
-        status='cancelled'
+        status='cancelled',
+        rebooking_completed=False,
     ).select_related('therapist').first()
 
     if not booking:
@@ -1780,7 +1787,8 @@ def rebooking_submit(request, token):
 
     booking = Booking.objects.filter(
         rebooking_token=token,
-        status='cancelled'
+        status='cancelled',
+        rebooking_completed=False,
     ).select_related('therapist').prefetch_related('services').first()
 
     if not booking:
@@ -1860,8 +1868,8 @@ def rebooking_submit(request, token):
         )
         new_booking.services.set(booking.services.all())
 
-        booking.rebooking_token = None
-        booking.save(update_fields=['rebooking_token'])
+        booking.rebooking_completed = True
+        booking.save(update_fields=['rebooking_completed'])
 
         _create_booking_notifications(new_booking)
         _send_rebooking_confirmation_email(new_booking, booking, action_type='switch_therapist')
@@ -1955,8 +1963,8 @@ def rebooking_submit(request, token):
         if not new_booking.therapist:
             _auto_assign_therapist(new_booking)
 
-        booking.rebooking_token = None
-        booking.save(update_fields=['rebooking_token'])
+        booking.rebooking_completed = True
+        booking.save(update_fields=['rebooking_completed'])
 
         _create_booking_notifications(new_booking)
         _send_rebooking_confirmation_email(new_booking, booking, action_type='reschedule_date')

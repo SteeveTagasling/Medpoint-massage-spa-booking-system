@@ -542,7 +542,11 @@ class Booking(models.Model):
     is_archived = models.BooleanField(default=False, db_index=True, help_text="Archived bookings are hidden from main list but not deleted")
     rebooking_token = models.UUIDField(
         null=True, blank=True, db_index=True,
-        help_text="One-time UUID token sent to client when booking is cancelled due to staff leave. Cleared after use."
+        help_text="UUID token sent to client when booking is cancelled due to staff leave."
+    )
+    rebooking_completed = models.BooleanField(
+        default=False,
+        help_text="Whether the client has completed rebooking with this token."
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

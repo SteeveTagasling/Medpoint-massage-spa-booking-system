@@ -2394,8 +2394,9 @@ def _cancel_bookings_for_leave(leave, request=None):
     for booking in affected:
         # Generate a fresh rebooking token
         booking.rebooking_token = uuid_module.uuid4()
+        booking.rebooking_completed = False
         booking.status = 'cancelled'
-        booking.save(update_fields=['status', 'rebooking_token'])
+        booking.save(update_fields=['status', 'rebooking_token', 'rebooking_completed'])
         cancelled_count += 1
 
         # Build the public absolute rebooking URL
