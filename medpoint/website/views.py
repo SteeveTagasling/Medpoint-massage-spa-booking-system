@@ -714,6 +714,8 @@ def cancel_booking_verify(request):
     booking_obj = get_object_or_404(Booking, pk=pk)
 
     if request.method == 'POST':
+        import datetime
+
         entered_otp = request.POST.get('otp', '').strip()
 
         if booking_obj.verification_otp and booking_obj.verification_otp == entered_otp:
@@ -976,6 +978,8 @@ def _send_booking_otp(request, bookings, email, is_creation=True):
 
 def verify_booking(request):
     """Verify email with OTP."""
+    import datetime
+
     booking_ids = request.session.get('last_booking_ids', [])
     if not booking_ids:
         return redirect('website:booking')
@@ -987,17 +991,14 @@ def verify_booking(request):
         )
 
         if requested_bookings:
-            # Lock every submitted request for the requested slot. Competing OTP
-            # verifications are therefore serialized: the first transaction that
-            # verifies wins, and the next one sees that the slot is already taken.
-            slot_filter = Q()
-            for booking_obj in requested_bookings:
-                slot_filter |= Q(date=booking_obj.date, time=booking_obj.time)
+            # Lock existing bookings on the requested dates so concurrent OTP
+            # submissions can check therapist-specific availability consistently.
+            requested_dates = {booking_obj.date for booking_obj in requested_bookings}
 
             with transaction.atomic():
                 locked_slot_bookings = list(
                     Booking.objects.select_for_update()
-                    .filter(slot_filter)
+                    .filter(date__in=requested_dates)
                     .order_by('pk')
                 )
                 current_booking_ids = {
@@ -1010,12 +1011,46 @@ def verify_booking(request):
                 first_booking = bookings[0] if bookings else None
 
                 if first_booking and first_booking.verification_otp == entered_otp:
-                    slot_is_taken = any(
-                        booking_obj.pk not in current_booking_ids
-                        and booking_obj.is_verified
-                        and booking_obj.status != 'cancelled'
-                        for booking_obj in locked_slot_bookings
-                    )
+                    slot_is_taken = False
+                    for submitted_booking in bookings:
+                        if not submitted_booking.therapist_id:
+                            continue
+                        try:
+                            submitted_start = datetime.datetime.combine(
+                                submitted_booking.date,
+                                datetime.datetime.strptime(submitted_booking.time, '%H:%M').time(),
+                            )
+                            submitted_end = submitted_start + datetime.timedelta(
+                                minutes=submitted_booking.total_duration_minutes,
+                            )
+                        except (TypeError, ValueError):
+                            continue
+
+                        for existing_booking in locked_slot_bookings:
+                            if (
+                                existing_booking.pk in current_booking_ids
+                                or not existing_booking.is_verified
+                                or existing_booking.status == 'cancelled'
+                                or existing_booking.therapist_id != submitted_booking.therapist_id
+                                or existing_booking.date != submitted_booking.date
+                            ):
+                                continue
+                            try:
+                                existing_start = datetime.datetime.combine(
+                                    existing_booking.date,
+                                    datetime.datetime.strptime(existing_booking.time, '%H:%M').time(),
+                                )
+                                existing_end = existing_start + datetime.timedelta(
+                                    minutes=existing_booking.total_duration_minutes,
+                                )
+                            except (TypeError, ValueError):
+                                continue
+
+                            if max(submitted_start, existing_start) < min(submitted_end, existing_end):
+                                slot_is_taken = True
+                                break
+                        if slot_is_taken:
+                            break
                     if slot_is_taken:
                         messages.error(
                             request,
