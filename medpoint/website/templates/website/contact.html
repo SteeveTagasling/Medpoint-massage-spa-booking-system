@@ -136,10 +136,24 @@
                     </h3>
                     <div class="map-container">
                         <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d6811.816118180916!2d123.85547439999998!3d9.643420199999992!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33aa4db1ba3f218f%3A0x5633cc0c1bb8e44b!2sMedipoint%20Massage%20%26%20Spa!5e1!3m2!1sen!2sph!4v1783066933920!5m2!1sen!2sph"
+                            src="https://www.google.com/maps?q=JVV3%2B5MQ%2C%2092%20Celestino%20Gallares%20St%2C%20Tagbilaran%20City%2C%206300%20Bohol&z=19&t=k&output=embed"
+                            title="MEDPOINT Massage & Spa location at 92 Celestino Gallares Street, Tagbilaran City"
                             width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"
                             referrerpolicy="strict-origin-when-cross-origin"></iframe>
                     </div>
+                    <figure class="location-preview mt-4">
+                        <div class="location-preview-frame">
+                        {% if contact_location_image_url %}
+                        <img src="{{ contact_location_image_url }}"
+                            alt="MEDPOINT Massage & Spa storefront on Gallares Street in Tagbilaran City"
+                            loading="lazy" style="transform-origin: {{ site_content.contact_location_image_x|default:'50' }}% {{ site_content.contact_location_image_y|default:'40' }}%;">
+                        {% else %}
+                        <img src="{% static 'website/images/medpoint-location-preview.png' %}"
+                            alt="MEDPOINT Massage & Spa storefront on Gallares Street in Tagbilaran City"
+                            loading="lazy" style="transform-origin: {{ site_content.contact_location_image_x|default:'50' }}% {{ site_content.contact_location_image_y|default:'40' }}%;">
+                        {% endif %}
+                        </div>
+                    </figure>
                 </div>
 
                 <!-- Social -->

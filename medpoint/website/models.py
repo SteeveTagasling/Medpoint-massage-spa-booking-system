@@ -15,6 +15,8 @@ class SiteContent(models.Model):
         ('phone', 'Phone'),
         ('number', 'Number'),
         ('url', 'URL'),
+        ('image', 'Image'),
+        ('range', 'Range'),
     ]
 
     key = models.SlugField(max_length=100, unique=True)

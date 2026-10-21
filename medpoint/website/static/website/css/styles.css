@@ -440,7 +440,33 @@ html {
 .map-container iframe {
     display: block;
     width: 100%;
-    filter: brightness(0.8) contrast(1.1) saturate(0.5) hue-rotate(210deg);
+}
+
+.location-preview {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.location-preview-frame {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    border-radius: 0.75rem;
+}
+
+.location-preview-frame img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.25);
+}
+
+.location-preview figcaption {
+    margin-top: 0.5rem;
+    color: #9ca3af;
+    font-size: 0.75rem;
 }
 
 /* --- Loading shimmer --- */

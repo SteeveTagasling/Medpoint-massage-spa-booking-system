@@ -16,9 +16,7 @@
             <span class="text-purple-400">{{ service.name }}</span>
         </div>
         <div class="flex items-center gap-3 mb-4 animate-fade-in flex-wrap" style="animation-delay:0.1s">
-            <span
-                class="text-[11px] tracking-wider uppercase text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full">{{
-                service.get_category_display }}</span>
+            <span class="text-[11px] tracking-wider uppercase text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full">{{ service.get_category_display }}</span>
             <span class="text-gray-500 text-sm"><i class="far fa-clock mr-1"></i>{{ service.duration_minutes }}
                 min</span>
             {% if service.has_discount %}
@@ -146,8 +144,7 @@
                             class="text-4xl font-display font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent mt-1">
                             ₱{{ service.price|floatformat:2 }}</div>
                         {% endif %}
-                        <span class="text-gray-500 text-sm block mt-2"><i class="far fa-clock mr-1"></i>{{
-                            service.duration_minutes }} minutes session</span>
+                        <span class="text-gray-500 text-sm block mt-2"><i class="far fa-clock mr-1"></i>{{ service.duration_minutes }} minutes session</span>
                     </div>
 
                     <div class="space-y-3 mb-8">

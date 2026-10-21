@@ -15,7 +15,7 @@ from .models import (
 )
 from .forms import (
     BookingForm, ContactForm, FamilyMemberForm,
-    DUPLICATE_BOOKING_ERROR, duplicate_booking_exists, validate_phone_number,
+    DUPLICATE_BOOKING_ERROR, duplicate_booking_exists, normalize_phone_number,
 )
 from portals.models import StaffNotification
 
@@ -382,7 +382,7 @@ def _handle_family_booking(request):
         errors.append('Phone number is required.')
     else:
         try:
-            validate_phone_number(client_phone)
+            client_phone = normalize_phone_number(client_phone)
         except ValidationError as error:
             errors.extend(error.messages)
     if not date_str:
@@ -1559,7 +1559,8 @@ def rebooking_options(request, token):
 
     booking = Booking.objects.filter(
         rebooking_token=token,
-        status='cancelled'
+        status='cancelled',
+        rebooking_completed=False,
     ).select_related('therapist').prefetch_related('services').first()
 
     if not booking:

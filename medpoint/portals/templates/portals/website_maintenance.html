@@ -1,4 +1,5 @@
 {% extends 'portals/base.html' %}
+{% load static %}
 
 {% block title %}Website Maintenance — MEDPOINT{% endblock %}
 {% block page_title %}Website Maintenance{% endblock %}
@@ -55,6 +56,12 @@
     .maintenance-field input { min-height:41px; }
     .maintenance-field textarea { min-height:82px; resize:vertical; line-height:1.48; }
     .maintenance-field input:focus, .maintenance-field textarea:focus { background:var(--bg-secondary); border-color:var(--purple-500); box-shadow:0 0 0 3px rgba(168,85,247,.09); }
+    .maintenance-image-preview.crop-frame { position:relative; width:min(100%,420px); aspect-ratio:16/9; margin-bottom:.7rem; overflow:hidden; border:1px solid var(--border-color); border-radius:10px; cursor:grab; touch-action:none; }
+    .maintenance-image-preview.crop-frame:active { cursor:grabbing; }
+    .maintenance-image-preview.crop-frame img { display:block; width:100%; height:100%; max-width:none; object-fit:cover; transform:scale(1.25); user-select:none; pointer-events:none; }
+    .crop-state-field { display:none !important; }
+    .crop-instructions { margin-bottom:.7rem; }
+    .maintenance-field input[type="file"] { cursor:pointer; }
     .maintenance-meta { display:flex; align-items:flex-start; justify-content:space-between; gap:.65rem; margin-top:.32rem; }
     .maintenance-help { color:var(--text-muted); font-size:.66rem; line-height:1.35; }
     .reset-field { flex:none; padding:0; color:var(--text-muted); background:transparent; border:0; font-size:.65rem; font-weight:700; cursor:pointer; }
@@ -128,7 +135,7 @@
         <input id="maintenance-search" type="search" placeholder="Search website content…" autocomplete="off" aria-label="Search website content">
         <kbd>Ctrl K</kbd>
     </div>
-    <form method="post" id="maintenance-form">
+    <form method="post" id="maintenance-form" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="maintenance-workspace">
             <nav class="maintenance-nav" aria-label="Website content sections">
@@ -155,16 +162,28 @@
                     </div>
                     <div class="maintenance-grid">
                         {% for item in group.items %}
-                        <div class="maintenance-field {% if item.input_type == 'textarea' %}full{% endif %}" data-search-field="{{ item.label|lower }} {{ item.value|lower }}">
+                        <div class="maintenance-field {% if item.input_type == 'textarea' or item.input_type == 'image' %}full{% endif %} {% if item.input_type == 'range' %}crop-state-field{% endif %}" data-search-field="{{ item.label|lower }} {{ item.value|lower }}">
                             <label for="content-{{ item.pk }}">{{ item.label }}</label>
-                            {% if item.input_type == 'textarea' %}
+                            {% if item.input_type == 'image' %}
+                            <div class="maintenance-image-preview crop-frame" data-crop-frame="contact-location-image-preview">
+                                {% if item.preview_url %}
+                                <img id="contact-location-image-preview" src="{{ item.preview_url }}" data-original-src="{{ item.preview_url }}" style="transform-origin: {{ site_content.contact_location_image_x|default:'50' }}% {{ site_content.contact_location_image_y|default:'40' }}%;" alt="Current {{ item.label|lower }}" draggable="false">
+                                {% elif item.key == 'contact_location_image' %}
+                                <img id="contact-location-image-preview" src="{% static 'website/images/medpoint-location-preview.png' %}" data-original-src="{% static 'website/images/medpoint-location-preview.png' %}" style="transform-origin: {{ site_content.contact_location_image_x|default:'50' }}% {{ site_content.contact_location_image_y|default:'40' }}%;" alt="Default storefront image" draggable="false">
+                                {% endif %}
+                            </div>
+                            <p class="maintenance-help crop-instructions">Drag the image to choose which part appears on the Contact page.</p>
+                            <input id="content-{{ item.pk }}" name="content_{{ item.pk }}" type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-preview-target="contact-location-image-preview" data-maintenance-field>
+                            {% elif item.input_type == 'range' %}
+                            <input id="content-{{ item.pk }}" name="content_{{ item.pk }}" type="hidden" value="{{ item.value|default:'50' }}" data-default="{{ item.default_value }}" data-crop-axis="{% if item.key == 'contact_location_image_x' %}x{% else %}y{% endif %}" data-preview-target="contact-location-image-preview" data-maintenance-field>
+                            {% elif item.input_type == 'textarea' %}
                             <textarea id="content-{{ item.pk }}" name="content_{{ item.pk }}" rows="3" data-default="{{ item.default_value }}" data-maintenance-field>{{ item.value }}</textarea>
                             {% else %}
                             <input id="content-{{ item.pk }}" name="content_{{ item.pk }}" type="{% if item.input_type == 'phone' %}tel{% else %}{{ item.input_type }}{% endif %}" value="{{ item.value }}" data-default="{{ item.default_value }}" {% if item.input_type == 'number' %}min="0" step="1"{% endif %} data-maintenance-field>
                             {% endif %}
                             <div class="maintenance-meta">
                                 <span class="maintenance-help">{{ item.help_text|default:"Displayed wherever this information is used." }}</span>
-                                <button class="reset-field" type="button" data-reset-field="content-{{ item.pk }}" title="Restore default value"><i class="fas fa-rotate-left"></i> Reset</button>
+                                {% if item.input_type != 'image' %}<button class="reset-field" type="button" data-reset-field="content-{{ item.pk }}" title="Restore default value"><i class="fas fa-rotate-left"></i> Reset</button>{% endif %}
                             </div>
                         </div>
                         {% endfor %}
@@ -303,8 +322,72 @@ document.addEventListener('DOMContentLoaded', function () {
             field.focus();
         });
     });
+    document.querySelectorAll('input[type="file"][data-preview-target]').forEach(input => {
+        input.addEventListener('change', function () {
+            const file = this.files?.[0];
+            const preview = document.getElementById(this.dataset.previewTarget);
+            if (file && preview) preview.src = URL.createObjectURL(file);
+        });
+    });
+    const cropFrame = document.querySelector('[data-crop-frame="contact-location-image-preview"]');
+    const cropControls = Array.from(form.querySelectorAll('[data-crop-axis]'));
+    function updateCropPreview(targetId) {
+        const preview = document.getElementById(targetId);
+        if (!preview) return;
+        const controls = cropControls.filter(control => control.dataset.previewTarget === targetId);
+        const x = controls.find(control => control.dataset.cropAxis === 'x')?.value ?? 50;
+        const y = controls.find(control => control.dataset.cropAxis === 'y')?.value ?? 40;
+        preview.style.transformOrigin = `${x}% ${y}%`;
+    }
+    cropControls.forEach(input => {
+        input.addEventListener('input', function () {
+            updateCropPreview(this.dataset.previewTarget);
+            updateDirtyState();
+        });
+        updateCropPreview(input.dataset.previewTarget);
+    });
+    if (cropFrame) {
+        let dragState = null;
+        cropFrame.addEventListener('pointerdown', function (event) {
+            const rect = cropFrame.getBoundingClientRect();
+            dragState = {
+                pointerId: event.pointerId,
+                startX: event.clientX,
+                startY: event.clientY,
+                x: Number(cropControls.find(input => input.dataset.cropAxis === 'x')?.value ?? 50),
+                y: Number(cropControls.find(input => input.dataset.cropAxis === 'y')?.value ?? 40),
+                width: rect.width,
+                height: rect.height,
+            };
+            cropFrame.setPointerCapture(event.pointerId);
+            event.preventDefault();
+        });
+        cropFrame.addEventListener('pointermove', function (event) {
+            if (!dragState || event.pointerId !== dragState.pointerId) return;
+            const xControl = cropControls.find(input => input.dataset.cropAxis === 'x');
+            const yControl = cropControls.find(input => input.dataset.cropAxis === 'y');
+            if (xControl) xControl.value = Math.max(0, Math.min(100, Math.round(dragState.x - (event.clientX - dragState.startX) / dragState.width * 100)));
+            if (yControl) yControl.value = Math.max(0, Math.min(100, Math.round(dragState.y - (event.clientY - dragState.startY) / dragState.height * 100)));
+            cropControls.forEach(input => input.dispatchEvent(new Event('input', { bubbles: true })));
+        });
+        cropFrame.addEventListener('pointerup', event => {
+            if (dragState?.pointerId === event.pointerId) dragState = null;
+        });
+        cropFrame.addEventListener('pointercancel', () => { dragState = null; });
+    }
     document.getElementById('discard-changes').addEventListener('click', function () {
-        fields.forEach(field => field.value = initialValues.get(field));
+        fields.forEach(field => {
+            field.value = initialValues.get(field);
+            if (field.dataset.previewTarget) {
+                const preview = document.getElementById(field.dataset.previewTarget);
+                if (preview) preview.src = preview.dataset.originalSrc;
+            }
+            if (field.dataset.cropAxis) {
+                const output = field.parentElement.querySelector('output');
+                if (output) output.textContent = `${field.value}%`;
+            }
+        });
+        cropControls.forEach(input => updateCropPreview(input.dataset.previewTarget));
         updateDirtyState();
     });
     form.addEventListener('submit', function (event) {

@@ -7,7 +7,7 @@ from website.forms import (
     DUPLICATE_BOOKING_ERROR,
     duplicate_booking_exists,
     validate_full_name,
-    validate_phone_number,
+    normalize_phone_number,
 )
 from website.models import Service, ServiceCategory, Therapist, Booking, StaffSchedule
 
@@ -243,9 +243,9 @@ class WalkInBookingForm(forms.ModelForm):
                 'class': 'portal-input', 'placeholder': 'client@example.com',
             }),
             'client_phone': forms.TextInput(attrs={
-                'class': 'portal-input', 'placeholder': '639XXXXXXXXX',
-                'inputmode': 'numeric', 'pattern': '[0-9]+',
-                'maxlength': '20', 'autocomplete': 'tel',
+                'class': 'portal-input', 'placeholder': '09XXXXXXXXX',
+                'inputmode': 'tel', 'pattern': '(09[0-9]{9}|\\+639[0-9]{9}|639[0-9]{9})',
+                'maxlength': '13', 'autocomplete': 'tel',
             }),
             'services': forms.SelectMultiple(attrs={'class': 'portal-input'}),
             'additional_minutes': forms.Select(attrs={'class': 'portal-input'}),
@@ -292,8 +292,7 @@ class WalkInBookingForm(forms.ModelForm):
 
     def clean_client_phone(self):
         value = self.cleaned_data['client_phone'].strip()
-        validate_phone_number(value)
-        return value
+        return normalize_phone_number(value)
 
     def clean(self):
         cleaned_data = super().clean()

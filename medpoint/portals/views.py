@@ -13,6 +13,9 @@ from django.db.models import Count, Sum, Q, F, Case, When, Value, IntegerField
 from django.utils import timezone
 from django.conf import settings
 from django.db import transaction
+from django.core.files.storage import default_storage
+from django.utils.text import get_valid_filename
+from PIL import Image, UnidentifiedImageError
 
 from website.models import (
     Service, ServiceCategory, Therapist, Testimonial, GalleryImage,
@@ -129,7 +132,13 @@ def website_maintenance(request):
                     setattr(item, field, metadata[field])
                 item.save(update_fields=changed)
 
-    content_items = list(SiteContent.objects.all())
+    supported_content_keys = [definition['key'] for definition in SITE_CONTENT_FIELDS]
+    content_items = list(SiteContent.objects.filter(key__in=supported_content_keys))
+    for item in content_items:
+        if item.input_type == 'image' and item.value and default_storage.exists(item.value):
+            item.preview_url = default_storage.url(item.value)
+            if not item.preview_url.startswith(('/', 'http://', 'https://', '//')):
+                item.preview_url = '/' + item.preview_url
     policy_items = list(WebsitePolicyItem.objects.all())
 
     if request.method == 'POST':
@@ -165,13 +174,55 @@ def website_maintenance(request):
                 messages.success(request, f'New {valid_sections[section]} content was added.')
             return redirect(f"{reverse('portals:website_maintenance')}?section={section}")
 
+        image_uploads = {}
+        range_values = {}
+        for item in content_items:
+            if item.input_type == 'range':
+                try:
+                    range_value = int(request.POST.get(f'content_{item.pk}', item.value or '50'))
+                except (TypeError, ValueError):
+                    range_value = -1
+                if not 0 <= range_value <= 100:
+                    messages.error(request, f'{item.label} must be between 0 and 100.')
+                    return redirect('portals:website_maintenance')
+                range_values[item.pk] = str(range_value)
+            elif item.input_type == 'image':
+                uploaded = request.FILES.get(f'content_{item.pk}')
+                if not uploaded:
+                    continue
+                if uploaded.size > 8 * 1024 * 1024:
+                    messages.error(request, f'{item.label} must be 8 MB or smaller.')
+                    return redirect('portals:website_maintenance')
+                try:
+                    image = Image.open(uploaded)
+                    if image.format not in {'JPEG', 'PNG', 'WEBP', 'GIF'}:
+                        raise ValueError('Unsupported image format')
+                    image.verify()
+                    uploaded.seek(0)
+                except (UnidentifiedImageError, Image.DecompressionBombError, OSError, ValueError):
+                    messages.error(request, f'{item.label} must be a valid JPG, PNG, WEBP, or GIF image.')
+                    return redirect('portals:website_maintenance')
+                image_uploads[item.pk] = uploaded
+
         with transaction.atomic():
             changed_count = 0
             for item in content_items:
+                if item.pk in image_uploads:
+                    upload = image_uploads[item.pk]
+                    image_name = get_valid_filename(upload.name)
+                    stored_name = default_storage.save(f'website_content/{image_name}', upload)
+                    if item.value != stored_name:
+                        item.value = stored_name
+                        item.updated_by = request.user
+                        item.save(update_fields=['value', 'updated_by', 'updated_at'])
+                        changed_count += 1
+                    continue
+                if item.input_type == 'image':
+                    continue
                 field_name = f'content_{item.pk}'
                 if field_name not in request.POST:
                     continue
-                new_value = request.POST.get(field_name, '').strip()
+                new_value = range_values.get(item.pk, request.POST.get(field_name, '').strip())
                 if item.value != new_value:
                     item.value = new_value
                     item.updated_by = request.user

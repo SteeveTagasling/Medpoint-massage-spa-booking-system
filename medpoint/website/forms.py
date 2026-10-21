@@ -41,8 +41,25 @@ def validate_full_name(value):
         )
 
 
+def normalize_phone_number(value):
+    """Validate a Philippine mobile number and store it in +63 format."""
+    value = value.strip().replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+    digits = value[1:] if value.startswith('+') else value
+    if not digits.isdigit():
+        raise ValidationError('Contact number must contain numbers only.')
+    if digits.startswith('0'):
+        if len(digits) != 11 or not digits.startswith('09'):
+            raise ValidationError('Enter an 11-digit Philippine mobile number starting with 09.')
+        return '+63' + digits[1:]
+    if digits.startswith('63') and len(digits) == 12 and digits[2] == '9':
+        return '+' + digits
+    if value.startswith('+63') and len(digits) == 12 and digits[2] == '9':
+        return '+' + digits
+    raise ValidationError('Enter an 11-digit Philippine mobile number starting with 09.')
+
+
 def validate_phone_number(value):
-    """Booking contact numbers are stored as digits only."""
+    """Validate a general contact number, which is stored as entered."""
     value = value.strip()
     if not value.isdigit():
         raise ValidationError('Contact number must contain numbers only.')
@@ -101,11 +118,11 @@ class BookingForm(forms.ModelForm):
             }),
             'client_phone': forms.TextInput(attrs={
                 'class': 'form-input',
-                'placeholder': '639XXXXXXXXX',
+                'placeholder': '09XXXXXXXXX',
                 'id': 'booking-phone',
                 'inputmode': 'numeric',
-                'pattern': '[0-9]+',
-                'maxlength': '20',
+                'pattern': '(09[0-9]{9}|\\+639[0-9]{9}|639[0-9]{9})',
+                'maxlength': '13',
                 'autocomplete': 'tel',
             }),
             'client_gender': forms.Select(attrs={
@@ -157,8 +174,7 @@ class BookingForm(forms.ModelForm):
 
     def clean_client_phone(self):
         value = self.cleaned_data['client_phone'].strip()
-        validate_phone_number(value)
-        return value
+        return normalize_phone_number(value)
 
     def clean(self):
         cleaned_data = super().clean()
