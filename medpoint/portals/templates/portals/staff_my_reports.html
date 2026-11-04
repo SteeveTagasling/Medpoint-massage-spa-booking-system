@@ -106,6 +106,9 @@
     .booking-section {
         display: none;
     }
+    .booking-section.filter-active {
+        display: block;
+    }
 
     /* Screen Data Table typography & alignment */
     .data-table {
@@ -171,6 +174,18 @@
         padding: 0.25rem;
         border-radius: 12px;
     }
+    .booking-filter-form > .custom-date-filter { flex: 0 0 360px; }
+    .booking-filter-form > .custom-date-filter .date-input-wrapper { flex: 1 1 0; min-width: 0; }
+    .booking-filter-form > .custom-date-filter input[type="date"] { width: 122px; }
+    .booking-filter-form > .date-input-wrapper { flex: 0 0 170px; }
+    .booking-filter-form > .date-input-wrapper input[type="month"] { width: 125px; }
+    .booking-filter-form > .report-select-wrap { flex: 0 1 215px; }
+    .booking-filter-form > .report-select-wrap.signatory-select-wrap {
+        flex: 1 1 300px;
+        min-width: 280px;
+        max-width: 380px;
+    }
+    .booking-filter-form > .print-dropdown-wrap { margin-left: auto; }
     .report-select-wrap {
         display: inline-flex;
         align-items: center;
@@ -296,7 +311,8 @@
         background: var(--bg-card);
         box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.15);
     }
-    .date-input-wrapper input[type="date"] {
+    .date-input-wrapper input[type="date"],
+    .date-input-wrapper input[type="month"] {
         border: none;
         background: transparent;
         color: var(--text-primary);
@@ -485,6 +501,18 @@
             flex: 1 1 100%;
             min-width: 0;
             min-height: 42px;
+        }
+        .booking-filter-form > .custom-date-filter,
+        .booking-filter-form > .date-input-wrapper,
+        .booking-filter-form > .report-select-wrap,
+        .booking-filter-form > .report-select-wrap.signatory-select-wrap {
+            flex: 1 1 100%;
+            min-width: 0;
+            max-width: none;
+        }
+        .booking-filter-form > .print-dropdown-wrap {
+            width: 100%;
+            margin-left: 0;
         }
         .report-select-wrap select { flex: 1; }
         .report-select-wrap.signatory-select-wrap {
@@ -1022,16 +1050,16 @@
     </div>
     <div class="print-logo-right">
         <div class="print-date-block">
-            <div class="print-date-row"><strong>As of:</strong><span>{{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</span></div>
-            <div class="print-date-row"><strong>Generated:</strong><span>{{ generated_date|date:"F d, Y" }}</span></div>
+            <div class="print-date-row"><strong>As of:</strong><span>{{ report_date_range }}</span></div>
+            <div class="print-date-row"><strong>Generated:</strong><span>{{ generated_date|date:"F j, Y" }}</span></div>
         </div>
     </div>
 </div>
 <h2 class="print-main-title" id="print-report-title" style="display:none;">BOOKING REPORT</h2>
 <div class="print-global-meta" style="display:none;">
     <div class="print-global-dates">
-        <div><strong>As of:</strong><span>{{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</span></div>
-        <div><strong>Generated:</strong><span>{{ generated_date|date:"F d, Y" }}</span></div>
+        <div><strong>As of:</strong><span>{{ report_date_range }}</span></div>
+        <div><strong>Generated:</strong><span>{{ generated_date|date:"F j, Y" }}</span></div>
     </div>
 </div>
 <div class="business-summary-reference" style="display:none;">
@@ -1039,17 +1067,14 @@
         <h3 class="business-summary-title">Booking Summary</h3>
         <table class="business-summary-table">
             <tbody>
-                <tr><td>Total Bookings</td><td>{{ total_bookings_period }}</td></tr>
-                <tr><td>Completed</td><td>{{ services_rendered }}</td></tr>
-                <tr><td>Online</td><td>{{ online_count }}</td></tr>
-                <tr><td>Walk-in</td><td>{{ walkin_count }}</td></tr>
-                <tr><td>Total Commission</td><td>₱{{ commission_earned|floatformat:"2g" }}</td></tr>
+                <tr><td>Completed Online</td><td>{{ online_count }}</td></tr>
+                <tr><td>Completed Walk-in</td><td>{{ walkin_count }}</td></tr>
             </tbody>
         </table>
     </section>
     <div class="business-summary-dates">
-        <div><strong>As of:</strong><span>{{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</span></div>
-        <div><strong>Generated:</strong><span>{{ generated_date|date:"F d, Y" }}</span></div>
+        <div><strong>As of:</strong><span>{{ report_date_range }}</span></div>
+        <div><strong>Generated:</strong><span>{{ generated_date|date:"F j, Y" }}</span></div>
     </div>
 </div>
 
@@ -1079,13 +1104,17 @@
                 <div class="custom-date-filter">
                     <div class="date-input-wrapper">
                         <i class="fas fa-calendar-day" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
-                        <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" required title="Start Date" onchange="this.form.requestSubmit()">
+                        <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" required title="Start Date">
                     </div>
                     <span class="date-separator"><i class="fas fa-arrow-right"></i></span>
                     <div class="date-input-wrapper">
                         <i class="fas fa-calendar-day" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
-                        <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" required title="End Date" onchange="this.form.requestSubmit()">
+                        <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" required title="End Date">
                     </div>
+                </div>
+                <div class="date-input-wrapper" title="Choose a past or current month">
+                    <i class="fas fa-calendar-alt" style="color: var(--purple-400); font-size: 0.8rem; margin-right: 0.25rem;"></i>
+                    <input type="month" id="staff-report-month-filter" value="{{ selected_report_month }}" aria-label="Filter report by month">
                 </div>
                 <div class="report-select-wrap">
                     <label for="staff-report-status-filter">Status</label>
@@ -1137,7 +1166,7 @@
 </div>
 
 {# ═══════════ BOOKING SECTION (hidden on screen, only visible when printing Bookings) ═══════════ #}
-<div class="booking-section">
+<div class="booking-section{% if show_booking_section %} filter-active{% endif %}">
 
     <!-- Booking Summary -->
     <div class="booking-summary-reference">
@@ -1156,39 +1185,25 @@
                 </colgroup>
                 <tbody>
                     <tr>
-                        <td style="font-weight: 700; text-align: left; padding-left: 6px;">Total Bookings</td>
-                        <td style="font-weight: 700; text-align: center;">{{ total_bookings_period }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: 700; text-align: left; padding-left: 6px;">Completed</td>
-                        <td style="font-weight: 700; text-align: center; color: var(--green-400);">{{ services_rendered }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: 700; text-align: left; padding-left: 6px;">Online</td>
+                        <td style="font-weight: 700; text-align: left; padding-left: 6px;">Completed Online</td>
                         <td style="font-weight: 700; text-align: center;">{{ online_count }}</td>
                     </tr>
                     <tr>
-                        <td style="font-weight: 700; text-align: left; padding-left: 6px;">Walk-in</td>
+                        <td style="font-weight: 700; text-align: left; padding-left: 6px;">Completed Walk-in</td>
                         <td style="font-weight: 700; text-align: center;">{{ walkin_count }}</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: 700; text-align: left; padding-left: 6px;">Total Commission</td>
-                        <td style="font-weight: 700; text-align: center;">₱{{ commission_earned|floatformat:"2g" }}</td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
     <div class="booking-reference-dates">
-        <div><strong>As of:</strong><span>{{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</span></div>
-        <div><strong>Generated:</strong><span>{{ generated_date|date:"F d, Y" }}</span></div>
+        <div><strong>As of:</strong><span>{{ report_date_range }}</span></div>
+        <div><strong>Generated:</strong><span>{{ generated_date|date:"F j, Y" }}</span></div>
     </div>
     </div>
 
     <!-- Booking tables grouped by current service category -->
     {% include "portals/includes/booking_category_tables.html" %}
-
-    {% include "portals/includes/booking_combined_revenue.html" %}
 
     {% comment %}Legacy single-table booking layout retained only for template history.
     <!-- Booking List -->
@@ -1225,7 +1240,7 @@
                     {% for b in all_bookings_in_period %}
                     <tr>
                         <td class="text-left" style="font-weight: 500; color: var(--text-primary);">{{ b.client_name }}</td>
-                        <td class="text-center" style="white-space: nowrap;">{{ b.date|date:"F d, Y" }}</td>
+                        <td class="text-center" style="white-space: nowrap;">{{ b.date|date:"F j, Y" }}</td>
                         <td class="text-center" style="white-space: nowrap;">{{ b.get_time_display }}</td>
                         <td class="text-left">{{ b.service_names }}</td>
                         <td class="text-center">
@@ -1249,14 +1264,6 @@
                     </tr>
                     {% endfor %}
                 </tbody>
-                {% if all_bookings_in_period %}
-                <tfoot>
-                    <tr>
-                        <td colspan="6" style="font-weight: 700; color: #000; text-align: right; padding-right: 12px;">TOTAL REVENUE (Completed)</td>
-                        <td class="revenue-highlight" style="white-space: nowrap; text-align: right; padding-right: 6px;">₱{{ total_revenue|floatformat:"2g" }}</td>
-                    </tr>
-                </tfoot>
-                {% endif %}
             </table>
         </div>
     </div>
@@ -1279,15 +1286,13 @@
                 <span class="period-pill">{{ period_label }}</span>
             </div>
             <div class="metrics-grid">
-                <!-- Total Revenue -->
+
                 <div class="metric-card metric-green">
-                    <div class="metric-icon"><i class="fas fa-coins"></i></div>
+                    <div class="metric-icon"><i class="fas fa-cash-register"></i></div>
                     <div class="metric-info">
-                        <div class="metric-label">Total Revenue</div>
-                        <div class="metric-value">₱{{ total_revenue|floatformat:"2g" }}</div>
-                        <div class="metric-subtext">
-                            <i class="fas fa-arrow-trend-up"></i> Generated Sales
-                        </div>
+                        <div class="metric-label">Total Sales</div>
+                        <div class="metric-value">₱{{ total_sales|floatformat:"2g" }}</div>
+                        <div class="metric-subtext"><i class="fas fa-receipt"></i> Paid completed transactions</div>
                     </div>
                 </div>
 
@@ -1296,7 +1301,7 @@
                     <div class="metric-icon"><i class="fas fa-spa"></i></div>
                     <div class="metric-info">
                         <div class="metric-label">Services Completed</div>
-                        <div class="metric-value">{{ services_rendered }}</div>
+                        <div class="metric-value">{{ completed_booking_count }}</div>
                         <div class="metric-subtext">
                             <i class="fas fa-check-circle"></i> Rendered Treatments
                         </div>
@@ -1337,25 +1342,24 @@
             <div class="print-summary-title">Sales Summary</div>
             <table class="sales-summary-print">
                 <tbody>
-                    <tr>
-                        <td>Total Revenue</td>
-                        <td class="revenue-highlight text-center">₱{{ total_revenue|floatformat:"2g" }}</td>
-                    </tr>
+                    <tr><td>Total Sales</td><td class="text-center" style="font-weight:600;">₱{{ total_sales|floatformat:"2g" }}</td></tr>
                     <tr>
                         <td>Services Completed</td>
-                        <td class="text-center" style="font-weight: 600;">{{ services_rendered }}</td>
+                        <td class="text-center" style="font-weight: 600;">{{ completed_booking_count }}</td>
                     </tr>
-                    <tr><td>Online Bookings</td><td class="text-center">{{ online_count }}</td></tr>
-                    <tr><td>Walk-in</td><td class="text-center">{{ walkin_count }}</td></tr>
+                    <tr><td>Completed Online</td><td class="text-center">{{ online_count }}</td></tr>
+                    <tr><td>Completed Walk-in</td><td class="text-center">{{ walkin_count }}</td></tr>
                 </tbody>
             </table>
             </div>
             <div class="sales-summary-dates">
-                <div><strong>As of:</strong><span>{{ start_date|date:"F d" }}–{{ end_date|date:"F d, Y" }}</span></div>
-                <div><strong>Generated:</strong><span>{{ generated_date|date:"F d, Y" }}</span></div>
+                <div><strong>As of:</strong><span>{{ report_date_range }}</span></div>
+                <div><strong>Generated:</strong><span>{{ generated_date|date:"F j, Y" }}</span></div>
             </div>
         </div>
     </div>
+
+    {% include "portals/includes/sales_transaction_table.html" %}
 
     <!-- Regular Priced Services -->
     <div class="card">
@@ -1452,19 +1456,6 @@
         </div>
     </div>
 
-    <div class="card combined-revenue-card" style="margin-top:1.5rem;">
-        <div class="card-header"><span class="card-header-title">COMBINED TOTAL REVENUE</span></div>
-        <div class="table-wrapper">
-            <table class="data-table">
-                <tbody>
-                    <tr><td class="text-left"><strong>Regular Priced Services Revenue</strong></td><td class="text-right">₱{{ regular_revenue|floatformat:"2g" }}</td></tr>
-                    <tr><td class="text-left"><strong>Promotional / Discounted Services Revenue</strong></td><td class="text-right">₱{{ promotional_revenue|floatformat:"2g" }}</td></tr>
-                    <tr><td class="text-left"><strong>TOTAL REVENUE</strong></td><td class="text-right"><strong>₱{{ combined_revenue|floatformat:"2g" }}</strong></td></tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
 </div>{# end sales-section #}
 
 <!-- Print-only: Signature Fields -->
@@ -1484,6 +1475,35 @@
 </div>
 
 <script>
+let staffDateFilterTimer;
+document.querySelectorAll('.booking-filter-form input[type="date"]').forEach(function (input) {
+    input.addEventListener('change', function () {
+        const form = this.form;
+        const startDate = form?.querySelector('[name="start_date"]');
+        const endDate = form?.querySelector('[name="end_date"]');
+        if (!form || !startDate?.value || !endDate?.value) return;
+        if (startDate.value > endDate.value) {
+            if (this.name === 'start_date') endDate.value = startDate.value;
+            else startDate.value = endDate.value;
+        }
+        clearTimeout(staffDateFilterTimer);
+        staffDateFilterTimer = setTimeout(function () { form.requestSubmit(); }, 300);
+    });
+});
+
+document.getElementById('staff-report-month-filter')?.addEventListener('change', function () {
+    if (!this.value) return;
+    const [year, month] = this.value.split('-').map(Number);
+    const form = this.closest('form');
+    if (!form || !year || !month) return;
+    const startDate = form.querySelector('[name="start_date"]');
+    const endDate = form.querySelector('[name="end_date"]');
+    const lastDay = new Date(year, month, 0).getDate();
+    if (startDate) startDate.value = `${year}-${String(month).padStart(2, '0')}-01`;
+    if (endDate) endDate.value = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    form.requestSubmit();
+});
+
 function togglePrintDropdown(e) {
     e.stopPropagation();
     document.getElementById('printDropdown').classList.toggle('open');

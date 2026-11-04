@@ -8,24 +8,24 @@
     /* Therapist Card Grid */
     .therapist-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        gap: 1.125rem;
     }
 
     .therapist-card {
         position: relative;
-        border-radius: 1rem;
+        border-radius: 1.125rem;
         overflow: hidden;
-        border: 2px solid rgba(139, 92, 246, 0.1);
-        background: rgba(139, 92, 246, 0.05);
+        border: 1px solid rgba(196, 181, 253, 0.16);
+        background: linear-gradient(180deg, rgba(35, 22, 49, 0.98), rgba(25, 16, 36, 0.98));
         cursor: pointer;
         transition: all 0.3s ease;
     }
 
     .therapist-card:hover {
         border-color: rgba(139, 92, 246, 0.4);
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(9, 5, 15, 0.28);
     }
 
     .therapist-card.selected {
@@ -40,7 +40,7 @@
         font-weight: 900;
         position: absolute;
         top: 8px;
-        right: 8px;
+        left: 8px;
         background: #a855f7;
         color: #fff;
         width: 24px;
@@ -55,14 +55,14 @@
 
     .therapist-card-photo {
         width: 100%;
-        aspect-ratio: 1;
+        aspect-ratio: 4 / 3;
         object-fit: cover;
         display: block;
     }
 
     .therapist-card-photo-placeholder {
         width: 100%;
-        aspect-ratio: 1;
+        aspect-ratio: 4 / 3;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -72,11 +72,11 @@
     }
 
     .therapist-card-info {
-        padding: 0.6rem 0.75rem;
+        padding: 0.85rem 0.9rem 1rem;
     }
 
     .therapist-card-name {
-        font-size: 0.8rem;
+        font-size: 0.9rem;
         font-weight: 600;
         color: #e5e7eb;
         white-space: nowrap;
@@ -85,13 +85,30 @@
     }
 
     .therapist-card-title {
-        font-size: 0.65rem;
+        font-size: 0.72rem;
         color: #9ca3af;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         margin-top: 2px;
     }
+
+    .therapist-detail { color: #b9aec6; font-size: 0.73rem; line-height: 1.5; margin-top: 0.65rem; }
+    .therapist-detail-label { color: #8f829f; display: block; font-size: 0.61rem; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 0.2rem; text-transform: uppercase; }
+    .therapist-bio { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .therapist-category-list { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.7rem; }
+    .therapist-category-tag { border: 1px solid rgba(196, 181, 253, 0.18); background: rgba(168, 85, 247, 0.1); color: #d8c5ef; border-radius: 999px; padding: 0.24rem 0.55rem; font-size: 0.63rem; }
+    .therapist-experience { color: #d4c8e0; display: flex; align-items: center; gap: 0.4rem; font-size: 0.7rem; margin-top: 0.65rem; }
+    .therapist-info-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; border: 1px solid rgba(196, 181, 253, 0.22); border-radius: 0.6rem; background: rgba(255, 255, 255, 0.04); color: #c4b5d2; cursor: pointer; font: inherit; font-size: 0.7rem; padding: 0.45rem 0.65rem; transition: background 0.2s, border-color 0.2s; }
+    .therapist-card .therapist-info-button { position: absolute; top: 0.6rem; right: 0.6rem; z-index: 12; min-width: 2rem; min-height: 2rem; padding: 0.4rem; border-radius: 999px; background: rgba(24, 16, 34, 0.88); backdrop-filter: blur(6px); }
+    .therapist-card .therapist-info-button:hover { background: rgba(88, 51, 120, 0.96); }
+    .therapist-info-button:hover { background: rgba(168, 85, 247, 0.14); border-color: rgba(196, 181, 253, 0.4); color: #e9d5ff; }
+    .therapist-modal-backdrop { position: fixed; inset: 0; z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(9, 5, 15, 0.78); backdrop-filter: blur(6px); }
+    .therapist-modal { width: min(100%, 460px); max-height: min(85vh, 720px); overflow-y: auto; border: 1px solid rgba(196, 181, 253, 0.22); border-radius: 1.1rem; background: #1b1225; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5); padding: 1.25rem; }
+    .therapist-modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+    .therapist-modal-close { border: 0; background: transparent; color: #b9aec6; cursor: pointer; font-size: 1.1rem; padding: 0.25rem; }
+    .therapist-modal-photo { width: 76px; height: 76px; border-radius: 0.85rem; object-fit: cover; border: 1px solid rgba(196, 181, 253, 0.2); }
+    .therapist-modal-content { border-top: 1px solid rgba(196, 181, 253, 0.12); padding-top: 0.25rem; }
 
     .therapist-section {
         margin-top: 1.25rem;
@@ -840,7 +857,7 @@
                                         <i class="fas fa-users text-xs"></i> Family Members
                                     </h3>
                                     <span class="member-count-badge" id="member-count-badge">
-                                        <i class="fas fa-user"></i> <span id="member-count-text">1</span> / 5
+                                        <i class="fas fa-user"></i> <span id="member-count-text">1</span>
                                     </span>
                                 </div>
 
@@ -1106,7 +1123,6 @@
         // ═══════════════════════════════════════
         // FAMILY MEMBER MANAGEMENT
         // ═══════════════════════════════════════
-        const MAX_MEMBERS = 5;
         let memberCount = 1;
         const container = document.getElementById('family-members-container');
         const addBtn = document.getElementById('add-member-btn');
@@ -1165,7 +1181,8 @@
         function updateMemberCount() {
             countInput.value = memberCount;
             countText.textContent = memberCount;
-            addBtn.disabled = memberCount >= MAX_MEMBERS;
+            // Member entry is independent of therapist availability and has no fixed cap.
+            addBtn.disabled = false;
             // Re-number all member cards
             const cards = container.querySelectorAll('.family-member-card');
             cards.forEach((card, idx) => {
@@ -1250,7 +1267,6 @@
         }
 
         addBtn.addEventListener('click', () => {
-            if (memberCount >= MAX_MEMBERS) return;
             const newCard = createMemberCard(memberCount);
             container.appendChild(newCard);
 
@@ -1595,6 +1611,128 @@
             updateFamilyTherapistSelections();
         };
 
+        function escapeTherapistText(value) {
+            return String(value || '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[char]));
+        }
+
+        const therapistExpertiseFilterState = {};
+        function therapistCategoryCodes(therapist) {
+            return [...new Set((therapist.specialties || []).flatMap(s =>
+                (s.categories || []).map(category => category.code).filter(Boolean)
+            ))];
+        }
+
+        function expertiseFilterMarkup(therapists, filterKey) {
+            const categories = new Map();
+            (therapists || []).forEach(therapist => {
+                (therapist.specialties || []).forEach(specialty => {
+                    (specialty.categories || []).forEach(category => {
+                        if (category.code && category.label) categories.set(category.code, category.label);
+                    });
+                });
+            });
+            if (!categories.size) return '';
+            const selected = therapistExpertiseFilterState[filterKey] || 'all';
+            const options = [...categories.entries()].map(([code, label]) =>
+                `<option value="${escapeTherapistText(code)}" ${selected === code ? 'selected' : ''}>${escapeTherapistText(label)}</option>`
+            ).join('');
+            return `<div class="mb-3 flex flex-wrap items-center gap-3">
+                <label for="expertise-filter-${escapeTherapistText(filterKey)}" class="text-sm font-medium text-gray-300">Filter by expertise</label>
+                <select id="expertise-filter-${escapeTherapistText(filterKey)}" data-expertise-filter="${escapeTherapistText(filterKey)}" class="form-input" style="max-width: 260px; padding: .55rem .75rem;">
+                    <option value="all" ${selected === 'all' ? 'selected' : ''}>All expertise</option>${options}
+                </select>
+            </div>`;
+        }
+
+        function setupExpertiseFilter(container, filterKey) {
+            const filter = container.querySelector('[data-expertise-filter]');
+            const cards = [...container.querySelectorAll('.therapist-card')];
+            const emptyMessage = container.querySelector('[data-expertise-empty]');
+            const applyFilter = value => {
+                let visibleCount = 0;
+                cards.forEach(card => {
+                    let categories = [];
+                    try { categories = JSON.parse(card.dataset.expertiseCategories || '[]'); } catch (_) {}
+                    const visible = value === 'all' || categories.includes(value);
+                    card.style.display = visible ? '' : 'none';
+                    if (visible) visibleCount++;
+                });
+                if (emptyMessage) emptyMessage.style.display = visibleCount ? 'none' : '';
+            };
+            if (filter) {
+                const savedValue = therapistExpertiseFilterState[filterKey] || 'all';
+                filter.value = [...filter.options].some(option => option.value === savedValue) ? savedValue : 'all';
+                therapistExpertiseFilterState[filterKey] = filter.value;
+                filter.addEventListener('change', () => {
+                    therapistExpertiseFilterState[filterKey] = filter.value;
+                    applyFilter(filter.value);
+                });
+                applyFilter(filter.value);
+            }
+        }
+
+        function therapistDetailsContentHTML(t) {
+            const tags = (t.specialties || []).flatMap(s =>
+                (s.categories || []).map(category => category.label)
+            ).filter(Boolean);
+            const uniqueTags = [...new Set(tags)];
+            const categories = uniqueTags.length
+                ? `<div class="therapist-category-list" aria-label="Specialization categories">${uniqueTags.map(tag => `<span class="therapist-category-tag">${escapeTherapistText(tag)}</span>`).join('')}</div>`
+                : '';
+            const expertise = (t.specialties || []).map(s => s.name).filter(Boolean);
+            const expertiseText = expertise.length
+                ? `<div class="therapist-detail"><span class="therapist-detail-label">Specialties</span>${expertise.map(escapeTherapistText).join(' · ')}</div>`
+                : '';
+            const experience = Number(t.years_experience) > 0
+                ? `<div class="therapist-experience"><i class="fas fa-award" aria-hidden="true"></i>${escapeTherapistText(t.years_experience)} years of experience</div>`
+                : '';
+            const bio = t.bio
+                ? `<div class="therapist-detail therapist-bio"><span class="therapist-detail-label">Profile</span>${escapeTherapistText(t.bio)}</div>`
+                : '';
+            return `${categories}${expertiseText}${experience}${bio || '<div class="therapist-detail">Profile information is not available.</div>'}`;
+        }
+
+        const therapistInfoProfiles = {};
+        function therapistDetailsHTML(t) {
+            therapistInfoProfiles[t.id] = t;
+            return `<button type="button" class="therapist-info-button" onclick="event.stopPropagation(); showTherapistInfo(${Number(t.id)})" aria-label="View ${escapeTherapistText(t.name)} profile">
+                <i class="fas fa-circle-info" aria-hidden="true"></i> Info
+            </button>`;
+        }
+
+        window.showTherapistInfo = function (id) {
+            const t = therapistInfoProfiles[id];
+            if (!t) return;
+            document.getElementById('therapist-info-modal')?.remove();
+            const modal = document.createElement('div');
+            modal.id = 'therapist-info-modal';
+            modal.className = 'therapist-modal-backdrop';
+            modal.setAttribute('role', 'presentation');
+            modal.innerHTML = `<section class="therapist-modal" role="dialog" aria-modal="true" aria-labelledby="therapist-modal-name">
+                <div class="therapist-modal-header">
+                    <div class="flex items-center gap-4">
+                        ${t.photo ? `<img class="therapist-modal-photo" src="${escapeTherapistText(t.photo)}" alt="${escapeTherapistText(t.name)}">` : '<div class="therapist-modal-photo flex items-center justify-center text-purple-300"><i class="fas fa-user"></i></div>'}
+                        <div><h3 id="therapist-modal-name" class="text-lg font-semibold text-white">${escapeTherapistText(t.name)}</h3><p class="text-sm text-gray-400 mt-1">${escapeTherapistText(t.title)}</p></div>
+                    </div>
+                    <button type="button" class="therapist-modal-close" aria-label="Close therapist information"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="therapist-modal-content">${therapistDetailsContentHTML(t)}</div>
+            </section>`;
+            const onEscape = event => { if (event.key === 'Escape') closeModal(); };
+            const closeModal = () => {
+                modal.remove();
+                document.removeEventListener('keydown', onEscape);
+            };
+            modal.addEventListener('click', event => { if (event.target === modal) closeModal(); });
+            modal.querySelector('.therapist-modal-close').addEventListener('click', closeModal);
+            modal.querySelector('.therapist-modal').addEventListener('click', event => event.stopPropagation());
+            document.addEventListener('keydown', onEscape);
+            document.body.appendChild(modal);
+            modal.querySelector('.therapist-modal-close').focus();
+        }
+
         function renderFamilyTherapistCards(therapists, index, container) {
             if (!therapists || therapists.length === 0) {
                 container.innerHTML = '<p class="no-therapists-msg"><i class="fas fa-user-slash" style="font-size:1.5rem;opacity:0.3;display:block;margin-bottom:0.5rem;"></i>No therapists available for this preference.</p>';
@@ -1603,7 +1741,8 @@
 
             const hiddenInput = document.getElementById(`member_${index}_therapist_hidden`);
             let selectedId = hiddenInput ? hiddenInput.value : null;
-            let html = '<div class="therapist-grid">';
+            const filterKey = `family-${index}`;
+            let html = expertiseFilterMarkup(therapists, filterKey) + '<div class="therapist-grid">';
 
             therapists.forEach(t => {
                 if ((t.is_off || t.is_booked || t.is_outside_schedule || t.is_on_break) && selectedId == t.id) {
@@ -1669,18 +1808,21 @@
                 <div class="therapist-card ${selectedClass}"
                      style="${disabledStyle}"
                      data-therapist-id="${t.id}"
+                     data-expertise-categories="${escapeTherapistText(JSON.stringify(therapistCategoryCodes(t)))}"
                      ${clickHandler}
                      title="${t.name} — ${t.title}">
                     ${badgeHtml}
                     ${photoHtml}
                     <div class="therapist-card-info">
-                        <div class="therapist-card-name">${t.name}</div>
-                        <div class="therapist-card-title">${t.title}</div>
+                        <div class="therapist-card-name">${escapeTherapistText(t.name)}</div>
+                        <div class="therapist-card-title">${escapeTherapistText(t.title)}</div>
+                        ${therapistDetailsHTML(t)}
                     </div>
                 </div>`;
             });
-            html += '</div>';
+            html += '</div><p data-expertise-empty style="display:none;" class="no-therapists-msg">No therapists match this expertise category.</p>';
             container.innerHTML = html;
+            setupExpertiseFilter(container, filterKey);
 
             // Ensure any already selected therapists by others show the badge
             setTimeout(() => {
@@ -1880,7 +2022,7 @@
                 return;
             }
 
-            let html = '<div class="therapist-grid">';
+            let html = expertiseFilterMarkup(therapists, 'single') + '<div class="therapist-grid">';
             therapists.forEach(t => {
                 if ((t.is_off || t.is_booked || t.is_outside_schedule || t.is_on_break) && selectedTherapistId == t.id) {
                     selectedTherapistId = null;
@@ -1945,18 +2087,21 @@
                 <div class="therapist-card ${selectedClass}"
                      style="${disabledStyle}"
                      data-therapist-id="${t.id}"
+                     data-expertise-categories="${escapeTherapistText(JSON.stringify(therapistCategoryCodes(t)))}"
                      ${clickHandler}
                      title="${t.name} — ${t.title}">
                     ${badgeHtml}
                     ${photoHtml}
                     <div class="therapist-card-info">
-                        <div class="therapist-card-name">${t.name}</div>
-                        <div class="therapist-card-title">${t.title}</div>
+                        <div class="therapist-card-name">${escapeTherapistText(t.name)}</div>
+                        <div class="therapist-card-title">${escapeTherapistText(t.title)}</div>
+                        ${therapistDetailsHTML(t)}
                     </div>
                 </div>`;
             });
-            html += '</div>';
+            html += '</div><p data-expertise-empty style="display:none;" class="no-therapists-msg">No therapists match this expertise category.</p>';
             cardsContainer.innerHTML = html;
+            setupExpertiseFilter(cardsContainer, 'single');
         }
 
         // Select a therapist

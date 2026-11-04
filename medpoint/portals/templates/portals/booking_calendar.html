@@ -669,7 +669,7 @@
                                 </button>
                             {% elif booking.status == 'confirmed' %}
                                 <button class="action-btn btn-complete"
-                                    onclick="updateBookingStatus({{ booking.pk }}, 'completed')">
+onclick="openCompletionModal({{ booking.pk }})">
                                     <i class="fas fa-check-double"></i> Complete
                                 </button>
                                 {% if request.user.is_superuser %}
@@ -955,7 +955,7 @@
                 `<button class="action-btn btn-confirm" onclick="updateBookingStatus(${bookingId}, 'confirmed')">`+
                 `<i class="fas fa-check"></i> Confirm</button>`;
         } else if (newStatus === 'confirmed') {
-            var completeBtn = `<button class="action-btn btn-complete" onclick="updateBookingStatus(${bookingId}, 'completed')">`+
+            var completeBtn = `<button class="action-btn btn-complete" onclick="openCompletionModal(${bookingId})">`+
                 `<i class="fas fa-check-double"></i> Complete</button>`;
             var cancelBtn = IS_SUPERUSER ? 
                 `<button class="action-btn btn-cancel" onclick="updateBookingStatus(${bookingId}, 'cancelled')">`+
@@ -966,14 +966,52 @@
         }
     }
 
-    function updateBookingStatus(bookingId, newStatus) {
+    function openCompletionModal(bookingId) {
+        fetch('/portal/bookings/' + bookingId + '/update-status/', {headers: {'X-CSRFToken': getCookie('csrftoken')}})
+        .then(function (r) { if (!r.ok) throw new Error('Unable to load booking details.'); return r.json(); })
+        .then(function (data) {
+            document.getElementById('completion-modal')?.remove();
+            if (!document.getElementById('completion-modal-css')) {
+                var css = document.createElement('style'); css.id = 'completion-modal-css';
+                css.textContent = '.completion-backdrop{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,5,14,.78);backdrop-filter:blur(6px)}.completion-dialog{width:min(100%,500px);max-height:88vh;overflow:auto;padding:26px;border:1px solid rgba(196,181,253,.2);border-radius:22px;background:linear-gradient(160deg,#241831,#17111f 72%);color:#f5f3f7;box-shadow:0 28px 90px rgba(0,0,0,.55)}.completion-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:22px}.completion-heading{display:flex;align-items:center;gap:14px}.completion-icon{display:grid;place-items:center;width:46px;height:46px;flex:0 0 46px;border-radius:14px;background:rgba(168,85,247,.16);color:#d8b4fe;font-size:1.1rem}.completion-dialog h2{margin:0;font-size:1.2rem;letter-spacing:-.02em}.completion-muted{margin:5px 0 0;color:#a99db5;font-size:.84rem}.completion-close{width:34px;height:34px;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.04);color:#c8bdcf;font-size:1.2rem;cursor:pointer}.completion-section-label{margin:0 0 8px;color:#9c8eaa;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}.completion-list{padding:4px 14px;border:1px solid rgba(196,181,253,.12);border-radius:14px;background:rgba(255,255,255,.025)}.completion-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.87rem}.completion-row:last-of-type{border-bottom:0}.completion-row strong{white-space:nowrap;color:#eee7f5}.completion-service-name{color:#d7cede}.completion-duration{display:block;margin-top:3px;color:#91849d;font-size:.73rem}.completion-total{display:flex;justify-content:space-between;align-items:center;margin:4px -14px -4px;padding:14px;border-radius:0 0 14px 14px;background:rgba(168,85,247,.09);font-weight:700}.completion-total span:last-child{color:#e9d5ff;font-size:1.12rem}.completion-payment-prompt{margin-top:20px;padding:16px;border:1px solid rgba(196,181,253,.12);border-radius:14px;background:rgba(255,255,255,.025)}.completion-question{margin:0;color:#f0eaf5;font-size:.96rem;font-weight:650}.completion-hint{margin:5px 0 0;color:#9e91a8;font-size:.78rem;line-height:1.5}.completion-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.completion-actions button{padding:11px 15px;border-radius:10px;font-weight:650;cursor:pointer;transition:all .18s}.completion-no{border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.035);color:#d9cfdf}.completion-no:hover{background:rgba(255,255,255,.08)}.completion-yes{border:1px solid #8b5cf6;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;box-shadow:0 5px 16px rgba(124,58,237,.2)}.completion-yes:hover{filter:brightness(1.08);transform:translateY(-1px)}@media(max-width:480px){.completion-dialog{padding:20px;border-radius:18px}.completion-actions{flex-direction:column-reverse}.completion-actions button{width:100%}}';
+                document.head.appendChild(css);
+            }
+            var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"': '&quot;', "'":'&#39;'}[c]; }); };
+            var money = function (v) { return '₱' + Number(v || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2}); };
+            var rows = (data.services || []).map(function (s) { return '<div class="completion-row"><span class="completion-service-name">' + esc(s.name) + (s.duration ? '<small class="completion-duration">' + esc(s.duration) + ' minutes</small>' : '') + '</span><strong>' + money(s.amount) + '</strong></div>'; }).join('');
+            var modal = document.createElement('div'); modal.id = 'completion-modal'; modal.className = 'completion-backdrop';
+            modal.innerHTML = '<section class="completion-dialog" role="dialog" aria-modal="true" aria-labelledby="completion-title">' +
+                '<div class="completion-head"><div class="completion-heading"><span class="completion-icon"><i class="fas fa-receipt" aria-hidden="true"></i></span><div><h2 id="completion-title">Complete booking</h2><p class="completion-muted">Booking #' + esc(data.booking_id) + ' · ' + esc(data.client_name) + '</p></div></div><button class="completion-close" type="button" aria-label="Close">&times;</button></div>' +
+                '<p class="completion-section-label">Service summary</p><div class="completion-list">' + (rows || '<p class="completion-muted">Service details unavailable</p>') + '<div class="completion-total"><span>Total due</span><span>' + money(data.total) + '</span></div></div>' +
+                '<div class="completion-payment-prompt"><p class="completion-question">Has the customer already paid?</p><p class="completion-hint">Confirm payment before marking this booking as completed.</p></div>' +
+                '<div class="completion-actions"><button class="completion-no" type="button"><i class="fas fa-times" aria-hidden="true"></i> Cancel</button><button class="completion-yes" type="button"><i class="fas fa-check" aria-hidden="true"></i> Confirm</button></div></section>';
+            var close = function () { modal.remove(); document.removeEventListener('keydown', onEscape); };
+            var onEscape = function (e) { if (e.key === 'Escape') close(); };
+            modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+            modal.querySelector('.completion-dialog').addEventListener('click', function (e) { e.stopPropagation(); });
+            modal.querySelector('.completion-close').addEventListener('click', close);
+            modal.querySelector('.completion-no').addEventListener('click', close);
+            modal.querySelector('.completion-yes').addEventListener('click', function () { close(); updateBookingStatus(bookingId, 'completed', true); });
+            document.addEventListener('keydown', onEscape); document.body.appendChild(modal);
+            modal.querySelector('.completion-yes').focus();
+        })
+        .catch(function (error) { alert(error.message || 'Unable to load booking details.'); });
+    }
+
+    function updateBookingStatus(bookingId, newStatus, paymentConfirmed) {
+        if (newStatus === 'completed' && !paymentConfirmed) return;
+        const bodyParams = new URLSearchParams({ status: newStatus });
+        if (newStatus === 'completed') {
+            bodyParams.set('payment_method', 'staff_verified');
+            bodyParams.set('payment_reference', 'Staff confirmed customer paid');
+        }
         fetch(`/portal/bookings/${bookingId}/update-status/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-CSRFToken': getCookie('csrftoken'),
             },
-            body: `status=${newStatus}`
+            body: bodyParams.toString()
         })
         .then(res => res.json())
         .then(data => {

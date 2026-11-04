@@ -1,0 +1,46 @@
+<style>
+    .sales-transaction-table { min-width: 940px; }
+    .sales-transaction-table small { color: var(--text-muted); }
+    @media print {
+        .sales-transaction-table { min-width: 0 !important; table-layout: fixed; }
+        .sales-transaction-table th, .sales-transaction-table td { padding: 4px 5px !important; font-size: 7pt !important; white-space: normal !important; overflow-wrap: anywhere; }
+    }
+</style>
+<div class="card sales-transaction-card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <span class="card-header-title"><i class="fas fa-receipt" style="margin-right:.5rem;color:var(--purple-400);"></i>SALES TRANSACTIONS</span>
+    </div>
+    <div class="table-wrapper">
+        <table class="data-table sales-transaction-table">
+            <thead>
+                <tr>
+                    <th class="text-left">BK ID</th>
+                    <th class="text-left">Customer</th>
+                    <th class="text-left">Date</th>
+                    <th class="text-left">Service(s)</th>
+                    <th class="text-left">Booking Type</th>
+                    <th class="text-left">Therapist</th>
+                    <th class="text-right">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales_transactions %}
+                <tr>
+                    <td class="text-left">#{{ sale.booking_id }}</td>
+                    <td class="text-left">{{ sale.client_name }}</td>
+                    <td class="text-left" style="white-space:nowrap;">{{ sale.booking_date|date:"M j, Y" }}</td>
+                    <td class="text-left">{{ sale.service_names }}</td>
+                    <td class="text-left">{{ sale.booking_type }}</td>
+                    <td class="text-left">{{ sale.therapist_name }}</td>
+                    <td class="text-right" style="white-space:nowrap;">₱{{ sale.amount|floatformat:"2g" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center"><div class="empty-state"><i class="fas fa-receipt"></i><p>No completed bookings were found in the selected period.</p></div></td></tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr><td colspan="6" class="text-right"><strong>TOTAL SALES</strong></td><td class="text-right"><strong>₱{{ total_sales|floatformat:"2g" }}</strong></td></tr>
+            </tfoot>
+        </table>
+    </div>
+</div>

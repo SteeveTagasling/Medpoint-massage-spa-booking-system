@@ -410,11 +410,8 @@ def _handle_family_booking(request):
 
     if member_count < 1:
         errors.append('At least one family member is required.')
-    if member_count > 5:
-        errors.append('Maximum 5 family members per group booking.')
-
     member_forms = []
-    for i in range(min(member_count, 5)):
+    for i in range(member_count):
         mf = FamilyMemberForm({
             'name': POST.get(f'member_{i}_name', ''),
             'gender': POST.get(f'member_{i}_gender', ''),
@@ -1138,6 +1135,9 @@ def get_therapists_by_preference(request):
         therapists = Therapist.objects.filter(is_active=True)
     else:
         therapists = Therapist.objects.filter(is_active=True, gender=pref)
+    therapists = therapists.prefetch_related('specialties')
+    category_labels = dict(Service.CATEGORY_CHOICES)
+    category_labels.update(dict(ServiceCategory.choices()))
 
     target_weekday = None
     target_date = None
@@ -1313,6 +1313,26 @@ def get_therapists_by_preference(request):
             'id': t.pk,
             'name': t.name,
             'title': t.title,
+            'bio': t.bio,
+            'years_experience': t.years_experience,
+            'specialties': [
+                {
+                    'name': specialty.name,
+                    'category': specialty.get_category_display,
+                    'categories': [
+                        {
+                            'code': code.strip(),
+                            'label': category_labels.get(
+                                code.strip(),
+                                dict(Service.CATEGORY_CHOICES).get(code.strip(), code.strip().replace('_', ' ').title()),
+                            ),
+                        }
+                        for code in (specialty.category or '').split(',')
+                        if code.strip()
+                    ],
+                }
+                for specialty in t.specialties.all()
+            ],
             'gender': t.gender,
             'photo': t.photo.url if t.photo else None,
             'is_off': is_off,

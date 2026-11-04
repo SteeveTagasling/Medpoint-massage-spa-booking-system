@@ -1,6 +1,6 @@
 from django.contrib import admin
 # pyrefly: ignore [missing-import]
-from .models import Service, ServiceCategory, Therapist, Testimonial, Booking, ContactMessage, MessageReply, StaffSchedule, ServicePriceHistory
+from .models import Service, ServiceCategory, Therapist, Testimonial, Booking, PaymentTransaction, ContactMessage, MessageReply, StaffSchedule, ServicePriceHistory
 
 
 @admin.register(ServiceCategory)
@@ -55,7 +55,7 @@ class TestimonialAdmin(admin.ModelAdmin):
 class BookingAdmin(admin.ModelAdmin):
     list_display = ['client_name', 'get_services', 'therapist', 'booking_type', 'date', 'time', 'status', 'created_at']
     list_filter = ['status', 'booking_type', 'date', 'services']
-    list_editable = ['status']
+    list_editable = []
     search_fields = ['client_name', 'client_email', 'client_phone']
     readonly_fields = ['created_at', 'updated_at']
 
@@ -65,6 +65,20 @@ class BookingAdmin(admin.ModelAdmin):
     def get_services(self, obj):
         return ", ".join([s.name for s in obj.services.all()])
     get_services.short_description = 'Services'
+
+
+@admin.register(PaymentTransaction)
+class PaymentTransactionAdmin(admin.ModelAdmin):
+    list_display = ['id', 'booking', 'amount', 'payment_method', 'status', 'recorded_by', 'created_at']
+    list_filter = ['status', 'payment_method', 'created_at']
+    search_fields = ['booking__client_name', 'reference']
+    readonly_fields = ['booking', 'amount', 'payment_method', 'reference', 'status', 'recorded_by', 'created_at']
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class MessageReplyInline(admin.TabularInline):

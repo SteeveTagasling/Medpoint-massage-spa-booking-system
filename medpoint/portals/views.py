@@ -19,7 +19,7 @@ from PIL import Image, UnidentifiedImageError
 
 from website.models import (
     Service, ServiceCategory, Therapist, Testimonial, GalleryImage,
-    Booking, ContactMessage, MessageReply, StaffSchedule, StaffLeave,
+    Booking, PaymentTransaction, ContactMessage, MessageReply, StaffSchedule, StaffLeave,
     ServicePriceHistory, SiteContent, WebsitePolicyItem,
 )
 from website.site_content import SITE_CONTENT_FIELDS
@@ -305,6 +305,8 @@ def _get_date_range(request):
             from datetime import datetime
             start = datetime.strptime(start_str, '%Y-%m-%d').date()
             end = datetime.strptime(end_str, '%Y-%m-%d').date()
+            if start > end:
+                start, end = end, start
             if start == end:
                 label = start.strftime('%B %d, %Y')
             else:
@@ -330,6 +332,23 @@ def _get_date_range(request):
         end = today
         label = today.strftime('%B %d, %Y')
     return start, end, label
+
+
+def _format_report_date_range(start_date, end_date):
+    """Format report dates compactly so the full year fits in print headers."""
+    if start_date == end_date:
+        return f'{start_date.strftime("%B")} {start_date.day}, {start_date.year}'
+    if start_date.year == end_date.year and start_date.month == end_date.month:
+        return f'{start_date.strftime("%B")} {start_date.day}–{end_date.day}, {end_date.year}'
+    if start_date.year == end_date.year:
+        return (
+            f'{start_date.strftime("%B")} {start_date.day}–'
+            f'{end_date.strftime("%B")} {end_date.day}, {end_date.year}'
+        )
+    return (
+        f'{start_date.strftime("%B")} {start_date.day}, {start_date.year}–'
+        f'{end_date.strftime("%B")} {end_date.day}, {end_date.year}'
+    )
 
 
 def _get_report_signatory_context(request):
@@ -527,6 +546,47 @@ def _get_report_service_tables(bookings):
         'promotional_revenue': promotional_revenue,
         'combined_revenue': regular_revenue + promotional_revenue,
     }
+
+
+def _get_paid_completed_sales(start_date, end_date, booking_type='all', therapist=None, status_filter='all'):
+    """Build one sales row for every completed booking in the selected period.
+
+    Completion is the business confirmation that the service was rendered and
+    paid. Historical completed bookings may predate PaymentTransaction records,
+    so reports use the booking's locked total.
+    """
+    if status_filter not in {'all', 'completed'}:
+        return [], [], Decimal('0')
+
+    completed_bookings = Booking.objects.filter(
+        status='completed',
+        date__gte=start_date,
+        date__lte=end_date,
+    ).select_related('therapist').prefetch_related('services')
+    if booking_type != 'all':
+        completed_bookings = completed_bookings.filter(booking_type=booking_type)
+    if therapist is not None:
+        completed_bookings = completed_bookings.filter(therapist=therapist)
+
+    rows = []
+    sales_bookings = []
+    total_sales = Decimal('0')
+    for booking in completed_bookings.order_by('date', 'time', 'pk'):
+        amount = Decimal(str(booking.total_discounted_price))
+        rows.append({
+            'booking_id': booking.pk,
+            'client_name': booking.client_name,
+            'booking_date': booking.date,
+            'service_names': booking.service_names,
+            'booking_type': booking.get_booking_type_display(),
+            'booking_type_code': booking.booking_type,
+            'therapist_name': booking.therapist.name if booking.therapist else 'Unassigned',
+            'amount': amount,
+        })
+        sales_bookings.append(booking)
+        total_sales += amount
+
+    return rows, sales_bookings, total_sales
 
 
 def _get_booking_report_snapshots(booking):
@@ -1026,33 +1086,108 @@ def booking_detail(request, pk):
 
 
 @login_required(login_url='portals:login')
+@transaction.atomic
 def booking_update_status(request, pk):
     if not request.user.is_staff:
         return JsonResponse({'error': 'Unauthorized'}, status=403)
+    if request.method == 'GET':
+        booking = get_object_or_404(Booking, pk=pk)
+        snapshot = booking.service_prices_snapshot or []
+        service_items = []
+        if snapshot:
+            service_durations = dict(
+                Service.objects.filter(
+                    pk__in=[item.get('service_id') for item in snapshot if item.get('service_id')]
+                ).values_list('pk', 'duration_minutes')
+            )
+            for item in snapshot:
+                service_id = item.get('service_id')
+                service_items.append({
+                    'name': item.get('name') or 'Service',
+                    'duration': item.get('duration_minutes') or service_durations.get(service_id),
+                    'amount': item.get('discounted_price', item.get('base_price', 0)),
+                })
+        else:
+            service_items = [
+                {'name': service.name, 'duration': service.duration_minutes, 'amount': service.discounted_price}
+                for service in booking.services.all()
+            ]
+            if booking.additional_minutes:
+                service_items.append({
+                    'name': f'Additional Massage Time ({booking.additional_minutes} min)',
+                    'duration': booking.additional_minutes,
+                    'amount': booking.additional_time_fee,
+                })
+        return JsonResponse({
+            'booking_id': booking.pk,
+            'client_name': booking.client_name,
+            'services': service_items,
+            'total': str(booking.total_discounted_price),
+        })
     if request.method == 'POST':
         booking = get_object_or_404(Booking, pk=pk)
         old_status = booking.status
         new_status = request.POST.get('status')
         if new_status == 'cancelled' and not request.user.is_superuser:
             return JsonResponse({'error': 'Only admins can cancel bookings.'}, status=403)
+        if new_status == 'confirmed' and booking.date < timezone.localdate():
+            return JsonResponse({
+                'error': 'Cannot confirm a booking scheduled for a past date.',
+                'code': 'booking_date_in_past',
+                'status': booking.status,
+                'booking_date': booking.date.isoformat(),
+                'current_date': timezone.localdate().isoformat(),
+            }, status=400)
         if new_status == 'completed':
             today = timezone.localdate()
-            if booking.date != today:
+            if booking.status != 'confirmed':
+                return JsonResponse({
+                    'error': 'Only confirmed bookings can be completed.',
+                    'code': 'booking_not_confirmed',
+                    'status': booking.status,
+                    'booking_date': booking.date.isoformat(),
+                    'current_date': today.isoformat(),
+                }, status=400)
+            if booking.date > today:
                 booking_date_display = (
                     f"{booking.date.strftime('%B')} {booking.date.day}, {booking.date.year}"
                 )
-                today_display = f"{today.strftime('%B')} {today.day}, {today.year}"
                 return JsonResponse({
                     'error': (
-                        'Cannot complete this booking. Only bookings scheduled '
-                        f'for today ({today_display}) can be completed. This '
-                        f'booking is scheduled for {booking_date_display}.'
+                        'Cannot complete a future booking. This booking is '
+                        f'scheduled for {booking_date_display}.'
                     ),
                     'code': 'booking_date_mismatch',
                     'status': booking.status,
                     'booking_date': booking.date.isoformat(),
                     'current_date': today.isoformat(),
                 }, status=400)
+            payment_method = request.POST.get('payment_method', '').strip()
+            payment_reference = request.POST.get('payment_reference', '').strip()
+            valid_methods = dict(PaymentTransaction.PAYMENT_METHOD_CHOICES)
+            due_amount = booking.total_discounted_price
+            existing_payment = booking.payment_transactions.filter(
+                status='successful', amount__gte=due_amount,
+            ).exists()
+            if not existing_payment:
+                if payment_method not in valid_methods:
+                    return JsonResponse({
+                        'error': 'Record a valid successful payment before completing this booking.',
+                        'code': 'payment_required',
+                    }, status=400)
+                if due_amount <= 0:
+                    return JsonResponse({
+                        'error': 'A valid positive booking total is required before recording payment.',
+                        'code': 'invalid_payment_amount',
+                    }, status=400)
+                PaymentTransaction.objects.create(
+                    booking=booking,
+                    amount=due_amount,
+                    payment_method=payment_method,
+                    reference=payment_reference[:120],
+                    status='successful',
+                    recorded_by=request.user,
+                )
         if new_status in dict(Booking.STATUS_CHOICES):
             booking.status = new_status
             if new_status in {'confirmed', 'completed'}:
@@ -3089,9 +3224,9 @@ def admin_reports(request):
     if booking_type_filter not in valid_booking_types:
         booking_type_filter = 'all'
 
-    # Base report data: walk-ins, verified online bookings, and confirmed/completed records.
+    # Booking reports must include every booking inside the selected historical
+    # range. Status and booking type are applied separately below.
     filtered_bookings = Booking.objects.filter(
-        Q(booking_type='walk_in') | Q(is_verified=True) | Q(status__in=['confirmed', 'completed']),
         date__gte=start_date,
         date__lte=end_date,
     )
@@ -3115,6 +3250,18 @@ def admin_reports(request):
     )
 
     total_completed = completed.count()
+    sales_transactions, sales_bookings, total_sales = _get_paid_completed_sales(
+        start_date,
+        end_date,
+        booking_type=booking_type_filter,
+        status_filter=status_filter,
+    )
+    sales_amount_by_booking = {
+        row['booking_id']: row['amount'] for row in sales_transactions
+    }
+    sales_completed_count = len(sales_bookings)
+    sales_online_count = sum(1 for row in sales_transactions if row['booking_type_code'] == 'online')
+    sales_walkin_count = sum(1 for row in sales_transactions if row['booking_type_code'] == 'walk_in')
 
     # ── Booking Report: all bookings in period ──
     all_bookings_in_period = filtered_bookings.select_related(
@@ -3132,12 +3279,9 @@ def admin_reports(request):
     total_commission = Decimal('0')
     therapists = Therapist.objects.filter(is_active=True)
     for t in therapists:
-        t_bookings = completed.filter(therapist=t)
-        t_count = t_bookings.count()
-        t_revenue = sum(
-            (booking.total_discounted_price for booking in t_bookings),
-            Decimal('0'),
-        )
+        t_bookings = [booking for booking in sales_bookings if booking.therapist_id == t.pk]
+        t_count = len(t_bookings)
+        t_revenue = sum((sales_amount_by_booking[b.pk] for b in t_bookings), Decimal('0'))
         t_commission = t_revenue * (t.commission_percentage / Decimal('100'))
         total_commission += t_commission
         staff_data.append({
@@ -3149,15 +3293,16 @@ def admin_reports(request):
         })
     staff_data.sort(key=lambda x: x['services_rendered'], reverse=True)
 
-    online_count = all_bookings_in_period.filter(booking_type='online').count()
-    walkin_count = all_bookings_in_period.filter(booking_type='walk_in').count()
+    online_count = completed.filter(booking_type='online').count()
+    walkin_count = completed.filter(booking_type='walk_in').count()
     confirmed_count = all_bookings_in_period.filter(status='confirmed').count()
     pending_count = all_bookings_in_period.filter(status='pending').count()
     cancelled_count = all_bookings_in_period.filter(status='cancelled').count()
 
     service_breakdown = []
+    sales_bookings_qs = Booking.objects.filter(pk__in=[b.pk for b in sales_bookings]).prefetch_related('services')
     for svc in Service.objects.filter(is_active=True):
-        svc_bookings = completed.filter(services=svc)
+        svc_bookings = sales_bookings_qs.filter(services=svc)
         svc_count = svc_bookings.count()
         if svc_count > 0:
             svc_revenue = svc.discounted_price * svc_count
@@ -3167,9 +3312,7 @@ def admin_reports(request):
                 'revenue': svc_revenue,
             })
     service_breakdown.sort(key=lambda x: x['count'], reverse=True)
-    report_service_tables = _get_report_service_tables(
-        completed.order_by('date', 'time', 'created_at')
-    )
+    report_service_tables = _get_report_service_tables(sales_bookings)
     booking_category_groups = _get_booking_category_groups(all_bookings_in_period)
     booking_category_total = sum(
         (group['subtotal'] for group in booking_category_groups),
@@ -3186,6 +3329,9 @@ def admin_reports(request):
     else:
         filter_reset_params = {'period': period}
     active_filter_count = int(status_filter != 'all') + int(booking_type_filter != 'all')
+    show_booking_section = (
+        period != 'today' or status_filter != 'all' or booking_type_filter != 'all'
+    )
     signatory_context = _get_report_signatory_context(request)
     selected_signatory_id = signatory_context['selected_signatory_id']
     if selected_signatory_id:
@@ -3197,7 +3343,18 @@ def admin_reports(request):
         'period_label': period_label,
         'start_date': start_date,
         'end_date': end_date,
+        'selected_report_month': (
+            start_date.strftime('%Y-%m')
+            if (start_date.year, start_date.month) == (end_date.year, end_date.month)
+            else ''
+        ),
+        'report_date_range': _format_report_date_range(start_date, end_date),
         'total_revenue': total_revenue,
+        'total_sales': total_sales,
+        'sales_transactions': sales_transactions,
+        'sales_completed_count': sales_completed_count,
+        'sales_online_count': sales_online_count,
+        'sales_walkin_count': sales_walkin_count,
         'total_completed': total_completed,
         'total_commission': total_commission,
         'total_bookings_period': total_bookings_period,
@@ -3230,6 +3387,7 @@ def admin_reports(request):
             'online': 'Online',
         }[booking_type_filter],
         'active_filter_count': active_filter_count,
+        'show_booking_section': show_booking_section,
         'filter_reset_query': urlencode(filter_reset_params),
         **signatory_context,
     }
@@ -4105,7 +4263,13 @@ def staff_my_reports(request):
         booking_type_filter = 'all'
 
     services_rendered = 0
+    completed_booking_count = 0
     total_revenue = Decimal('0')
+    total_sales = Decimal('0')
+    sales_transactions = []
+    sales_bookings = []
+    sales_online_count = 0
+    sales_walkin_count = 0
     commission_earned = Decimal('0')
     booking_details = []
     all_bookings_in_period = []
@@ -4119,7 +4283,6 @@ def staff_my_reports(request):
     if therapist:
         # All bookings in period for this therapist (for the Bookings section)
         all_bookings_qs = Booking.objects.filter(
-            Q(booking_type='walk_in') | Q(is_verified=True),
             therapist=therapist,
             date__gte=start_date,
             date__lte=end_date,
@@ -4131,15 +4294,24 @@ def staff_my_reports(request):
 
         all_bookings_in_period = all_bookings_qs
         total_bookings_period = all_bookings_qs.count()
-        online_count = all_bookings_qs.filter(booking_type='online').count()
-        walkin_count = all_bookings_qs.filter(booking_type='walk_in').count()
-
-        # Completed bookings only (for the Sales section)
+        # Completed service count follows the selected booking date range.
         completed = all_bookings_qs.filter(status='completed')
-
-        services_rendered = completed.count()
-        for b in completed:
-            price = b.total_discounted_price
+        completed_booking_count = completed.count()
+        sales_transactions, sales_bookings, total_sales = _get_paid_completed_sales(
+            start_date,
+            end_date,
+            booking_type=booking_type_filter,
+            therapist=therapist,
+            status_filter=status_filter,
+        )
+        services_rendered = len(sales_bookings)
+        online_count = completed.filter(booking_type='online').count()
+        walkin_count = completed.filter(booking_type='walk_in').count()
+        sales_online_count = sum(1 for row in sales_transactions if row['booking_type_code'] == 'online')
+        sales_walkin_count = sum(1 for row in sales_transactions if row['booking_type_code'] == 'walk_in')
+        sales_amount_by_booking = {row['booking_id']: row['amount'] for row in sales_transactions}
+        for b in sales_bookings:
+            price = sales_amount_by_booking[b.pk]
             total_revenue += price
             booking_details.append({
                 'booking': b,
@@ -4147,7 +4319,7 @@ def staff_my_reports(request):
             })
         if therapist.commission_percentage:
             commission_earned = total_revenue * (therapist.commission_percentage / Decimal('100'))
-        report_service_tables = _get_report_service_tables(completed)
+        report_service_tables = _get_report_service_tables(sales_bookings)
         booking_category_groups = _get_booking_category_groups(all_bookings_in_period)
         booking_category_total = sum(
             (group['subtotal'] for group in booking_category_groups),
@@ -4161,8 +4333,19 @@ def staff_my_reports(request):
         'period_label': period_label,
         'start_date': start_date,
         'end_date': end_date,
+        'selected_report_month': (
+            start_date.strftime('%Y-%m')
+            if (start_date.year, start_date.month) == (end_date.year, end_date.month)
+            else ''
+        ),
+        'report_date_range': _format_report_date_range(start_date, end_date),
         'services_rendered': services_rendered,
+        'completed_booking_count': completed_booking_count,
         'total_revenue': total_revenue,
+        'total_sales': total_sales,
+        'sales_transactions': sales_transactions,
+        'sales_online_count': sales_online_count,
+        'sales_walkin_count': sales_walkin_count,
         'commission_earned': commission_earned,
         'booking_details': booking_details,
         'all_bookings_in_period': all_bookings_in_period,
@@ -4173,6 +4356,9 @@ def staff_my_reports(request):
         'walkin_count': walkin_count,
         'status_filter': status_filter,
         'booking_type_filter': booking_type_filter,
+        'show_booking_section': (
+            period != 'today' or status_filter != 'all' or booking_type_filter != 'all'
+        ),
         **report_service_tables,
         'generated_date': timezone.localdate(),
         **_get_report_signatory_context(request),

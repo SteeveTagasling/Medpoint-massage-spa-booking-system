@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 
 class SiteContent(models.Model):
@@ -688,6 +689,17 @@ class Booking(models.Model):
     def total_duration_minutes(self):
         return sum(s.duration_minutes for s in self.services.all()) + self.additional_minutes
 
+    def save(self, *args, **kwargs):
+        if self.status == 'completed':
+            if not self.pk:
+                raise ValidationError('A booking cannot be completed before its payment is recorded.')
+            if not self.payment_transactions.filter(
+                status='successful', amount__gte=self.total_discounted_price,
+            ).exists():
+                raise ValidationError('A successful payment transaction is required to complete this booking.')
+        return super().save(*args, **kwargs)
+
+
     def lock_current_price(self):
         """Lock service and optional extension pricing at booking time."""
         snapshots = []
@@ -739,6 +751,37 @@ class Booking(models.Model):
         self.locked_price = total
         self.service_prices_snapshot = snapshots
         self.save(update_fields=['locked_price', 'service_prices_snapshot'])
+
+
+class PaymentTransaction(models.Model):
+    """A successfully recorded customer payment for a booking."""
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('card', 'Card'),
+        ('bank_transfer', 'Bank transfer'),
+        ('e_wallet', 'E-wallet'),
+        ('staff_verified', 'Staff verified'),
+        ('other', 'Other'),
+    ]
+    STATUS_CHOICES = [
+        ('successful', 'Successful'),
+        ('failed', 'Failed'),
+        ('refunded', 'Refunded'),
+    ]
+
+    booking = models.ForeignKey(Booking, on_delete=models.PROTECT, related_name='payment_transactions')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
+    reference = models.CharField(max_length=120, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='successful')
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Payment {self.pk} for booking #{self.booking_id} ({self.amount})"
 
 
 class BookingNotification(models.Model):
