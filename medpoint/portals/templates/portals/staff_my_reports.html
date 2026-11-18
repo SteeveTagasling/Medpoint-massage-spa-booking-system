@@ -1533,7 +1533,46 @@ function printReport(type) {
         document.body.classList.add('print-sales');
     }
 
-    window.print();
+    openReportPreview(type);
 }
+function collectPrintRules(rules) {
+    let css = '';
+    Array.from(rules || []).forEach(rule => {
+        if (rule.type === CSSRule.MEDIA_RULE) { if (/print/i.test(rule.conditionText || rule.media.mediaText)) css += collectPrintRules(rule.cssRules); }
+        else if (rule.type === CSSRule.SUPPORTS_RULE) css += collectPrintRules(rule.cssRules);
+        else css += rule.cssText + '\n';
+    });
+    return css;
+}
+function openReportPreview(type) {
+    const names={bookings:'Booking Report',sales:'Sales Report',both:'Business Report'}, overlay=document.getElementById('reportPreview');
+    document.getElementById('reportPreviewTitle').textContent=names[type]||names.sales;
+    overlay.dataset.type=type; overlay.classList.add('open'); overlay.setAttribute('aria-hidden','false');
+    const frame=document.getElementById('reportPreviewFrame');
+    frame.onload=function(){
+        const doc=frame.contentDocument;if(!doc)return;
+        doc.body.classList.remove('print-sales','print-bookings','print-both');
+        doc.body.classList.add(type==='bookings'?'print-bookings':type==='both'?'print-both':'print-sales');
+        const title=doc.getElementById('print-report-title');if(title)title.textContent=(names[type]||names.sales).toUpperCase();
+        let css='';Array.from(document.styleSheets).forEach(sheet=>{try{css+=collectPrintRules(sheet.cssRules);}catch(_){}});
+        const style=doc.createElement('style');style.textContent=css+'\n*,*::before,*::after{animation:none!important;transition:none!important;}';doc.head.appendChild(style);
+        frame.contentWindow.addEventListener('scroll',updateReportPreviewPages,{passive:true});
+        doc.addEventListener('scroll',updateReportPreviewPages,true);
+        frame.contentWindow.addEventListener('resize',updateReportPreviewPages);
+        setTimeout(updateReportPreviewPages,100);
+    };
+    const previewDocument=document.documentElement.cloneNode(true);
+    previewDocument.querySelectorAll('script').forEach(script=>script.remove());
+    previewDocument.querySelector('#reportPreview')?.remove();
+    frame.srcdoc='<!doctype html>'+previewDocument.outerHTML;
+}
+function updateReportPreviewPages(){const frame=document.getElementById('reportPreviewFrame');if(!frame.contentWindow||!frame.contentDocument)return;const doc=frame.contentDocument,scroller=doc.scrollingElement||doc.documentElement,height=Math.max(scroller.scrollHeight,doc.body.scrollHeight),total=Math.max(1,Math.ceil(height/1122)),top=Math.max(scroller.scrollTop,doc.documentElement.scrollTop,doc.body.scrollTop,frame.contentWindow.scrollY||0),maxScroll=Math.max(1,height-frame.clientHeight),current=Math.min(total,Math.floor((top/maxScroll)*total)+1);document.getElementById('reportPreviewPage').textContent=current+' / '+total;}
+function closeReportPreview(){const overlay=document.getElementById('reportPreview');overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true');}
+function confirmReportPrint(){closeReportPreview();setTimeout(()=>window.print(),50);}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('reportPreview').classList.contains('open'))closeReportPreview();});
 </script>
+<style>
+.report-preview-overlay,.report-preview-overlay *{animation:none!important;transition:none!important}.report-preview-overlay{display:none;position:fixed;inset:0;z-index:3000;background:rgba(30,10,20,.58);backdrop-filter:blur(5px);padding:20px;align-items:center;justify-content:center}.report-preview-overlay.open{display:flex}.report-preview-dialog{background:#fff;border-radius:14px;width:min(1180px,97vw);height:min(94vh,1100px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px #16081266}.report-preview-toolbar{display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid #e8e4e6;flex-shrink:0}.report-preview-heading{margin-right:auto;font-weight:700;color:#39232d}.report-preview-heading small{display:block;font-weight:400;color:#766b70}.report-preview-toolbar button{border:1px solid #ded8dc;border-radius:8px;background:white;padding:10px 16px;font-weight:600;cursor:pointer}.report-preview-toolbar .preview-print{background:#35121f;color:white;border-color:#35121f}.report-preview-page-count{font-variant-numeric:tabular-nums;color:#62545a;font-weight:600;min-width:48px;text-align:center}.report-preview-frame{width:100%;height:100%;border:0;background:#fff}@media(max-width:700px){.report-preview-overlay{padding:8px}.report-preview-dialog{width:100%;height:96vh}.report-preview-toolbar{padding:10px;flex-wrap:wrap}}
+</style>
+<div class="report-preview-overlay" id="reportPreview" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="reportPreviewTitle"><div class="report-preview-dialog"><div class="report-preview-toolbar"><div class="report-preview-heading">REPORT VIEWER<small id="reportPreviewTitle">Report</small></div><span class="report-preview-page-count" id="reportPreviewPage">1 / 1</span><button class="preview-print" type="button" onclick="confirmReportPrint()"><i class="fas fa-print"></i> Print / Save as PDF</button><button type="button" onclick="closeReportPreview()">Close</button></div><iframe class="report-preview-frame" id="reportPreviewFrame" title="Report preview"></iframe></div></div>
 {% endblock %}
