@@ -1,4 +1,3 @@
-{% extends "portals/base.html" %}
 
 {% block title %}My Reports{% endblock %}
 {% block page_title %}My Reports{% endblock %}
@@ -1033,6 +1032,38 @@
         .promotion-table .empty-state i { display: none !important; }
         .promotion-table .empty-state p { margin: 0 !important; }
     }
+
+    /* Sales transactions remain on screen, but print after the signatories. */
+    .sales-transactions-page { display: block; width: 100%; margin-top: 1.5rem; }
+    .sales-transactions-print-title { display: none; }
+
+    @media print {
+        .sales-transactions-page { display: none !important; }
+        body.print-sales .sales-transactions-page,
+        body.print-both .sales-transactions-page {
+            display: block !important;
+            break-before: page !important;
+            page-break-before: always !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        body.print-sales .sales-transactions-print-title,
+        body.print-both .sales-transactions-print-title {
+            display: block !important;
+            text-align: center !important;
+            font-size: 12pt !important;
+            font-weight: 800 !important;
+            color: #000 !important;
+            margin: 0 0 14px !important;
+        }
+        .sales-transactions-page .table-wrapper { width: 100% !important; overflow: visible !important; }
+        .sales-transactions-page table { width: 100% !important; border-collapse: collapse !important; }
+        .sales-transactions-page thead { display: table-header-group !important; }
+        .sales-transactions-page tr { break-inside: avoid !important; page-break-inside: avoid !important; }
+        .sales-transactions-page tbody { break-inside: auto !important; page-break-inside: auto !important; }
+    }
+
 </style>
 {% endblock %}
 
@@ -1359,7 +1390,6 @@
         </div>
     </div>
 
-    {% include "portals/includes/sales_transaction_table.html" %}
 
     <!-- Regular Priced Services -->
     <div class="card">
@@ -1472,6 +1502,12 @@
         <div class="print-sig-line"></div>
         <div class="print-sig-role">{% if selected_signatory %}{{ selected_signatory.role|upper }}{% else %}&nbsp;{% endif %}</div>
     </div>
+</div>
+
+<!-- Sales transactions: displayed on screen, printed on a new page after signatories -->
+<div class="sales-transactions-page">
+    <h2 class="sales-transactions-print-title">SALES TRANSACTIONS</h2>
+    {% include "portals/includes/sales_transaction_table.html" %}
 </div>
 
 <script>
